@@ -10,6 +10,7 @@
 struct GLFWwindow;
 
 namespace Morpheus {
+
 	enum class NodeType {
 		ENGINE = 0,
 		SCENE = 1,
@@ -40,7 +41,7 @@ namespace Morpheus {
 		glm::mat4 cache;
 	};
 	
-	enum ErrorCode {
+	enum class ErrorCode {
 		SUCCESS,
 		FAIL_GLFW_INIT,
 		FAIL_GLFW_WINDOW_INIT

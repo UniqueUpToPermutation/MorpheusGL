@@ -48,6 +48,9 @@
     <ClInclude Include="graph.hpp">
       <Filter>Header Files\util</Filter>
     </ClInclude>
+    <ClInclude Include="content.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="digraph.cpp">

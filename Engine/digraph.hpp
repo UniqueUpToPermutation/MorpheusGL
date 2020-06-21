@@ -91,6 +91,10 @@ namespace Morpheus {
 		inline T& data(const std::string& s);
 	};
 
+	class IDigraphLookup;
+	template <typename T>
+	class DigraphLookup;
+
 	/// <summary>
 	/// A directed graph class which features resizing memory and recycling of destroyed edges and vertices.
 	/// </summary>
@@ -109,6 +113,10 @@ namespace Morpheus {
 		float rescaleFactor;
 		std::unordered_map<std::string, IDigraphData*> vertexDatas;
 		std::unordered_map<std::string, IDigraphData*> edgeDatas;
+		std::unordered_map<std::string, IDigraphLookup*> vertexLookups;
+		std::unordered_map<std::string, IDigraphLookup*> edgeLookups;
+		DigraphLookup<std::string>* names;
+		DigraphLookup<int> handles;
 
 		void resizeVertices(uint32_t newSize);
 		void resizeEdges(uint32_t newSize);
@@ -145,6 +153,12 @@ namespace Morpheus {
 
 		template <typename T>
 		DigraphDataView<T> createVertexData(const std::string& name);
+
+		template <typename T>
+		DigraphLookup<T> createVertexLookup(const std::string& name);
+
+		template <typename T>
+		DigraphLookup<T> createEdgeLookup(const std::string& name);
 
 		template <typename T>
 		void destroyData(DigraphDataView<T>& view);
@@ -251,6 +265,50 @@ namespace Morpheus {
 		}
 
 		friend struct DigraphDataView<T>;
+	};
+
+
+	enum class DigraphLookupType {
+		VERTEX,
+		EDGE
+	};
+
+	class IDigraphLookup {
+	public:
+		virtual void applyMap(const int map[], const uint32_t mapSize) = 0;
+	};
+
+	template <typename T>
+	class DigraphLookup : public IDigraphLookup {
+	private:
+		Digraph* parent;
+		DigraphLookupType type_;
+		std::unordered_map<T, int> TtoId;
+
+	protected:
+		void applyMap(const int map[], const uint32_t mapSize) override {
+			for (auto& item : TtoId)
+				item.second = map[item.second];
+		}
+
+	public:
+		void setv(const DigraphVertex& v, const T& t) {
+			TtoId[t] = v.id();
+		}
+		void sete(const DigraphEdge& e, const T& t) {
+			TtoId[t] = e.id();
+		}
+		DigraphVertex getv(const T& t) {
+			return parent->getVertex(TtoId[t]);
+		}
+		DigraphEdge gete(const T& t) {
+			return parent->getEdge(TtoId[t]);
+		}
+
+		inline explicit DigraphLookup(Digraph* parent, const DigraphLookupType type) :
+			parent(parent), type_(type) { }
+
+		friend class Digraph;
 	};
 
 	template <typename T>
@@ -448,6 +506,16 @@ namespace Morpheus {
 		auto ptr = new DigraphVertexData<T>(this, name);
 		vertexDatas[name] = ptr;
 		return DigraphDataView<T>(ptr);
+	}
+
+	template <typename T>
+	DigraphLookup<T> Digraph::createVertexLookup(const std::string& name) {
+
+	}
+
+	template <typename T>
+	DigraphLookup<T> Digraph::createEdgeLookup(const std::string& name) {
+
 	}
 
 	template <typename T>

@@ -142,6 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="content.h" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="digraph.hpp" />
     <ClInclude Include="graph.hpp" />

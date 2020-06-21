@@ -1,10 +1,14 @@
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <fstream>
 
 #include "core.hpp"
 
 using namespace std;
+
+#define DEFAULT_VERSION_MAJOR 3
+#define DEFAULT_VERSION_MINOR 3
 
 void error_callback(int error, const char* description)
 {
@@ -16,23 +20,34 @@ namespace Morpheus {
 	}
 
 	Error Engine::startup(const std::string& configPath) {
+
 		if (!glfwInit())
 		{
-			Error err(FAIL_GLFW_INIT);
+			Error err(ErrorCode::FAIL_GLFW_INIT);
 			err.message = "GLFW failed to initialize!";
 			err.source = "Engine::startup";
 			cout << err.str() << endl;
 			return err;
 		}
 
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		// Load config
+		ifstream f(configPath);
+		f >> config_;
+
+		auto glConfig = config_["opengl"];
+		uint32_t majorVersion = DEFAULT_VERSION_MAJOR;
+		uint32_t minorVersion = DEFAULT_VERSION_MINOR;
+		glConfig["v_major"].get_to(majorVersion);
+		glConfig["v_minor"].get_to(minorVersion);
+
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, majorVersion);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minorVersion);
 		glfwSetErrorCallback(error_callback);
 
 		window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
 		if (!window)
 		{
-			Error err(FAIL_GLFW_WINDOW_INIT);
+			Error err(ErrorCode::FAIL_GLFW_WINDOW_INIT);
 			err.message = "GLFW failed to create window!";
 			err.source = "Engine::startup";
 			cout << err.str() << endl;
