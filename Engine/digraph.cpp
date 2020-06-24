@@ -58,6 +58,22 @@ namespace Morpheus {
 			data.second->resize(newSize);
 	}
 
+	void Digraph::applyVertexMap(const int map[], const uint32_t mapLen, const uint32_t newSize) {
+		for (auto& data : vertexDatas)
+			data.second->compress(map, mapLen, newSize);
+
+		for (auto& lookup : vertexLookups)
+			lookup.second->applyMap(map, mapLen);
+	}
+
+	void Digraph::applyEdgeMap(const int map[], const uint32_t mapLen, const uint32_t newSize) {
+		for (auto& data : edgeDatas)
+			data.second->compress(map, mapLen, newSize);
+
+		for (auto& lookup : edgeLookups)
+			lookup.second->applyMap(map, mapLen);
+	}
+
 	DigraphVertex Digraph::createVertex() {
 		if (firstUnusedVertex != -1) {
 			auto next = vertices_[firstUnusedVertex].outEdge;
@@ -119,8 +135,8 @@ namespace Morpheus {
 		return DigraphEdge(this, id);
 	}
 
-	DigraphEdge Digraph::createEdge(DigraphVertex& head, DigraphVertex& tail) {
-		return createEdge(head.id(), tail.id());
+	DigraphEdge Digraph::createEdge(DigraphVertex& tail, DigraphVertex& head) {
+		return createEdge(tail.id(), head.id());
 	}
 
 	void Digraph::deleteVertex(DigraphVertex& v) {
@@ -220,10 +236,9 @@ namespace Morpheus {
 		edgeActiveBlock_ = edgeCount_;
 		vertexActiveBlock_ = vertexCount_;
 
-		for (auto& data : vertexDatas)
-			data.second->compress(vmap, vertexActiveBlock_, newVertexReserve);
-		for (auto& data : edgeDatas)
-			data.second->compress(emap, edgeActiveBlock_, newEdgeReserve);
+		// Relabel vertices as necessary and update data and lookups
+		applyVertexMap(vmap, vertexActiveBlock_, newVertexReserve);
+		applyEdgeMap(emap, edgeActiveBlock_, newEdgeReserve);
 
 		delete[] vmap;
 		delete[] emap;

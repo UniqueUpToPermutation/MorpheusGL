@@ -25,6 +25,10 @@ namespace Morpheus {
 	class DigraphVertexData;
 	template <typename T>
 	struct DigraphDataView;
+	template <typename T>
+	struct DigraphVertexLookupView;
+	template <typename T>
+	struct DigraphEdgeLookupView;
 
 	struct DigraphVertexRaw {
 		int inEdge;
@@ -115,11 +119,12 @@ namespace Morpheus {
 		std::unordered_map<std::string, IDigraphData*> edgeDatas;
 		std::unordered_map<std::string, IDigraphLookup*> vertexLookups;
 		std::unordered_map<std::string, IDigraphLookup*> edgeLookups;
-		DigraphLookup<std::string>* names;
-		DigraphLookup<int> handles;
 
 		void resizeVertices(uint32_t newSize);
 		void resizeEdges(uint32_t newSize);
+
+		void applyVertexMap(const int map[], const uint32_t mapLen, const uint32_t newSize);
+		void applyEdgeMap(const int map[], const uint32_t mapLen, const uint32_t newSize);
 
 	public:
 		Digraph();
@@ -128,8 +133,8 @@ namespace Morpheus {
 
 		DigraphVertex createVertex();
 		DigraphEdge createEdge(int tail, int head);
-		DigraphEdge createEdge(DigraphVertex& head, DigraphVertex& tail);
-		void deleteVertex(DigraphVertex& v);
+		inline DigraphEdge createEdge(DigraphVertex& head, DigraphVertex& tail);
+		inline void deleteVertex(DigraphVertex& v);
 		void deleteVertex(int v);
 		void deleteEdge(DigraphEdge& e);
 		void compress(bool bTight = false);
@@ -137,13 +142,13 @@ namespace Morpheus {
 		uint32_t edgeCount() const { return edgeCount_; }
 		uint32_t vertexCount() const { return vertexCount_; }
 
-		inline DigraphVertex getVertex(int id) { return DigraphVertex(this, id); }
-		inline DigraphEdge getEdge(int id) { return DigraphEdge(this, id); }
-
 		inline uint32_t vertexReserve() const { return vertexReserve_; }
 		inline uint32_t edgeReserve() const { return edgeReserve_; }
 		inline uint32_t vertexActiveBlock() const { return vertexActiveBlock_; }
 		inline uint32_t edgeActiveBlock() const { return edgeActiveBlock_; }
+
+		inline DigraphVertex getVertex(int id) { return DigraphVertex(this, id); }
+		inline DigraphEdge getEdge(int id) { return DigraphEdge(this, id); }
 
 		inline DigraphEdgeIteratorAll edges();
 		inline DigraphVertexIteratorAll vertices();
@@ -155,10 +160,10 @@ namespace Morpheus {
 		DigraphDataView<T> createVertexData(const std::string& name);
 
 		template <typename T>
-		DigraphLookup<T> createVertexLookup(const std::string& name);
+		DigraphVertexLookupView<T> createVertexLookup(const std::string& name);
 
 		template <typename T>
-		DigraphLookup<T> createEdgeLookup(const std::string& name);
+		DigraphEdgeLookupView<T> createEdgeLookup(const std::string& name);
 
 		template <typename T>
 		void destroyData(DigraphDataView<T>& view);
@@ -192,9 +197,8 @@ namespace Morpheus {
 
 	class IDigraphData {
 	protected:
-		
 		virtual void resize(uint32_t newSize) = 0;
-		virtual void compress(int map[], uint32_t mapSize, uint32_t newSize) = 0;
+		virtual void compress(const int map[], uint32_t mapSize, uint32_t newSize) = 0;
 
 	public:
 
@@ -220,14 +224,14 @@ namespace Morpheus {
 			return DigraphDataType::UNKNOWN;
 		}
 
-		void resize(uint32_t newSize) override {
+		void resize(const uint32_t newSize) override {
 			auto new_data = new T[newSize];
 			memcpy(new_data, data, sizeof(T) * dataSize);
 			delete[] data;
 			data = new_data;
 			dataSize = newSize;
 		}
-		void compress(int map[], uint32_t mapSize, uint32_t newSize) override {
+		void compress(const int map[], const uint32_t mapSize, const uint32_t newSize) override {
 			auto new_data = new T[newSize];
 			mapcpy(new_data, data, map, mapSize);
 			delete[] data;
@@ -292,16 +296,16 @@ namespace Morpheus {
 		}
 
 	public:
-		void setv(const DigraphVertex& v, const T& t) {
+		inline void setv(const DigraphVertex& v, const T& t) {
 			TtoId[t] = v.id();
 		}
-		void sete(const DigraphEdge& e, const T& t) {
+		inline void sete(const DigraphEdge& e, const T& t) {
 			TtoId[t] = e.id();
 		}
-		DigraphVertex getv(const T& t) {
+		inline DigraphVertex getv(const T& t) {
 			return parent->getVertex(TtoId[t]);
 		}
-		DigraphEdge gete(const T& t) {
+		inline DigraphEdge gete(const T& t) {
 			return parent->getEdge(TtoId[t]);
 		}
 
@@ -309,6 +313,66 @@ namespace Morpheus {
 			parent(parent), type_(type) { }
 
 		friend class Digraph;
+		friend struct DigraphVertexLookupView<T>;
+		friend struct DigraphEdgeLookupView<T>;
+	};
+
+	template <typename T>
+	struct DigraphVertexLookupView {
+	private:
+		DigraphLookup<T>* lookup;
+
+	public:
+		inline DigraphVertexLookupView(DigraphLookup<T>* lookup) : lookup(lookup) { }
+		inline DigraphVertexLookupView() : lookup(nullptr) { }
+
+		inline DigraphVertex operator[](const T& t) {
+			lookup->parent->getVertex(lookup->TtoId[t]);
+		}
+		inline void set(const DigraphVertex& v, const T& t) {
+			lookup->TtoId[t] = v.id();
+		}
+		inline void clear(const T& t) {
+			lookup->TtoId.erase(t);
+		}
+		inline bool tryFind(const T& t, DigraphVertex* out) {
+			auto it = lookup->TtoId.find(t);
+			if (it == lookup->TtoId.end())
+				return false;
+			else {
+				*out = lookup->parent->getVertex(it->second);
+				return true;
+			}
+		}
+	};
+
+	template <typename T>
+	struct DigraphEdgeLookupView {
+	private:
+		DigraphLookup<T>* lookup;
+
+	public:
+		inline DigraphEdgeLookupView(DigraphLookup<T>* lookup) : lookup(lookup) { }
+		inline DigraphEdgeLookupView() : lookup(nullptr) { }
+
+		inline DigraphEdge operator[](const T& t) {
+			lookup->parent->getEdge(lookup->TtoId[t]);
+		}
+		inline void set(const DigraphEdge& e, const T& t) {
+			lookup->TtoId[t] = e.id();
+		}
+		inline void clear(const T& t) {
+			lookup->TtoId.erase(t);
+		}
+		inline bool tryFind(const T& t, DigraphVertex* out) {
+			auto it = lookup->TtoId.find(t);
+			if (it == lookup->TtoId.end())
+				return false;
+			else {
+				*out = lookup->parent->getVertex(it->second);
+				return true;
+			}
+		}
 	};
 
 	template <typename T>
@@ -509,16 +573,6 @@ namespace Morpheus {
 	}
 
 	template <typename T>
-	DigraphLookup<T> Digraph::createVertexLookup(const std::string& name) {
-
-	}
-
-	template <typename T>
-	DigraphLookup<T> Digraph::createEdgeLookup(const std::string& name) {
-
-	}
-
-	template <typename T>
 	void Digraph::destroyData(DigraphDataView<T>& view) {
 		switch (view.type()) {
 		case DigraphDataType::VERTEX:
@@ -562,6 +616,20 @@ namespace Morpheus {
 		for (auto it = getIngoingEdges(); it.valid(); it.next())
 			++result;
 		return result;
+	}
+
+	template <typename T>
+	DigraphVertexLookupView<T> Digraph::createVertexLookup(const std::string& name) {
+		auto lookup = new DigraphLookup<T>(this, DigraphLookupType::VERTEX);
+		vertexLookups[name] = lookup;
+		return DigraphVertexLookupView<T>(lookup);
+	}
+
+	template <typename T>
+	DigraphEdgeLookupView<T> Digraph::createEdgeLookup(const std::string& name) {
+		auto lookup = new DigraphLookup<T>(this, DigraphLookupType::EDGE);
+		edgeLookups[name] = lookup;
+		return DigraphEdgeLookupView<T>(lookup);
 	}
 }	
 

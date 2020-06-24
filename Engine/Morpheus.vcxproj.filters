@@ -28,6 +28,9 @@
     <Filter Include="Source Files\gl">
       <UniqueIdentifier>{8b402877-0fba-4789-98db-2a96cf56c6eb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{fa663aaa-aadc-4d7e-915e-eedae3c40d94}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp">
@@ -45,10 +48,10 @@
     <ClInclude Include="json.hpp">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="graph.hpp">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
     <ClInclude Include="content.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="engine.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
@@ -65,9 +68,18 @@
     <ClCompile Include="..\glad\GL\src\glad.c">
       <Filter>Source Files\gl</Filter>
     </ClCompile>
+    <ClCompile Include="engine.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="config.json" />
+    <None Include="shaders\basic.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\basic.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

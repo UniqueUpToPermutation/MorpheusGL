@@ -145,7 +145,7 @@
     <ClInclude Include="content.h" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="digraph.hpp" />
-    <ClInclude Include="graph.hpp" />
+    <ClInclude Include="engine.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="mapcpy.hpp" />
     <ClInclude Include="pool.hpp" />
@@ -154,11 +154,14 @@
     <ClCompile Include="..\glad\GL\src\glad.c" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="digraph.cpp" />
+    <ClCompile Include="engine.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="config.json" />
     <None Include="packages.config" />
+    <None Include="shaders\basic.frag" />
+    <None Include="shaders\basic.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
