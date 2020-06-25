@@ -142,25 +142,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="content.h" />
+    <ClInclude Include="basic_shader.hpp" />
+    <ClInclude Include="content.hpp" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="digraph.hpp" />
     <ClInclude Include="engine.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="mapcpy.hpp" />
     <ClInclude Include="pool.hpp" />
+    <ClInclude Include="shader.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\glad\GL\src\glad.c" />
+    <ClCompile Include="basic_shader.cpp" />
+    <ClCompile Include="content.cpp" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="digraph.cpp" />
     <ClCompile Include="engine.cpp" />
+    <ClCompile Include="shader.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="config.json" />
     <None Include="packages.config" />
     <None Include="shaders\basic.frag" />
+    <None Include="shaders\basic.json" />
     <None Include="shaders\basic.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

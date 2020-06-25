@@ -63,6 +63,7 @@ namespace Morpheus {
 		int id_;
 
 	public:
+		inline explicit DigraphVertex() : ptr(nullptr), id_(-1) { }
 		inline explicit DigraphVertex(Digraph* ptr, int id) :
 			ptr(ptr), id_(id) { }
 
@@ -84,6 +85,7 @@ namespace Morpheus {
 		int id_;
 
 	public:
+		inline explicit DigraphEdge() : ptr(nullptr), id_(-1) { }
 		inline explicit DigraphEdge(Digraph* ptr, int id) :
 			ptr(ptr), id_(id) { }
 
@@ -133,8 +135,8 @@ namespace Morpheus {
 
 		DigraphVertex createVertex();
 		DigraphEdge createEdge(int tail, int head);
-		inline DigraphEdge createEdge(DigraphVertex& head, DigraphVertex& tail);
-		inline void deleteVertex(DigraphVertex& v);
+		inline DigraphEdge createEdge(DigraphVertex& tail, DigraphVertex& head) { return createEdge(tail.id(), head.id()); }
+		void deleteVertex(DigraphVertex& v);
 		void deleteVertex(int v);
 		void deleteEdge(DigraphEdge& e);
 		void compress(bool bTight = false);
@@ -327,7 +329,7 @@ namespace Morpheus {
 		inline DigraphVertexLookupView() : lookup(nullptr) { }
 
 		inline DigraphVertex operator[](const T& t) {
-			lookup->parent->getVertex(lookup->TtoId[t]);
+			return lookup->parent->getVertex(lookup->TtoId[t]);
 		}
 		inline void set(const DigraphVertex& v, const T& t) {
 			lookup->TtoId[t] = v.id();

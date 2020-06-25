@@ -48,10 +48,16 @@
     <ClInclude Include="json.hpp">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="content.h">
+    <ClInclude Include="engine.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="engine.hpp">
+    <ClInclude Include="content.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="shader.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="basic_shader.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
@@ -71,6 +77,15 @@
     <ClCompile Include="engine.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="shader.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="basic_shader.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="content.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -79,6 +94,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\basic.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\basic.json">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

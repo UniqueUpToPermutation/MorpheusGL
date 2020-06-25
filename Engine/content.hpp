@@ -2,15 +2,16 @@
 
 #include "core.hpp"
 #include "pool.hpp"
+#include "engine.hpp"
 
 #include <set>
 
-#define REGISTER_CONTENT_BASE_TYPE(subType, baseType) template <typename SubType> struct ContentSubTypeToBaseType { \
+#define REGISTER_CONTENT_BASE_TYPE(subType, baseType) template <> struct ContentSubTypeToBaseType<subType> { \
 	public: \
 	typedef baseType Base; \
 	}; \
 
-#define CONTENT_BASE_TYPE(subType) ContentSubTypeToBaseType<subType>::baseType
+#define CONTENT_BASE_TYPE(subType) ContentSubTypeToBaseType<subType>::Base
 
 /*
 *	Every piece of content is treated as a node in the node graph.
@@ -27,13 +28,18 @@ namespace Morpheus {
 	};
 
 	class IContentFactory {
+	private:
+		NodeHandle handle_;
+
 	public:
 		virtual OwnerRef load(const std::string& source) = 0;
 		virtual void unload(OwnerRef& ref) = 0;
-		virtual void setHandle(const NodeHandle handle) = 0;
-		virtual NodeHandle getHandle() const = 0;
+		inline NodeHandle handle() const { return handle_; }
+
+		friend class ContentManager;
 	};
 	REGISTER_NODE_TYPE(IContentFactory, NodeType::CONTENT_FACTORY);
+	REGISTER_CONTENT_BASE_TYPE(IContentFactory, IContentFactory);
 
 	template <typename ContentType>
 	class ContentFactory : public IContentFactory {
@@ -43,24 +49,20 @@ namespace Morpheus {
 	private:
 		NodeHandle handle_;
 		std::set<IContentFactory*> factories_;
-		std::unordered_map<NodeType, IContentFactory> typeToFactory_;
+		std::unordered_map<NodeType, IContentFactory*> typeToFactory_;
 		DigraphVertexLookupView<std::string> sources_;
 
 	public:
 		NodeHandle handle() const { return handle_; }
 
-		ContentManager() {
-			auto v = graph().addNode(this, engine().handle());
-			handle_ = graph().issueHandle(v);
-			sources_ = graph().createVertexLookup<std::string>("content_src");
-		}
+		ContentManager();
 
 		template <typename ContentType> void addFactory() {
-			IContentFactory* factory = new ContentFactory<ContentType>(this);
+			IContentFactory* factory = new ContentFactory<ContentType>();
 			factories_.insert(factory);
 			typeToFactory_[NODE_TYPE(ContentType)] = factory;
 			auto v = graph().addNode<IContentFactory>(factory, handle_);
-			factory->setHandle(graph().issueHandle(v));
+			factory->handle_ = graph().issueHandle(v);
 		}
 
 		template <typename ContentType> void removeFactory() {
@@ -73,14 +75,14 @@ namespace Morpheus {
 		}
 
 		template <typename ContentType>
-		DigraphVertex load(const std::string& source, const DigraphVertex& parent) {
+		DigraphVertex load(const std::string& source, DigraphVertex& parent) {
 			DigraphVertex v;
 			if (sources_.tryFind(source, &v))
 				return v;
 			else {
 				NodeType type = NODE_TYPE(CONTENT_BASE_TYPE(ContentType));
 
-				auto factory = factories_[type];
+				auto factory = typeToFactory_[type];
 				auto ref = factory->load(source);
 				v = graph().addNode<CONTENT_BASE_TYPE(ContentType)>(ref, parent);
 				sources_.set(v, source);
@@ -90,7 +92,8 @@ namespace Morpheus {
 
 		template <typename ContentType>
 		inline DigraphVertex load(const std::string& source, const NodeHandle parentHandle) {
-			return load<ContentType>(source, graph()[parentHandle]);
+			DigraphVertex v = graph()[parentHandle];
+			return load<ContentType>(source, v);
 		}
 
 		template <typename ContentType> 
@@ -99,12 +102,22 @@ namespace Morpheus {
 			return load<ContentType>(source, handle_);
 		}
 
-		template <typename ContentType>
-		void unload(DigraphVertex node) {
+		void unload(DigraphVertex& node) {
 			auto desc = graph().desc(node);
 			// Get factory from type
 			auto factory = typeToFactory_[desc.type];
-			factory.unload(desc.owner);
+			if (factory != nullptr)
+				factory->unload(desc.owner);
+		}
+
+		void unloadAll() {
+			for (auto it = graph()[handle_].getOutgoingNeighbors(); it.valid(); it.next()) {
+				DigraphVertex v = it();
+				unload(v);
+			}
+
+			for (auto& it : factories_)
+				delete it;
 		}
 	};
 }

@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <fstream>
 #include "engine.hpp"
+#include "content.hpp"
 
 using namespace std;
 
@@ -65,6 +66,10 @@ namespace Morpheus {
 		auto v = graph_.addNode(this);
 		handle_ = graph_.issueHandle(v);
 
+		// Create content manager
+		content_ = new ContentManager();
+		graph_.addNode<ContentManager>(content_, handle_);
+
 		// Set valid
 		bValid = true;
 
@@ -91,6 +96,10 @@ namespace Morpheus {
 	}
 
 	void Engine::shutdown() {
+
+		content_->unloadAll();
+		delete content_;
+
 		glfwDestroyWindow(window);
 
 		glfwTerminate();

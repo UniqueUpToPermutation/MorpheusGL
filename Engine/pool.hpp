@@ -94,7 +94,8 @@ namespace Morpheus {
 			while (!freeIndices.empty())
 				cull[freeIndices.pop()] = true;
 			
-			for (uint32_t i = 0, new_i = 0; i < freeBlockStart; ++i)
+			uint32_t new_i = 0;
+			for (uint32_t i = 0; i < freeBlockStart; ++i)
 				if (!cull[i])
 					map[i] = new_i++;
 				else
@@ -135,11 +136,11 @@ namespace Morpheus {
 		/// Frees an object in the pool.
 		/// </summary>
 		/// <param name="h">Handle to the object to free</param>
-		void dealloc(PoolHandle<T, uint32_t>& h) {
+		void dealloc(PoolHandle<T>& h) {
 			freeIndices.push(h.offset);
 		}
 
-		friend class PoolHandle<T, uint32_t>;
+		friend class PoolHandle<T>;
 	};
 
 	template<typename T>
@@ -160,7 +161,7 @@ namespace Morpheus {
 	}
 
 	template <typename T>
-	PoolHandle<T>::PoolHandle(VoidPoolHandle& handle) : poolPtr((Pool<T>)*handle.poolPtr), offset(handle.offset) {
+	PoolHandle<T>::PoolHandle(VoidPoolHandle& handle) : poolPtr((Pool<T>*)handle.poolPtr), offset(handle.offset) {
 	}
 
 	template <typename T>

@@ -110,37 +110,44 @@ namespace Morpheus {
 		inline DigraphVertex addNode(OwnerType* owner, NodeType type, DigraphVertex& parent) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(parent, v);
+			return v;
 		}
 		template <typename OwnerType>
 		inline DigraphVertex addNode(OwnerType* owner, NodeType type, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(handles_[parentHandle], v);
+			return v;
 		}
 		template <typename OwnerType>
 		inline DigraphVertex addNode(OwnerType* owner, NodeType type, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(names_[parentName], v);
+			return v;
 		}
 		template <typename OwnerType>
 		inline DigraphVertex addNode(OwnerType* owner, DigraphVertex& parent) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(parent, v);
+			return v;
 		}
 		template <typename OwnerType>
 		inline DigraphVertex addNode(OwnerType* owner, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
-			createEdge(handles_[parentHandle], v);
+			DigraphVertex u = handles_[parentHandle];
+			createEdge(u, v);
+			return v;
 		}
 		template <typename OwnerType>
 		inline DigraphVertex addNode(OwnerType* owner, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(names_[parentName], v);
+			return v;
 		}
 
 
 
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef* owner, NodeType type) {
+		inline DigraphVertex addNode(OwnerRef owner, NodeType type) {
 			NodeData data;
 			data.type = type;
 			data.owner = owner;
@@ -149,34 +156,40 @@ namespace Morpheus {
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef* owner, NodeType type, DigraphVertex& parent) {
+		inline DigraphVertex addNode(OwnerRef owner, NodeType type, DigraphVertex& parent) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(parent, v);
+			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef* owner, NodeType type, NodeHandle parentHandle) {
+		inline DigraphVertex addNode(OwnerRef owner, NodeType type, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(handles_[parentHandle], v);
+			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef* owner, NodeType type, const std::string& parentName) {
+		inline DigraphVertex addNode(OwnerRef owner, NodeType type, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(names_[parentName], v);
+			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef* owner, DigraphVertex& parent) {
+		inline DigraphVertex addNode(OwnerRef owner, DigraphVertex& parent) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(parent, v);
+			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef* owner, NodeHandle parentHandle) {
+		inline DigraphVertex addNode(OwnerRef owner, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(handles_[parentHandle], v);
+			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef* owner, const std::string& parentName) {
+		inline DigraphVertex addNode(OwnerRef owner, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(names_[parentName], v);
+			return v;
 		}
 
 		inline DigraphVertex addNode(Engine* owner) {

@@ -135,10 +135,6 @@ namespace Morpheus {
 		return DigraphEdge(this, id);
 	}
 
-	DigraphEdge Digraph::createEdge(DigraphVertex& tail, DigraphVertex& head) {
-		return createEdge(tail.id(), head.id());
-	}
-
 	void Digraph::deleteVertex(DigraphVertex& v) {
 		for (auto inIt = v.getIngoingEdges(); inIt.valid(); ) {
 			auto e = inIt();
