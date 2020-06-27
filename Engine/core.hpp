@@ -2,13 +2,21 @@
 
 #include "json.hpp"
 #include "digraph.hpp"
+#include "pool.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/ext/quaternion_float.hpp>
 #include <string>
 
-#define REGISTER_NODE_TYPE(ownerType, nodeType) template <> struct OwnerToNode<ownerType> { public: enum { type = nodeType }; };
+#define REGISTER_NODE_TYPE(ownerType, nodeType) template <> struct OwnerToNode<ownerType> { enum { type = nodeType }; }; \
+	template <> struct NodeToOwner<nodeType> { typedef ownerType type; };
+
 #define NODE_TYPE(ownerType) (NodeType)OwnerToNode<ownerType>::type
+#define OWNER_TYPE(nodeType) NodeToOwner<nodeType>::type
+
+#define IS_POOLED(nodeType)			NodeFlags<nodeType>::pooled
+#define IS_CONTENT(nodeType)		NodeFlags<nodeType>::content
+#define IS_SCENE_CHILD(nodeType)	NodeFlags<nodeType>::sceneChild
 
 #define HANDLE_INVALID 0
 
@@ -18,8 +26,15 @@ namespace Morpheus {
 
 	class ContentManager;
 	class Engine;
+	struct Transform;
+	class IContentFactory;
+	
+	struct BoundingBox {
+		glm::vec3 lower;
+		glm::vec3 upper;
+	};
 
-	enum class NodeType {
+	enum class NodeType : uint32_t {
 		ENGINE,
 
 		// All nodes that are found inside of a scene
@@ -48,21 +63,307 @@ namespace Morpheus {
 		TEXTURE_2D_ARRAY,
 		CUBE_MAP,
 		STATIC_MESH,
-		CONTENT_END
+		CONTENT_END,
+
+		END
+	};
+
+	template <bool pooled, typename T>
+	struct ConditionalPool;
+
+	template <typename T>
+	struct ConditionalPool<true, T> {
+		Pool<T> pool;
+	};
+
+	template <typename T>
+	struct ConditionalPool<false, T> {
+	};
+
+	template <NodeType nodeType>
+	struct NodeFlags;
+	template <>
+	struct NodeFlags<NodeType::ENGINE> {
+		enum {
+			pooled = false,
+			content = false,
+			sceneChild = false
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::EMPTY> {
+		enum {
+			pooled = false,
+			content = false,
+			sceneChild = true
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::SCENE_ROOT> {
+		enum {
+			pooled = false,
+			content = false,
+			sceneChild = true
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::ENTITY> {
+		enum {
+			pooled = false,
+			content = false,
+			sceneChild = true
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::LOGIC> {
+		enum {
+			pooled = false,
+			content = false,
+			sceneChild = true
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::TRANSFORM> {
+		enum {
+			pooled = true,
+			content = false,
+			sceneChild = true
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::REGION> {
+		enum {
+			pooled = false,
+			content = false,
+			sceneChild = true,
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::BOUNDING_BOX> {
+		enum {
+			pooled = true,
+			content = false,
+			sceneChild = true,
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::DYNAMIC_OBJECT_MANAGER> {
+		enum {
+			pooled = false,
+			content = false,
+			sceneChild = true
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::STATIC_OBJECT_MANAGER> {
+		enum {
+			pooled = false,
+			content = false,
+			sceneChild = true
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::GEOMETRY> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::CONTENT_MANAGER> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false,
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::CONTENT_FACTORY> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::MATERIAL> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::SHADER> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::TEXTURE_1D> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::TEXTURE_2D> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::TEXTURE_3D> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::TEXTURE_2D_ARRAY> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::CUBE_MAP> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false
+		};
+	};
+	template <>
+	struct NodeFlags<NodeType::STATIC_MESH> {
+		enum {
+			pooled = false,
+			content = true,
+			sceneChild = false
+		};
 	};
 
 	template <typename OwnerType> struct OwnerToNode;
+	template <NodeType> struct NodeToOwner;
+
 	REGISTER_NODE_TYPE(Engine, NodeType::ENGINE);
 	REGISTER_NODE_TYPE(ContentManager, NodeType::CONTENT_MANAGER);
+	REGISTER_NODE_TYPE(IContentFactory, NodeType::CONTENT_FACTORY);
+	REGISTER_NODE_TYPE(BoundingBox, NodeType::BOUNDING_BOX);
+	REGISTER_NODE_TYPE(char, NodeType::EMPTY);
+	REGISTER_NODE_TYPE(Transform, NodeType::TRANSFORM);
 
-	union OwnerRef {
-		uint32_t offset;
-		void* ptr;
+	template <typename T>
+	struct ref;
+
+	template <>
+	struct ref<void> {
+	public:
+		union voidrefunion {
+			PoolHandle<void> h;
+			void* ptr;
+			inline voidrefunion() { }
+			inline ~voidrefunion() { }
+		} p;
+
+		template <typename T> ref<T> as();
+
+		inline ref() {
+		}
+		inline ref(void* ptr) {
+			p.ptr = ptr;
+		}
+		inline ref(PoolHandle<void>& h) {
+			p.h = h;
+		}
 	};
+
+	template <typename T, bool pooled>
+	struct ref_pool_gate;
+
+	template <typename T>
+	struct ref_pool_gate<T, true> {
+		PoolHandle<T> h;
+		inline T* get() { return h.get(); }
+		inline void from(T* ptr) {
+			assert(true);
+		}
+		inline void from(PoolHandle<T>& newH) {
+			h = newH;
+		}
+		inline void from(ref<void>& r) {
+			h = PoolHandle<T>(r.p.h);
+		}
+		inline void to(ref<void>& r) {
+			r.p.h = PoolHandle<void>(h);
+		}
+	};
+
+	template <typename T>
+	struct ref_pool_gate<T, false> {
+		T* ptr;
+		inline T* get() { return ptr; }
+		inline void from(T* newPtr) {
+			ptr = newPtr;
+		}
+		inline void from(PoolHandle<T>& h) {
+			assert(true);
+		}
+		inline void from(ref<void>& r) {
+			ptr = (T*)r.p.ptr;
+		}
+		inline void to(ref<void>& r) {
+			r.p.ptr = ptr;
+		}
+	};
+
+	template <typename T>
+	struct ref {
+	private:
+		ref_pool_gate<T, IS_POOLED(NODE_TYPE(T))> poolGate;
+
+	public:
+		inline T* get() { return poolGate.get(); }
+		inline T* operator->() { return poolGate.get(); }
+
+		inline ref<void> asvoid() {
+			ref<void> r;
+			poolGate.to(r);
+			return r;
+		}
+
+		inline ref(T* ptr) {
+			poolGate.from(ptr);
+		}
+
+		inline ref(PoolHandle<T>& h) {
+			poolGate.from(h);
+		}
+
+		inline ref(ref<void>& r) {
+			poolGate.from(r);
+		}
+
+		friend struct ref<void>;
+	};
+
+	template<typename T>
+	inline ref<T> ref<void>::as()
+	{
+		return ref<T>(*this);
+	}
 
 	struct NodeData {
 		NodeType type;
-		OwnerRef owner;
+		ref<void> owner;
 	};
 
 	typedef uint32_t NodeHandle;
@@ -101,7 +402,7 @@ namespace Morpheus {
 		inline DigraphVertex addNode(OwnerType* owner, NodeType type) {
 			NodeData data;
 			data.type = type;
-			data.owner.ptr = (void*)owner;
+			data.owner = ref<void>(owner);
 			auto v = createVertex();
 			descs_[v] = data;
 			return v;
@@ -144,10 +445,8 @@ namespace Morpheus {
 			return v;
 		}
 
-
-
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef owner, NodeType type) {
+		inline DigraphVertex addNode(ref<void> owner, NodeType type) {
 			NodeData data;
 			data.type = type;
 			data.owner = owner;
@@ -156,37 +455,37 @@ namespace Morpheus {
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef owner, NodeType type, DigraphVertex& parent) {
+		inline DigraphVertex addNode(ref<void> owner, NodeType type, DigraphVertex& parent) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(parent, v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef owner, NodeType type, NodeHandle parentHandle) {
+		inline DigraphVertex addNode(ref<void> owner, NodeType type, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(handles_[parentHandle], v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef owner, NodeType type, const std::string& parentName) {
+		inline DigraphVertex addNode(ref<void> owner, NodeType type, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(names_[parentName], v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef owner, DigraphVertex& parent) {
+		inline DigraphVertex addNode(ref<void> owner, DigraphVertex& parent) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(parent, v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef owner, NodeHandle parentHandle) {
+		inline DigraphVertex addNode(ref<void> owner, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(handles_[parentHandle], v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerRef owner, const std::string& parentName) {
+		inline DigraphVertex addNode(ref<void> owner, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(names_[parentName], v);
 			return v;

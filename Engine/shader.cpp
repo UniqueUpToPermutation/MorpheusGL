@@ -75,16 +75,15 @@ namespace Morpheus {
 		REGISTER_SHADER(BasicShader, "basic");
 	}
 
-	OwnerRef ContentFactory<IShader>::load(const std::string& source) {
+	ref<void> ContentFactory<IShader>::load(const std::string& source) {
 		json j;
 		ifstream f(source);
 
 		cout << "Loading Shader " << source << endl;
 
 		if (!f.is_open()) {
-			OwnerRef ref;
-			ref.ptr = nullptr;
-			return ref;
+			ref<void> r(nullptr);
+			return r;
 		}
 
 		f >> j;
@@ -134,19 +133,21 @@ namespace Morpheus {
 		}
 
 		// Shader no longer needed
+		glDetachShader(id, vertex_id);
+		glDetachShader(id, frag_id);
+
 		glDeleteShader(vertex_id);
 		glDeleteShader(frag_id);
 
 		// Set the shader ID!
 		shader->id_ = id;
 
-		OwnerRef ref;
-		ref.ptr = shader;
-		return ref;
+		ref<void> r(shader);
+		return r;
 	}
 
-	void ContentFactory<IShader>::unload(OwnerRef& ref) {
-		IShader* shad = (IShader*)ref.ptr;
+	void ContentFactory<IShader>::unload(ref<void>& ref) {
+		IShader* shad = ref.as<IShader>().get();
 		glDeleteProgram(shad->id_);
 		delete shad;
 	}

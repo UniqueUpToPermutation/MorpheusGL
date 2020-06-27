@@ -5,7 +5,7 @@
 namespace Morpheus {
 	class Engine {
 	private:
-		GLFWwindow* window;
+		GLFWwindow* window_;
 		nlohmann::json config_;
 		NodeGraph graph_;
 		ContentManager* content_;
@@ -17,6 +17,7 @@ namespace Morpheus {
 		inline NodeGraph& graph() { return graph_; }
 		inline NodeHandle handle() const { return handle_; }
 		inline ContentManager& content() { return *content_; }
+		inline GLFWwindow* window() { return window_; }
 
 		Engine();
 

@@ -112,8 +112,8 @@ namespace Morpheus {
 	class ContentFactory<IShader> : public IContentFactory {
 	public:
 		ContentFactory();
-		OwnerRef load(const std::string& source) override;
-		void unload(OwnerRef& ref) override;
+		ref<void> load(const std::string& source) override;
+		void unload(ref<void>& ref) override;
 	};
 
 	std::unordered_map<std::string, std::function<IShader*(void)>>& shaderRegistry();
