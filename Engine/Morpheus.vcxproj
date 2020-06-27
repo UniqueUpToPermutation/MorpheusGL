@@ -153,6 +153,7 @@
     <ClInclude Include="mapcpy.hpp" />
     <ClInclude Include="pool.hpp" />
     <ClInclude Include="region.h" />
+    <ClInclude Include="renderer.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="staticmanager.h" />

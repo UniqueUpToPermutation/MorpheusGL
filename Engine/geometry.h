@@ -39,5 +39,6 @@ namespace Morpheus {
 
 		ref<void> load(const std::string& source) override;
 		void unload(ref<void>& ref) override;
+		void dispose() override;
 	};
 }

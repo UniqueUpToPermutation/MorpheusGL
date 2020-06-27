@@ -21,6 +21,7 @@ namespace Morpheus {
 
 	Engine::Engine() : mWindow(nullptr), bValid(false) {
 		gEngine = this;
+		NodeMetadata::init();
 	}
 
 	Error Engine::startup(const std::string& configPath) {
@@ -97,8 +98,12 @@ namespace Morpheus {
 
 	void Engine::shutdown() {
 
-		mContent->unloadAll();
-		delete mContent;
+		// Clean up anything disposable
+		for (auto nodeIt = mGraph.vertices(); nodeIt.valid(); nodeIt.next()) {
+			auto desc = mGraph.desc(nodeIt());
+			if (NodeMetadata::isDisposable(desc.type))
+				dispose(desc.owner);
+		}
 
 		glfwDestroyWindow(mWindow);
 

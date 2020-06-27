@@ -17,6 +17,7 @@
 #define IS_POOLED(nodeType)			NodeFlags<nodeType>::pooled
 #define IS_CONTENT(nodeType)		NodeFlags<nodeType>::content
 #define IS_SCENE_CHILD(nodeType)	NodeFlags<nodeType>::sceneChild
+#define IS_DISPOSABLE(nodeType)		NodeFlags<nodeType>::disposable
 
 #define HANDLE_INVALID 0
 
@@ -29,6 +30,11 @@ namespace Morpheus {
 	struct Transform;
 	class IContentFactory;
 	
+	class IDisposable {
+	public:
+		virtual void dispose() = 0;
+	};
+
 	struct BoundingBox {
 		glm::vec3 mLower;
 		glm::vec3 mUpper;
@@ -41,7 +47,6 @@ namespace Morpheus {
 		SCENE_BEGIN,
 		EMPTY,
 		SCENE_ROOT,
-		ENTITY,
 		LOGIC,
 		TRANSFORM,
 		REGION,
@@ -69,13 +74,22 @@ namespace Morpheus {
 	};
 
 	template <NodeType nodeType>
-	struct NodeFlags;
+	struct NodeFlags {
+		enum {
+			pooled = false,
+			content = false,
+			sceneChild = false,
+			disposable = false
+		};
+	};
+
 	template <>
 	struct NodeFlags<NodeType::ENGINE> {
 		enum {
 			pooled = false,
 			content = false,
-			sceneChild = false
+			sceneChild = false,
+			disposable = false
 		};
 	};
 	template <>
@@ -83,7 +97,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = false,
-			sceneChild = true
+			sceneChild = true,
+			disposable = false
 		};
 	};
 	template <>
@@ -91,15 +106,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = false,
-			sceneChild = true
-		};
-	};
-	template <>
-	struct NodeFlags<NodeType::ENTITY> {
-		enum {
-			pooled = false,
-			content = false,
-			sceneChild = true
+			sceneChild = true,
+			disposable = false
 		};
 	};
 	template <>
@@ -107,7 +115,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = false,
-			sceneChild = true
+			sceneChild = true,
+			disposable = true
 		};
 	};
 	template <>
@@ -115,7 +124,8 @@ namespace Morpheus {
 		enum {
 			pooled = true,
 			content = false,
-			sceneChild = true
+			sceneChild = true,
+			disposable = false
 		};
 	};
 	template <>
@@ -124,6 +134,7 @@ namespace Morpheus {
 			pooled = false,
 			content = false,
 			sceneChild = true,
+			disposable = true
 		};
 	};
 	template <>
@@ -132,6 +143,7 @@ namespace Morpheus {
 			pooled = true,
 			content = false,
 			sceneChild = true,
+			disposable = false
 		};
 	};
 	template <>
@@ -139,7 +151,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = false,
-			sceneChild = true
+			sceneChild = true,
+			disposable = true
 		};
 	};
 	template <>
@@ -147,7 +160,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = false,
-			sceneChild = true
+			sceneChild = true,
+			disposable = true
 		};
 	};
 	template <>
@@ -155,7 +169,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = true,
-			sceneChild = false
+			sceneChild = false,
+			disposable = false
 		};
 	};
 	template <>
@@ -164,6 +179,7 @@ namespace Morpheus {
 			pooled = false,
 			content = true,
 			sceneChild = false,
+			disposable = true
 		};
 	};
 	template <>
@@ -171,7 +187,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = true,
-			sceneChild = false
+			sceneChild = false,
+			disposable = true
 		};
 	};
 	template <>
@@ -179,7 +196,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = true,
-			sceneChild = false
+			sceneChild = false,
+			disposable = false
 		};
 	};
 	template <>
@@ -187,7 +205,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = true,
-			sceneChild = false
+			sceneChild = false,
+			disposable = false
 		};
 	};
 	template <>
@@ -195,7 +214,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = true,
-			sceneChild = false
+			sceneChild = false,
+			disposable = false
 		};
 	};
 	template <>
@@ -203,7 +223,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = true,
-			sceneChild = false
+			sceneChild = false,
+			disposable = false
 		};
 	};
 	template <>
@@ -211,7 +232,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = true,
-			sceneChild = false
+			sceneChild = false,
+			disposable = false
 		};
 	};
 	template <>
@@ -219,7 +241,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = true,
-			sceneChild = false
+			sceneChild = false,
+			disposable = false
 		};
 	};
 	template <>
@@ -227,7 +250,8 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = true,
-			sceneChild = false
+			sceneChild = false,
+			disposable = false
 		};
 	};
 	template <>
@@ -235,8 +259,35 @@ namespace Morpheus {
 		enum {
 			pooled = false,
 			content = true,
-			sceneChild = false
+			sceneChild = false,
+			disposable = false
 		};
+	};
+
+	template <typename T>
+	struct ref;
+
+	class NodeMetadata {
+	public:
+		typedef void (*disposer)(ref<void>&);
+
+	private:
+		static bool pooled[(uint32_t)NodeType::END];
+		static bool content[(uint32_t)NodeType::END];
+		static bool sceneChild[(uint32_t)NodeType::END];
+		static bool disposable[(uint32_t)NodeType::END];
+
+		template <uint32_t iType> 
+		static void init_();
+		template <> 
+		static void init_<(uint32_t)NodeType::END>();
+
+	public:
+		static void init();
+		static inline bool isPooled(NodeType t) { return pooled[(uint32_t)t]; }
+		static inline bool isContent(NodeType t) { return content[(uint32_t)t]; }
+		static inline bool isSceneChild(NodeType t) { return sceneChild[(uint32_t)t]; }
+		static inline bool isDisposable(NodeType t) { return disposable[(uint32_t)t]; }
 	};
 
 	template <typename OwnerType> struct OwnerToNode;
@@ -248,9 +299,6 @@ namespace Morpheus {
 	REGISTER_NODE_TYPE(BoundingBox, NodeType::BOUNDING_BOX);
 	REGISTER_NODE_TYPE(char, NodeType::EMPTY);
 	REGISTER_NODE_TYPE(Transform, NodeType::TRANSFORM);
-
-	template <typename T>
-	struct ref;
 
 	template <>
 	struct ref<void> {
@@ -272,6 +320,8 @@ namespace Morpheus {
 		inline ref(PoolHandle<void>& h) {
 			p.mHandle = h;
 		}
+		template <typename T>
+		inline T* getAs();
 	};
 
 	template <typename T, bool pooled>
@@ -293,6 +343,9 @@ namespace Morpheus {
 		inline void to(ref<void>& r) {
 			r.p.mHandle = PoolHandle<void>(mHandle);
 		}
+		inline static T* getAs(ref<void>& r) {
+			return PoolHandle<T>(r.p).get();
+		}
 	};
 
 	template <typename T>
@@ -311,7 +364,16 @@ namespace Morpheus {
 		inline void to(ref<void>& r) {
 			r.p.mPtr = mPtr;
 		}
+		inline static T* getAs(ref<void>& r) {
+			static_cast<T*>(r.p.mPtr);
+		}
 	};
+
+	template<typename T>
+	inline T* Morpheus::ref<void>::getAs()
+	{
+		return ref_pool_gate<T, IS_POOLED(NODE_TYPE(T))>::getAs(*this);
+	}
 
 	template <typename T>
 	struct ref {
@@ -347,6 +409,10 @@ namespace Morpheus {
 	inline ref<T> ref<void>::as()
 	{
 		return ref<T>(*this);
+	}
+
+	inline void dispose(ref<void>& r) {
+		static_cast<IDisposable*>(r.p.mPtr)->dispose();
 	}
 
 	struct NodeData {

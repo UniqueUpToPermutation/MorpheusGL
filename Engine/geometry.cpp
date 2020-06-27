@@ -125,4 +125,7 @@ namespace Morpheus {
 		glDeleteVertexArrays(1, &vao);
 		delete r.get();
 	}
+	void ContentFactory<Geometry>::dispose() {
+		delete mImporter;
+	}
 }

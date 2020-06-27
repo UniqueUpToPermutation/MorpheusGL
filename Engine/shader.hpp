@@ -14,7 +14,7 @@ public:
 ShaderUniform<type> name;
 
 #define BEGIN_UNIFORM_LINK(name) void name::init() {
-#define LINK_UNIFORM(unif, loc_str) unif.loc = glGetUniformLocation(id(), loc_str)
+#define LINK_UNIFORM(unif, loc_str) unif.mLoc = glGetUniformLocation(id(), loc_str)
 #define END_UNIFORM_LINK }
 
 #define REGISTER_SHADER(name, str_class_name) std::function<IShader*(void)> name_f_ptr = []() { return new name(); }; \
@@ -112,6 +112,7 @@ namespace Morpheus {
 		ContentFactory();
 		ref<void> load(const std::string& source) override;
 		void unload(ref<void>& ref) override;
+		void dispose() override;
 	};
 
 	std::unordered_map<std::string, std::function<IShader*(void)>>& shaderRegistry();

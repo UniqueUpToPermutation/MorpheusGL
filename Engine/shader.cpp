@@ -152,6 +152,10 @@ namespace Morpheus {
 		delete shad;
 	}
 
+	void ContentFactory<IShader>::dispose() {
+
+	}
+
 	GLuint compileShader(const std::string& code, const ShaderType type) {
 		GLuint id;
 		GLenum shader_type;

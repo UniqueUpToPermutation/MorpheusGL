@@ -27,7 +27,7 @@ namespace Morpheus {
 		typedef void Base;
 	};
 
-	class IContentFactory {
+	class IContentFactory : public IDisposable {
 	private:
 		NodeHandle mHandle;
 
@@ -41,10 +41,9 @@ namespace Morpheus {
 	REGISTER_CONTENT_BASE_TYPE(IContentFactory, IContentFactory);
 
 	template <typename ContentType>
-	class ContentFactory : public IContentFactory {
-	};
+	class ContentFactory;
 
-	class ContentManager {
+	class ContentManager : public IDisposable {
 	private:
 		NodeHandle mHandle;
 		std::set<IContentFactory*> mFactories;
@@ -142,9 +141,10 @@ namespace Morpheus {
 				DigraphVertex v = it();
 				unloadNode(v);
 			}
+		}
 
-			for (auto& it : mFactories)
-				delete it;
+		void dispose() override {
+			unloadAll();
 		}
 	};
 }
