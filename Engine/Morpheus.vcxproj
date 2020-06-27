@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -149,6 +149,7 @@
     <ClInclude Include="dynamicmanager.h" />
     <ClInclude Include="engine.hpp" />
     <ClInclude Include="geometry.h" />
+    <ClInclude Include="halfedge.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="mapcpy.hpp" />
     <ClInclude Include="pool.hpp" />
@@ -166,6 +167,7 @@
     <ClCompile Include="digraph.cpp" />
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="geometry.cpp" />
+    <ClCompile Include="halfedge.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>

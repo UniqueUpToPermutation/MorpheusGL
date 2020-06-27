@@ -84,6 +84,9 @@
     <ClInclude Include="renderer.h">
       <Filter>Header Files\renderer</Filter>
     </ClInclude>
+    <ClInclude Include="halfedge.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="digraph.cpp">
@@ -112,6 +115,9 @@
     </ClCompile>
     <ClCompile Include="geometry.cpp">
       <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="halfedge.cpp">
+      <Filter>Source Files\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
