@@ -12,16 +12,16 @@ namespace Morpheus {
 
 	class Geometry {
 	private:
-		GLuint vao;
-		GLuint vbo;
-		GLuint ibo;
-		BoundingBox aabb;
+		GLuint mVao;
+		GLuint mVbo;
+		GLuint mIbo;
+		BoundingBox mAabb;
 
 	public:
-		inline GLuint vertexArray() const { return vao; }
-		inline GLuint vertexBuffer() const { return vbo; }
-		inline GLuint indexBuffer() const { return ibo; }
-		inline BoundingBox boundingBox() const { return aabb; }
+		inline GLuint vertexArray() const { return mVao; }
+		inline GLuint vertexBuffer() const { return mVbo; }
+		inline GLuint indexBuffer() const { return mIbo; }
+		inline BoundingBox boundingBox() const { return mAabb; }
 
 		friend class ContentFactory<Geometry>;
 	};
@@ -31,7 +31,7 @@ namespace Morpheus {
 	template <>
 	class ContentFactory<Geometry> : public IContentFactory {
 	private:
-		Assimp::Importer* importer;
+		Assimp::Importer* mImporter;
 
 	public:
 		ContentFactory();

@@ -19,7 +19,7 @@ namespace Morpheus {
 	Engine* gEngine = nullptr;
 	Engine& engine() { return *gEngine; }
 
-	Engine::Engine() : window_(nullptr), bValid(false) {
+	Engine::Engine() : mWindow(nullptr), bValid(false) {
 		gEngine = this;
 	}
 
@@ -28,17 +28,17 @@ namespace Morpheus {
 		if (!glfwInit())
 		{
 			Error err(ErrorCode::FAIL_GLFW_INIT);
-			err.message = "GLFW failed to initialize!";
-			err.source = "Engine::startup";
+			err.mMessage = "GLFW failed to initialize!";
+			err.mSource = "Engine::startup";
 			cout << err.str() << endl;
 			return err;
 		}
 
 		// Load config
 		ifstream f(configPath);
-		f >> config_;
+		f >> mConfig;
 
-		auto glConfig = config_["opengl"];
+		auto glConfig = mConfig["opengl"];
 		uint32_t majorVersion = DEFAULT_VERSION_MAJOR;
 		uint32_t minorVersion = DEFAULT_VERSION_MINOR;
 		glConfig["v_major"].get_to(majorVersion);
@@ -48,27 +48,27 @@ namespace Morpheus {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minorVersion);
 		glfwSetErrorCallback(error_callback);
 
-		window_ = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
-		if (!window_)
+		mWindow = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
+		if (!mWindow)
 		{
 			Error err(ErrorCode::FAIL_GLFW_WINDOW_INIT);
-			err.message = "GLFW failed to create window!";
-			err.source = "Engine::startup";
+			err.mMessage = "GLFW failed to create window!";
+			err.mSource = "Engine::startup";
 			cout << err.str() << endl;
 			return err;
 		}
 
-		glfwMakeContextCurrent(window_);
+		glfwMakeContextCurrent(mWindow);
 		gladLoadGL(); // Use GLAD to load necessary extensions
 		glfwSwapInterval(1); // Set VSync on
 
 		// Start building the engine graph
-		auto v = graph_.addNode(this);
-		handle_ = graph_.issueHandle(v);
+		auto v = mGraph.addNode(this);
+		mHandle = mGraph.issueHandle(v);
 
 		// Create content manager
-		content_ = new ContentManager();
-		graph_.addNode<ContentManager>(content_, handle_);
+		mContent = new ContentManager();
+		mGraph.addNode<ContentManager>(mContent, mHandle);
 
 		// Set valid
 		bValid = true;
@@ -77,7 +77,7 @@ namespace Morpheus {
 	}
 
 	bool Engine::valid() const {
-		return !glfwWindowShouldClose(window_) && bValid;
+		return !glfwWindowShouldClose(mWindow) && bValid;
 	}
 
 	void Engine::update() {
@@ -86,21 +86,21 @@ namespace Morpheus {
 
 	void Engine::render() {
 		int width, height;
-		glfwGetFramebufferSize(window_, &width, &height);
+		glfwGetFramebufferSize(mWindow, &width, &height);
 		glViewport(0, 0, width, height);
 
 		glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glfwSwapBuffers(window_);
+		glfwSwapBuffers(mWindow);
 	}
 
 	void Engine::shutdown() {
 
-		content_->unloadAll();
-		delete content_;
+		mContent->unloadAll();
+		delete mContent;
 
-		glfwDestroyWindow(window_);
+		glfwDestroyWindow(mWindow);
 
 		glfwTerminate();
 	}

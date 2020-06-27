@@ -146,12 +146,16 @@
     <ClInclude Include="content.hpp" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="digraph.hpp" />
+    <ClInclude Include="dynamicmanager.h" />
     <ClInclude Include="engine.hpp" />
     <ClInclude Include="geometry.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="mapcpy.hpp" />
     <ClInclude Include="pool.hpp" />
+    <ClInclude Include="region.h" />
+    <ClInclude Include="scene.h" />
     <ClInclude Include="shader.hpp" />
+    <ClInclude Include="staticmanager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\glad\GL\src\glad.c" />

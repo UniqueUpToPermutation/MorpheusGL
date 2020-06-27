@@ -12,125 +12,125 @@ namespace Morpheus {
 
 	Digraph::~Digraph()
 	{
-		delete[] vertices_;
-		delete[] edges_;
+		delete[] mVertices;
+		delete[] mEdges;
 
-		for (auto& data : vertexDatas)
+		for (auto& data : mVertexDatas)
 			delete data.second;
-		for (auto& data : edgeDatas)
+		for (auto& data : mEdgeDatas)
 			delete data.second;
 	}
 
 	Digraph::Digraph(uint32_t reserveVertices, uint32_t reserveEdges) :
-		firstUnusedEdge(-1), 
-		firstUnusedVertex(-1), 
-		rescaleFactor(DEFAULT_RESCALE_FACTOR), 
-		vertexActiveBlock_(0),
-		edgeActiveBlock_(0),
-		edgeCount_(0),
-		vertexCount_(0) 
+		mFirstUnusedEdge(-1), 
+		mFirstUnusedVertex(-1), 
+		mRescaleFactor(DEFAULT_RESCALE_FACTOR), 
+		mVertexActiveBlock(0),
+		mEdgeActiveBlock(0),
+		mEdgeCount(0),
+		mVertexCount(0) 
 	{
-		vertices_ = new DigraphVertexRaw[reserveVertices];
-		vertexReserve_ = reserveVertices;
-		edges_ = new DigraphEdgeRaw[reserveEdges];
-		edgeReserve_ = reserveEdges;
+		mVertices = new DigraphVertexRaw[reserveVertices];
+		mVertexReserve = reserveVertices;
+		mEdges = new DigraphEdgeRaw[reserveEdges];
+		mEdgeReserve = reserveEdges;
 	}
 
 	void Digraph::resizeVertices(uint32_t newSize) {
 		auto newMem = new DigraphVertexRaw[newSize];
-		std::memcpy(newMem, vertices_, sizeof(DigraphVertexRaw) * vertexReserve_);
-		delete[] vertices_;
-		vertices_ = newMem;
-		vertexReserve_ = newSize;
+		std::memcpy(newMem, mVertices, sizeof(DigraphVertexRaw) * mVertexReserve);
+		delete[] mVertices;
+		mVertices = newMem;
+		mVertexReserve = newSize;
 
-		for (auto& data : vertexDatas)
+		for (auto& data : mVertexDatas)
 			data.second->resize(newSize);
 	}
 
 	void Digraph::resizeEdges(uint32_t newSize) {
 		auto newMem = new DigraphEdgeRaw[newSize];
-		std::memcpy(newMem, edges_, sizeof(DigraphEdgeRaw) * edgeReserve_);
-		delete[] edges_;
-		edges_ = newMem;
-		edgeReserve_ = newSize;
+		std::memcpy(newMem, mEdges, sizeof(DigraphEdgeRaw) * mEdgeReserve);
+		delete[] mEdges;
+		mEdges = newMem;
+		mEdgeReserve = newSize;
 
-		for (auto& data : edgeDatas)
+		for (auto& data : mEdgeDatas)
 			data.second->resize(newSize);
 	}
 
 	void Digraph::applyVertexMap(const int map[], const uint32_t mapLen, const uint32_t newSize) {
-		for (auto& data : vertexDatas)
+		for (auto& data : mVertexDatas)
 			data.second->compress(map, mapLen, newSize);
 
-		for (auto& lookup : vertexLookups)
+		for (auto& lookup : mVertexLookups)
 			lookup.second->applyMap(map, mapLen);
 	}
 
 	void Digraph::applyEdgeMap(const int map[], const uint32_t mapLen, const uint32_t newSize) {
-		for (auto& data : edgeDatas)
+		for (auto& data : mEdgeDatas)
 			data.second->compress(map, mapLen, newSize);
 
-		for (auto& lookup : edgeLookups)
+		for (auto& lookup : mEdgeLookups)
 			lookup.second->applyMap(map, mapLen);
 	}
 
 	DigraphVertex Digraph::createVertex() {
-		if (firstUnusedVertex != -1) {
-			auto next = vertices_[firstUnusedVertex].outEdge;
-			auto id = firstUnusedVertex;
+		if (mFirstUnusedVertex != -1) {
+			auto next = mVertices[mFirstUnusedVertex].mOutEdge;
+			auto id = mFirstUnusedVertex;
 
-			vertices_[id].inEdge = -1;
-			vertices_[id].outEdge = -1;
+			mVertices[id].mInEdge = -1;
+			mVertices[id].mOutEdge = -1;
 
-			firstUnusedVertex = next;
-			vertexCount_++;
+			mFirstUnusedVertex = next;
+			mVertexCount++;
 			return DigraphVertex(this, id);
 		}
 		else {
 			// Resize buffer if necessary
-			if (vertexCount_ == vertexReserve_)
-				resizeVertices((uint32_t)(vertexReserve_ * rescaleFactor));
+			if (mVertexCount == mVertexReserve)
+				resizeVertices((uint32_t)(mVertexReserve * mRescaleFactor));
 
-			vertices_[vertexCount_].inEdge = -1;
-			vertices_[vertexCount_].outEdge = -1;
-			vertexActiveBlock_++;
-			return DigraphVertex(this, vertexCount_++);
+			mVertices[mVertexCount].mInEdge = -1;
+			mVertices[mVertexCount].mOutEdge = -1;
+			mVertexActiveBlock++;
+			return DigraphVertex(this, mVertexCount++);
 		}
 	}
 
 	DigraphEdge Digraph::createEdge(int tail, int head) {
 
 		int id;
-		if (firstUnusedEdge != -1) {
-			auto next = edges_[firstUnusedEdge].next;
-			id = firstUnusedEdge;
-			firstUnusedEdge = next;
+		if (mFirstUnusedEdge != -1) {
+			auto next = mEdges[mFirstUnusedEdge].mNext;
+			id = mFirstUnusedEdge;
+			mFirstUnusedEdge = next;
 		}
 		else {
 			// Resize buffer if necessary
-			if (edgeCount_ == edgeReserve_)
-				resizeEdges((uint32_t)(edgeReserve_ * rescaleFactor));
+			if (mEdgeCount == mEdgeReserve)
+				resizeEdges((uint32_t)(mEdgeReserve * mRescaleFactor));
 
-			id = edgeCount_;
-			edgeActiveBlock_++;
+			id = mEdgeCount;
+			mEdgeActiveBlock++;
 		}
 
-		edges_[id].head = head;
-		edges_[id].tail = tail;
-		edges_[id].prev = -1;
-		edges_[id].dualPrev = -1;
-		edges_[id].next = vertices_[tail].outEdge;
-		edges_[id].dualNext = vertices_[head].inEdge;
-		auto oldEdge = vertices_[tail].outEdge;
+		mEdges[id].mHead = head;
+		mEdges[id].mTail = tail;
+		mEdges[id].mPrev = -1;
+		mEdges[id].mDualPrev = -1;
+		mEdges[id].mNext = mVertices[tail].mOutEdge;
+		mEdges[id].mDualNext = mVertices[head].mInEdge;
+		auto oldEdge = mVertices[tail].mOutEdge;
 		if (oldEdge != -1)
-			edges_[oldEdge].prev = id;
-		vertices_[tail].outEdge = id;
-		oldEdge = vertices_[head].inEdge;
+			mEdges[oldEdge].mPrev = id;
+		mVertices[tail].mOutEdge = id;
+		oldEdge = mVertices[head].mInEdge;
 		if (oldEdge != -1)
-			edges_[oldEdge].dualPrev = id;
-		vertices_[head].inEdge = id;
+			mEdges[oldEdge].mDualPrev = id;
+		mVertices[head].mInEdge = id;
 
-		edgeCount_++;
+		mEdgeCount++;
 
 		return DigraphEdge(this, id);
 	}
@@ -150,11 +150,11 @@ namespace Morpheus {
 
 		// Send vertex to graveyard
 		auto id = v.id();
-		vertices_[id].outEdge = firstUnusedVertex;
-		vertices_[id].inEdge = GRAVEYARD_FLAG;
-		firstUnusedVertex = id;
+		mVertices[id].mOutEdge = mFirstUnusedVertex;
+		mVertices[id].mInEdge = GRAVEYARD_FLAG;
+		mFirstUnusedVertex = id;
 
-		--vertexCount_;
+		--mVertexCount;
 	}
 
 	void Digraph::deleteVertex(int v) {
@@ -164,77 +164,77 @@ namespace Morpheus {
 
 	void Digraph::deleteEdge(DigraphEdge& e) {
 		auto id = e.id();
-		auto head = edges_[id].head;
-		auto tail = edges_[id].tail;
+		auto head = mEdges[id].mHead;
+		auto tail = mEdges[id].mTail;
 
 		// Doubly linked list implementation
-		if (vertices_[tail].outEdge == id)
-			vertices_[tail].outEdge = edges_[id].next;
-		if (vertices_[head].inEdge == id)
-			vertices_[head].inEdge = edges_[id].dualNext;
+		if (mVertices[tail].mOutEdge == id)
+			mVertices[tail].mOutEdge = mEdges[id].mNext;
+		if (mVertices[head].mInEdge == id)
+			mVertices[head].mInEdge = mEdges[id].mDualNext;
 
-		if (edges_[id].prev != -1)
-			edges_[edges_[id].prev].next = edges_[id].next;
-		if (edges_[id].next != -1)
-			edges_[edges_[id].next].prev = edges_[id].prev;
-		if (edges_[id].dualPrev != -1)
-			edges_[edges_[id].dualPrev].dualNext = edges_[id].dualNext;
-		if (edges_[id].dualNext != -1)
-			edges_[edges_[id].dualNext].dualPrev = edges_[id].dualPrev;
+		if (mEdges[id].mPrev != -1)
+			mEdges[mEdges[id].mPrev].mNext = mEdges[id].mNext;
+		if (mEdges[id].mNext != -1)
+			mEdges[mEdges[id].mNext].mPrev = mEdges[id].mPrev;
+		if (mEdges[id].mDualPrev != -1)
+			mEdges[mEdges[id].mDualPrev].mDualNext = mEdges[id].mDualNext;
+		if (mEdges[id].mDualNext != -1)
+			mEdges[mEdges[id].mDualNext].mDualPrev = mEdges[id].mDualPrev;
 
 		// Send edge to graveyard
-		edges_[id].next = firstUnusedEdge;
-		edges_[id].prev = GRAVEYARD_FLAG;
-		firstUnusedEdge = id;
+		mEdges[id].mNext = mFirstUnusedEdge;
+		mEdges[id].mPrev = GRAVEYARD_FLAG;
+		mFirstUnusedEdge = id;
 
-		--edgeCount_;
+		--mEdgeCount;
 	}
 
 	void Digraph::compress(bool bTight)
 	{
-		int* vmap = new int[vertexActiveBlock_];
-		int* emap = new int[edgeActiveBlock_];
+		int* vmap = new int[mVertexActiveBlock];
+		int* emap = new int[mEdgeActiveBlock];
 
 		uint32_t new_v = 0;
-		for (uint32_t v = 0; v < vertexActiveBlock_; ++v) {
-			if (vertices_[v].inEdge != GRAVEYARD_FLAG)
+		for (uint32_t v = 0; v < mVertexActiveBlock; ++v) {
+			if (mVertices[v].mInEdge != GRAVEYARD_FLAG)
 				vmap[v] = new_v++;
 			else
 				vmap[v] = -1;
 		}
 
 		uint32_t new_e = 0;
-		for (uint32_t e = 0; e < edgeActiveBlock_; ++e) {
-			if (edges_[e].prev != GRAVEYARD_FLAG)
+		for (uint32_t e = 0; e < mEdgeActiveBlock; ++e) {
+			if (mEdges[e].mPrev != GRAVEYARD_FLAG)
 				emap[e] = new_e++;
 			else
 				emap[e] = -1;
 		}
 
-		uint32_t newEdgeReserve = bTight ? new_e : (uint32_t)(new_e * rescaleFactor);
-		uint32_t newVertexReserve = bTight ? new_v : (uint32_t)(new_v * rescaleFactor); 
+		uint32_t newEdgeReserve = bTight ? new_e : (uint32_t)(new_e * mRescaleFactor);
+		uint32_t newVertexReserve = bTight ? new_v : (uint32_t)(new_v * mRescaleFactor); 
 
 		auto new_vdata = new DigraphVertexRaw[newVertexReserve];
 		auto new_edata = new DigraphEdgeRaw[newEdgeReserve];
 
-		mapcpy(new_vdata, vertices_, vmap, vertexActiveBlock_);
-		mapcpy(new_edata, edges_, emap, edgeActiveBlock_);
+		mapcpy(new_vdata, mVertices, vmap, mVertexActiveBlock);
+		mapcpy(new_edata, mEdges, emap, mEdgeActiveBlock);
 
-		delete[] vertices_;
-		delete[] edges_;
+		delete[] mVertices;
+		delete[] mEdges;
 
-		vertices_ = new_vdata;
-		edges_ = new_edata;
+		mVertices = new_vdata;
+		mEdges = new_edata;
 
-		vertexReserve_ = newVertexReserve;
-		edgeReserve_ = newEdgeReserve;
+		mVertexReserve = newVertexReserve;
+		mEdgeReserve = newEdgeReserve;
 
-		edgeActiveBlock_ = edgeCount_;
-		vertexActiveBlock_ = vertexCount_;
+		mEdgeActiveBlock = mEdgeCount;
+		mVertexActiveBlock = mVertexCount;
 
 		// Relabel vertices as necessary and update data and lookups
-		applyVertexMap(vmap, vertexActiveBlock_, newVertexReserve);
-		applyEdgeMap(emap, edgeActiveBlock_, newEdgeReserve);
+		applyVertexMap(vmap, mVertexActiveBlock, newVertexReserve);
+		applyEdgeMap(emap, mEdgeActiveBlock, newEdgeReserve);
 
 		delete[] vmap;
 		delete[] emap;

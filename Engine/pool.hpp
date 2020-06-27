@@ -20,8 +20,8 @@ namespace Morpheus {
 	template <typename T>
 	class PoolHandle {
 	private:
-		Pool<T>* poolPtr;
-		uint32_t offset;
+		Pool<T>* mPoolPtr;
+		uint32_t mOffset;
 
 	public:
 		inline PoolHandle(T* ptr, uint32_t offset);
@@ -38,10 +38,10 @@ namespace Morpheus {
 	template <>
 	class PoolHandle<void> {
 	public:
-		void* poolPtr;
-		uint32_t offset;
+		void* mPoolPtr;
+		uint32_t mOffset;
 
-		inline PoolHandle(void* poolPtr, uint32_t offset) : poolPtr(poolPtr), offset(offset) { }
+		inline PoolHandle(void* poolPtr, uint32_t offset) : mPoolPtr(poolPtr), mOffset(offset) { }
 		template <typename T>
 		inline PoolHandle(PoolHandle<T>& handle);
 		inline PoolHandle() { }
@@ -54,46 +54,46 @@ namespace Morpheus {
 	template <typename T>
 	class Pool {
 	private:
-		T* data;
-		std::stack<uint32_t> freeIndices;
-		uint32_t freeBlockStart;
-		uint32_t dataSize;
-		double rescaleFactor;
+		T* mData;
+		std::stack<uint32_t> mFreeIndices;
+		uint32_t mFreeBlockStart;
+		uint32_t mDataSize;
+		double mRescaleFactor;
 
 	public:
-		Pool() : freeBlockStart(0), rescaleFactor(2.0) {
+		Pool() : mFreeBlockStart(0), mRescaleFactor(2.0) {
 			resize(0);
 		}
 
 		Pool(const uint32_t initialSize, const double rescaleFactor = 2.0d) :
-			freeBlockStart(0), rescaleFactor(rescaleFactor) 
+			mFreeBlockStart(0), mRescaleFactor(rescaleFactor) 
 		{
 			resize(initialSize);
 		}
 
 		~Pool() {
-			delete[] data;
+			delete[] mData;
 		}
 
 		inline T* at(const uint32_t offset) {
-			return &data[offset];
+			return &mData[offset];
 		}
 
 		void resize(const uint32_t newSize) {
 			// Resize pool
-			auto old = data;
+			auto old = mData;
 			if (newSize > 0)
-				data = new T[newSize];
+				mData = new T[newSize];
 			else
-				data = nullptr;
+				mData = nullptr;
 			
 			if (old) {
-				std::memcpy(data, old, dataSize * sizeof(T));
+				std::memcpy(mData, old, mDataSize * sizeof(T));
 				delete[] old;
 			}
 
-			dataSize = newSize;
-			freeBlockStart = std::min(dataSize, freeBlockStart);
+			mDataSize = newSize;
+			mFreeBlockStart = std::min(mDataSize, mFreeBlockStart);
 		}
 
 		/// <summary>
@@ -101,25 +101,25 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="bTight">Whether or not to make the compression tight, if set to true, any additional alloc will require a resize.</param>
 		void compress(const bool bTight = false) {
-			uint32_t* map = new uint32_t[freeBlockStart];
-			char* cull = new char[freeBlockStart];
-			memset(cull, 0, sizeof(char) * freeBlockStart);
+			uint32_t* map = new uint32_t[mFreeBlockStart];
+			char* cull = new char[mFreeBlockStart];
+			memset(cull, 0, sizeof(char) * mFreeBlockStart);
 
-			while (!freeIndices.empty())
-				cull[freeIndices.pop()] = true;
+			while (!mFreeIndices.empty())
+				cull[mFreeIndices.pop()] = true;
 			
 			uint32_t new_i = 0;
-			for (uint32_t i = 0; i < freeBlockStart; ++i)
+			for (uint32_t i = 0; i < mFreeBlockStart; ++i)
 				if (!cull[i])
 					map[i] = new_i++;
 				else
 					map[i] = -1;
 
-			uint32_t newSize = (uint32_t)(new_i * rescaleFactor);
-			auto old = data;
-			data = new T[newSize];
-			mapcpy(data, old, map, freeBlockStart);
-			dataSize = newSize;
+			uint32_t newSize = (uint32_t)(new_i * mRescaleFactor);
+			auto old = mData;
+			mData = new T[newSize];
+			mapcpy(mData, old, map, mFreeBlockStart);
+			mDataSize = newSize;
 			delete[] old;
 			delete[] cull;
 			delete[] map;
@@ -130,21 +130,21 @@ namespace Morpheus {
 		/// </summary>
 		/// <returns>A new object.</returns>
 		PoolHandle<T> alloc() {
-			size_t cnt = freeIndices.size();
+			size_t cnt = mFreeIndices.size();
 			if (cnt > 0) {
-				uint32_t of = freeIndices.pop();
-				return PoolHandle<T>(&data[of], of);
+				uint32_t of = mFreeIndices.pop();
+				return PoolHandle<T>(&mData[of], of);
 			}
-			else if (freeBlockStart == dataSize) {
-				if (dataSize == 0)
-					dataSize = 50;
-				resize((uint32_t)(dataSize * rescaleFactor));
-				uint32_t of = freeBlockStart++;
-				return PoolHandle<T>(&data[of], of);
+			else if (mFreeBlockStart == mDataSize) {
+				if (mDataSize == 0)
+					mDataSize = 50;
+				resize((uint32_t)(mDataSize * mRescaleFactor));
+				uint32_t of = mFreeBlockStart++;
+				return PoolHandle<T>(&mData[of], of);
 			}
 			else {
-				uint32_t of = freeBlockStart++;
-				return PoolHandle<T>(&data[of], of);
+				uint32_t of = mFreeBlockStart++;
+				return PoolHandle<T>(&mData[of], of);
 			}
 		}
 
@@ -153,7 +153,7 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="h">Handle to the object to free</param>
 		void dealloc(PoolHandle<T>& h) {
-			freeIndices.push(h.offset);
+			mFreeIndices.push(h.mOffset);
 		}
 
 		friend class PoolHandle<T>;
@@ -161,27 +161,27 @@ namespace Morpheus {
 
 	template<typename T>
 	inline PoolHandle<T>::PoolHandle(T* ptr, uint32_t offset) 
-		: poolPtr(ptr), offset(offset)
+		: mPoolPtr(ptr), mOffset(offset)
 	{
 	}
 
 	template<typename T>
 	inline T* PoolHandle<T>::operator->()
 	{
-		return &poolPtr->data[offset];
+		return &mPoolPtr->mData[mOffset];
 	}
 	template<typename T>
 	inline T* PoolHandle<T>::get()
 	{
-		return &poolPtr->data[offset];
+		return &mPoolPtr->mData[mOffset];
 	}
 
 	template <typename T>
-	PoolHandle<T>::PoolHandle(PoolHandle<void>& handle) : poolPtr((Pool<T>*)handle.poolPtr), offset(handle.offset) {
+	PoolHandle<T>::PoolHandle(PoolHandle<void>& handle) : mPoolPtr((Pool<T>*)handle.mPoolPtr), mOffset(handle.mOffset) {
 	}
 
 	template <typename T>
-	PoolHandle<void>::PoolHandle(PoolHandle<T>& handle) : poolPtr(handle.poolPtr), offset(handle.offset) {
+	PoolHandle<void>::PoolHandle(PoolHandle<T>& handle) : mPoolPtr(handle.mPoolPtr), mOffset(handle.mOffset) {
 	}
 }
 

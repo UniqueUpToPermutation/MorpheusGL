@@ -5,19 +5,19 @@
 namespace Morpheus {
 	class Engine {
 	private:
-		GLFWwindow* window_;
-		nlohmann::json config_;
-		NodeGraph graph_;
-		ContentManager* content_;
-		NodeHandle handle_;
+		GLFWwindow* mWindow;
+		nlohmann::json mConfig;
+		NodeGraph mGraph;
+		ContentManager* mContent;
+		NodeHandle mHandle;
 		bool bValid;
 
 	public:
-		inline nlohmann::json& config() { return config_; }
-		inline NodeGraph& graph() { return graph_; }
-		inline NodeHandle handle() const { return handle_; }
-		inline ContentManager& content() { return *content_; }
-		inline GLFWwindow* window() { return window_; }
+		inline nlohmann::json& config() { return mConfig; }
+		inline NodeGraph& graph() { return mGraph; }
+		inline NodeHandle handle() const { return mHandle; }
+		inline ContentManager& content() { return *mContent; }
+		inline GLFWwindow* window() { return mWindow; }
 
 		Engine();
 

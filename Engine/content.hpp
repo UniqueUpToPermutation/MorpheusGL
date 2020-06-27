@@ -29,12 +29,12 @@ namespace Morpheus {
 
 	class IContentFactory {
 	private:
-		NodeHandle handle_;
+		NodeHandle mHandle;
 
 	public:
 		virtual ref<void> load(const std::string& source) = 0;
 		virtual void unload(ref<void>& ref) = 0;
-		inline NodeHandle handle() const { return handle_; }
+		inline NodeHandle handle() const { return mHandle; }
 
 		friend class ContentManager;
 	};
@@ -46,29 +46,29 @@ namespace Morpheus {
 
 	class ContentManager {
 	private:
-		NodeHandle handle_;
-		std::set<IContentFactory*> factories_;
-		std::unordered_map<NodeType, IContentFactory*> typeToFactory_;
-		DigraphVertexLookupView<std::string> sources_;
+		NodeHandle mHandle;
+		std::set<IContentFactory*> mFactories;
+		std::unordered_map<NodeType, IContentFactory*> mTypeToFactory;
+		DigraphVertexLookupView<std::string> mSources;
 
 	public:
-		NodeHandle handle() const { return handle_; }
+		NodeHandle handle() const { return mHandle; }
 
 		ContentManager();
 
 		template <typename ContentType> void addFactory() {
 			IContentFactory* factory = new ContentFactory<ContentType>();
-			factories_.insert(factory);
-			typeToFactory_[NODE_TYPE(ContentType)] = factory;
-			auto v = graph().addNode<IContentFactory>(factory, handle_);
-			factory->handle_ = graph().issueHandle(v);
+			mFactories.insert(factory);
+			mTypeToFactory[NODE_TYPE(ContentType)] = factory;
+			auto v = graph().addNode<IContentFactory>(factory, mHandle);
+			factory->mHandle = graph().issueHandle(v);
 		}
 
 		template <typename ContentType> void removeFactory() {
 			auto type = NODE_TYPE(ContentType);
-			auto factory = typeToFactory_[type];
-			factories_.erase(factory);
-			typeToFactory_.erase(type);
+			auto factory = mTypeToFactory[type];
+			mFactories.erase(factory);
+			mTypeToFactory.erase(type);
 			graph().recallHandle(factory->getHandle());
 			delete factory;
 		}
@@ -76,15 +76,15 @@ namespace Morpheus {
 		template <typename ContentType>
 		DigraphVertex loadNode(const std::string& source, DigraphVertex& parent) {
 			DigraphVertex v;
-			if (sources_.tryFind(source, &v))
+			if (mSources.tryFind(source, &v))
 				return v;
 			else {
 				NodeType type = NODE_TYPE(CONTENT_BASE_TYPE(ContentType));
 
-				auto factory = typeToFactory_[type];
+				auto factory = mTypeToFactory[type];
 				auto ref = factory->load(source);
 				v = graph().addNode<CONTENT_BASE_TYPE(ContentType)>(ref, parent);
-				sources_.set(v, source);
+				mSources.set(v, source);
 				return v;
 			}
 		}
@@ -92,15 +92,15 @@ namespace Morpheus {
 		template <typename ContentType>
 		ref<ContentType> loadRef(const std::string& source, DigraphVertex& parent) {
 			DigraphVertex v;
-			if (sources_.tryFind(source, &v))
+			if (mSources.tryFind(source, &v))
 				return graph().desc(v).owner.as<ContentType>();
 			else {
 				NodeType type = NODE_TYPE(CONTENT_BASE_TYPE(ContentType));
 
-				auto factory = typeToFactory_[type];
+				auto factory = mTypeToFactory[type];
 				auto ref = factory->load(source);
 				v = graph().addNode<CONTENT_BASE_TYPE(ContentType)>(ref, parent);
-				sources_.set(v, source);
+				mSources.set(v, source);
 				return ref.as<ContentType>();
 			}
 		}
@@ -120,30 +120,30 @@ namespace Morpheus {
 		template <typename ContentType> 
 		inline DigraphVertex loadNode(const std::string& source) {
 			// Set self as the parent of the new object
-			return loadNode<ContentType>(source, handle_);
+			return loadNode<ContentType>(source, mHandle);
 		}
 
 		template <typename ContentType>
 		inline ref<ContentType> loadRef(const std::string& source) {
 			// Set self as the parent of the new object
-			return loadRef<ContentType>(source, handle_);
+			return loadRef<ContentType>(source, mHandle);
 		}
 
 		void unloadNode(DigraphVertex& node) {
 			auto desc = graph().desc(node);
 			// Get factory from type
-			auto factory = typeToFactory_[desc.type];
+			auto factory = mTypeToFactory[desc.type];
 			if (factory != nullptr)
 				factory->unload(desc.owner);
 		}
 
 		void unloadAll() {
-			for (auto it = graph()[handle_].getOutgoingNeighbors(); it.valid(); it.next()) {
+			for (auto it = graph()[mHandle].getOutgoingNeighbors(); it.valid(); it.next()) {
 				DigraphVertex v = it();
 				unloadNode(v);
 			}
 
-			for (auto& it : factories_)
+			for (auto& it : mFactories)
 				delete it;
 		}
 	};

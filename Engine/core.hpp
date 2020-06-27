@@ -30,8 +30,8 @@ namespace Morpheus {
 	class IContentFactory;
 	
 	struct BoundingBox {
-		glm::vec3 lower;
-		glm::vec3 upper;
+		glm::vec3 mLower;
+		glm::vec3 mUpper;
 	};
 
 	enum class NodeType : uint32_t {
@@ -66,18 +66,6 @@ namespace Morpheus {
 		CONTENT_END,
 
 		END
-	};
-
-	template <bool pooled, typename T>
-	struct ConditionalPool;
-
-	template <typename T>
-	struct ConditionalPool<true, T> {
-		Pool<T> pool;
-	};
-
-	template <typename T>
-	struct ConditionalPool<false, T> {
 	};
 
 	template <NodeType nodeType>
@@ -268,8 +256,8 @@ namespace Morpheus {
 	struct ref<void> {
 	public:
 		union voidrefunion {
-			PoolHandle<void> h;
-			void* ptr;
+			PoolHandle<void> mHandle;
+			void* mPtr;
 			inline voidrefunion() { }
 			inline ~voidrefunion() { }
 		} p;
@@ -279,10 +267,10 @@ namespace Morpheus {
 		inline ref() {
 		}
 		inline ref(void* ptr) {
-			p.ptr = ptr;
+			p.mPtr = ptr;
 		}
 		inline ref(PoolHandle<void>& h) {
-			p.h = h;
+			p.mHandle = h;
 		}
 	};
 
@@ -291,65 +279,65 @@ namespace Morpheus {
 
 	template <typename T>
 	struct ref_pool_gate<T, true> {
-		PoolHandle<T> h;
-		inline T* get() { return h.get(); }
+		PoolHandle<T> mHandle;
+		inline T* get() { return mHandle.get(); }
 		inline void from(T* ptr) {
 			assert(true);
 		}
 		inline void from(PoolHandle<T>& newH) {
-			h = newH;
+			mHandle = newH;
 		}
 		inline void from(ref<void>& r) {
-			h = PoolHandle<T>(r.p.h);
+			mHandle = PoolHandle<T>(r.p.mHandle);
 		}
 		inline void to(ref<void>& r) {
-			r.p.h = PoolHandle<void>(h);
+			r.p.mHandle = PoolHandle<void>(mHandle);
 		}
 	};
 
 	template <typename T>
 	struct ref_pool_gate<T, false> {
-		T* ptr;
-		inline T* get() { return ptr; }
+		T* mPtr;
+		inline T* get() { return mPtr; }
 		inline void from(T* newPtr) {
-			ptr = newPtr;
+			mPtr = newPtr;
 		}
 		inline void from(PoolHandle<T>& h) {
 			assert(true);
 		}
 		inline void from(ref<void>& r) {
-			ptr = (T*)r.p.ptr;
+			mPtr = (T*)r.p.mPtr;
 		}
 		inline void to(ref<void>& r) {
-			r.p.ptr = ptr;
+			r.p.mPtr = mPtr;
 		}
 	};
 
 	template <typename T>
 	struct ref {
 	private:
-		ref_pool_gate<T, IS_POOLED(NODE_TYPE(T))> poolGate;
+		ref_pool_gate<T, IS_POOLED(NODE_TYPE(T))> mPoolGate;
 
 	public:
-		inline T* get() { return poolGate.get(); }
-		inline T* operator->() { return poolGate.get(); }
+		inline T* get() { return mPoolGate.get(); }
+		inline T* operator->() { return mPoolGate.get(); }
 
 		inline ref<void> asvoid() {
 			ref<void> r;
-			poolGate.to(r);
+			mPoolGate.to(r);
 			return r;
 		}
 
 		inline ref(T* ptr) {
-			poolGate.from(ptr);
+			mPoolGate.from(ptr);
 		}
 
 		inline ref(PoolHandle<T>& h) {
-			poolGate.from(h);
+			mPoolGate.from(h);
 		}
 
 		inline ref(ref<void>& r) {
-			poolGate.from(r);
+			mPoolGate.from(r);
 		}
 
 		friend struct ref<void>;
@@ -374,29 +362,29 @@ namespace Morpheus {
 	class NodeGraph : public Digraph {
 	private:
 		// Descriptions of the types and owners of each node
-		DigraphDataView<NodeData> descs_;
-		DigraphVertexLookupView<NodeHandle> handles_;
-		DigraphVertexLookupView<std::string> names_;
-		NodeHandle largest_handle_;
+		DigraphDataView<NodeData> mDescs;
+		DigraphVertexLookupView<NodeHandle> mHandles;
+		DigraphVertexLookupView<std::string> mNames;
+		NodeHandle mLargestHandle;
 
 	public:
 		inline NodeDataView& descs() { 
-			return descs_; 
+			return mDescs; 
 		}
 		inline NodeData desc(const DigraphVertex& v) {
-			return descs_[v];
+			return mDescs[v];
 		}
 		inline NodeHandleLookupView handles() {
-			return handles_;
+			return mHandles;
 		}
 		inline NodeNameLookupView names() {
-			return names_;
+			return mNames;
 		}
 		inline DigraphVertex operator[](const NodeHandle handle) {
-			return handles_[handle];
+			return mHandles[handle];
 		}
 		inline DigraphVertex operator[](const std::string& name) {
-			return names_[name];
+			return mNames[name];
 		}
 		template <typename OwnerType>
 		inline DigraphVertex addNode(OwnerType* owner, NodeType type) {
@@ -404,7 +392,7 @@ namespace Morpheus {
 			data.type = type;
 			data.owner = ref<void>(owner);
 			auto v = createVertex();
-			descs_[v] = data;
+			mDescs[v] = data;
 			return v;
 		}
 		template <typename OwnerType>
@@ -416,13 +404,13 @@ namespace Morpheus {
 		template <typename OwnerType>
 		inline DigraphVertex addNode(OwnerType* owner, NodeType type, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, type);
-			createEdge(handles_[parentHandle], v);
+			createEdge(mHandles[parentHandle], v);
 			return v;
 		}
 		template <typename OwnerType>
 		inline DigraphVertex addNode(OwnerType* owner, NodeType type, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, type);
-			createEdge(names_[parentName], v);
+			createEdge(mNames[parentName], v);
 			return v;
 		}
 		template <typename OwnerType>
@@ -434,14 +422,14 @@ namespace Morpheus {
 		template <typename OwnerType>
 		inline DigraphVertex addNode(OwnerType* owner, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
-			DigraphVertex u = handles_[parentHandle];
+			DigraphVertex u = mHandles[parentHandle];
 			createEdge(u, v);
 			return v;
 		}
 		template <typename OwnerType>
 		inline DigraphVertex addNode(OwnerType* owner, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
-			createEdge(names_[parentName], v);
+			createEdge(mNames[parentName], v);
 			return v;
 		}
 
@@ -451,7 +439,7 @@ namespace Morpheus {
 			data.type = type;
 			data.owner = owner;
 			auto v = createVertex();
-			descs_[v] = data;
+			mDescs[v] = data;
 			return v;
 		}
 		template <typename OwnerType>
@@ -463,13 +451,13 @@ namespace Morpheus {
 		template <typename OwnerType>
 		inline DigraphVertex addNode(ref<void> owner, NodeType type, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, type);
-			createEdge(handles_[parentHandle], v);
+			createEdge(mHandles[parentHandle], v);
 			return v;
 		}
 		template <typename OwnerType>
 		inline DigraphVertex addNode(ref<void> owner, NodeType type, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, type);
-			createEdge(names_[parentName], v);
+			createEdge(mNames[parentName], v);
 			return v;
 		}
 		template <typename OwnerType>
@@ -481,13 +469,13 @@ namespace Morpheus {
 		template <typename OwnerType>
 		inline DigraphVertex addNode(ref<void> owner, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
-			createEdge(handles_[parentHandle], v);
+			createEdge(mHandles[parentHandle], v);
 			return v;
 		}
 		template <typename OwnerType>
 		inline DigraphVertex addNode(ref<void> owner, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
-			createEdge(names_[parentName], v);
+			createEdge(mNames[parentName], v);
 			return v;
 		}
 
@@ -495,32 +483,32 @@ namespace Morpheus {
 			return addNode(owner, NodeType::ENGINE);
 		}
 		inline NodeHandle issueHandle(const DigraphVertex& vertex) {
-			NodeHandle h = ++largest_handle_;
-			handles_.set(vertex, h);
+			NodeHandle h = ++mLargestHandle;
+			mHandles.set(vertex, h);
 			return h;
 		}
 		inline void recallHandle(const NodeHandle handle) {
-			handles_.clear(handle);
+			mHandles.clear(handle);
 		}
 		inline void setName(const DigraphVertex& vertex, const std::string& name) {
-			names_.set(vertex, name);
+			mNames.set(vertex, name);
 		}
 		inline void recallName(const std::string& name) {
-			names_.clear(name);
+			mNames.clear(name);
 		}
 
-		NodeGraph() : largest_handle_(HANDLE_INVALID) {
-			descs_ = createVertexData<NodeData>("desc");
-			handles_ = createVertexLookup<NodeHandle>("handle");
-			names_ = createVertexLookup<std::string>("name");
+		NodeGraph() : mLargestHandle(HANDLE_INVALID) {
+			mDescs = createVertexData<NodeData>("desc");
+			mHandles = createVertexLookup<NodeHandle>("handle");
+			mNames = createVertexLookup<std::string>("name");
 		}
 	};
 
 	struct Transform {
-		glm::vec3 translation;
-		glm::vec3 scale;
-		glm::quat rotation;
-		glm::mat4 cache;
+		glm::vec3 mTranslation;
+		glm::vec3 mScale;
+		glm::quat mRotation;
+		glm::mat4 mCache;
 	};
 	
 	enum class ErrorCode {
@@ -531,18 +519,18 @@ namespace Morpheus {
 
 	class Error {
 	public:
-		ErrorCode code;
-		std::string message;
-		std::string source;
+		ErrorCode mCode;
+		std::string mMessage;
+		std::string mSource;
 
 		bool isSuccess() const {
-			return code == ErrorCode::SUCCESS;
+			return mCode == ErrorCode::SUCCESS;
 		}
 
 		std::string str() const {
-			return source + ": " + message;
+			return mSource + ": " + mMessage;
 		}
 
-		inline explicit Error(const ErrorCode code) : code(code) { }
+		inline explicit Error(const ErrorCode code) : mCode(code) { }
 	};
 }

@@ -31,6 +31,12 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{fa663aaa-aadc-4d7e-915e-eedae3c40d94}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\renderer">
+      <UniqueIdentifier>{60d44e6e-c4dd-49e2-9bb5-32a95a539498}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scene">
+      <UniqueIdentifier>{6941b612-850e-4c86-89f6-b0a1754ac921}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp">
@@ -62,6 +68,18 @@
     </ClInclude>
     <ClInclude Include="geometry.h">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="scene.h">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="staticmanager.h">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="dynamicmanager.h">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="region.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

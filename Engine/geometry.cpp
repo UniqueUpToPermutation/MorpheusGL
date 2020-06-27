@@ -13,14 +13,14 @@ using namespace std;
 
 namespace Morpheus {
 	ContentFactory<Geometry>::ContentFactory() {
-		importer = new Importer();
+		mImporter = new Importer();
 	}
 	ContentFactory<Geometry>::~ContentFactory() {
-		delete importer;
+		delete mImporter;
 	}
 
 	ref<void> ContentFactory<Geometry>::load(const std::string& source) {
-		const aiScene* pScene = importer->ReadFile(source.c_str(),
+		const aiScene* pScene = mImporter->ReadFile(source.c_str(),
 			aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices |
 			aiProcess_GenUVCoords | aiProcess_CalcTangentSpace | aiProcessPreset_TargetRealtime_Quality);
 
@@ -52,10 +52,10 @@ namespace Morpheus {
 		unsigned int* indx_buffer = new unsigned int[nIndices];
 
 		BoundingBox aabb;
-		aabb.lower = glm::vec3(std::numeric_limits<float>::infinity(),
+		aabb.mLower = glm::vec3(std::numeric_limits<float>::infinity(),
 			std::numeric_limits<float>::infinity(),
 			std::numeric_limits<float>::infinity());
-		aabb.upper = glm::vec3(-std::numeric_limits<float>::infinity(),
+		aabb.mUpper = glm::vec3(-std::numeric_limits<float>::infinity(),
 			-std::numeric_limits<float>::infinity(),
 			-std::numeric_limits<float>::infinity());
 
@@ -72,8 +72,8 @@ namespace Morpheus {
 			vert_buffer[bufindx + 9] = mesh->mTangents[i].y;
 			vert_buffer[bufindx + 10] = mesh->mTangents[i].z;
 
-			aabb.lower = glm::min(aabb.lower, glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z));
-			aabb.upper = glm::max(aabb.upper, glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z));
+			aabb.mLower = glm::min(aabb.mLower, glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z));
+			aabb.mUpper = glm::max(aabb.mUpper, glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z));
 		}
 
 		for (uint32_t i_face = 0, i = 0; i_face < mesh->mNumFaces; ++i_face) {
@@ -107,10 +107,10 @@ namespace Morpheus {
 		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 		Geometry* geo = new Geometry();
-		geo->aabb = aabb;
-		geo->vbo = bufs[0];
-		geo->ibo = bufs[1];
-		geo->vao = vao;
+		geo->mAabb = aabb;
+		geo->mVbo = bufs[0];
+		geo->mIbo = bufs[1];
+		geo->mVao = vao;
 
 		delete[] vert_buffer;
 		delete[] indx_buffer;
@@ -119,8 +119,8 @@ namespace Morpheus {
 	}
 	void ContentFactory<Geometry>::unload(ref<void>& ref) {
 		auto r = ref.as<Geometry>();
-		GLuint bufs[2] = { r->vbo, r->ibo };
-		GLuint vao = r->vao;
+		GLuint bufs[2] = { r->mVbo, r->mIbo };
+		GLuint vao = r->mVao;
 		glDeleteBuffers(2, bufs);
 		glDeleteVertexArrays(1, &vao);
 		delete r.get();

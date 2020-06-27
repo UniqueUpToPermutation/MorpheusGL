@@ -140,7 +140,7 @@ namespace Morpheus {
 		glDeleteShader(frag_id);
 
 		// Set the shader ID!
-		shader->id_ = id;
+		shader->mId = id;
 
 		ref<void> r(shader);
 		return r;
@@ -148,7 +148,7 @@ namespace Morpheus {
 
 	void ContentFactory<IShader>::unload(ref<void>& ref) {
 		IShader* shad = ref.as<IShader>().get();
-		glDeleteProgram(shad->id_);
+		glDeleteProgram(shad->mId);
 		delete shad;
 	}
 
