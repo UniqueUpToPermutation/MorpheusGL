@@ -6,13 +6,6 @@
 
 #include <set>
 
-#define REGISTER_CONTENT_BASE_TYPE(subType, baseType) template <> struct ContentSubTypeToBaseType<subType> { \
-	public: \
-	typedef baseType Base; \
-	}; \
-
-#define CONTENT_BASE_TYPE(subType) ContentSubTypeToBaseType<subType>::Base
-
 /*
 *	Every piece of content is treated as a node in the node graph.
 *	A piece of content is owned by the content manager unless otherwise specified
@@ -38,7 +31,6 @@ namespace Morpheus {
 
 		friend class ContentManager;
 	};
-	REGISTER_CONTENT_BASE_TYPE(IContentFactory, IContentFactory);
 
 	template <typename ContentType>
 	class ContentFactory;
@@ -72,13 +64,17 @@ namespace Morpheus {
 			delete factory;
 		}
 
+		void addContentNode(DigraphVertex& content) {
+		
+		}
+
 		template <typename ContentType>
 		DigraphVertex loadNode(const std::string& source, DigraphVertex& parent) {
 			DigraphVertex v;
 			if (mSources.tryFind(source, &v))
 				return v;
 			else {
-				NodeType type = NODE_TYPE(CONTENT_BASE_TYPE(ContentType));
+				NodeType type = NODE_TYPE(ContentType);
 
 				auto factory = mTypeToFactory[type];
 				auto ref = factory->load(source);
@@ -94,11 +90,11 @@ namespace Morpheus {
 			if (mSources.tryFind(source, &v))
 				return graph().desc(v).owner.as<ContentType>();
 			else {
-				NodeType type = NODE_TYPE(CONTENT_BASE_TYPE(ContentType));
+				NodeType type = NODE_TYPE(ContentType);
 
 				auto factory = mTypeToFactory[type];
 				auto ref = factory->load(source);
-				v = graph().addNode<CONTENT_BASE_TYPE(ContentType)>(ref, parent);
+				v = graph().addNode(ref, type, parent);
 				mSources.set(v, source);
 				return ref.as<ContentType>();
 			}

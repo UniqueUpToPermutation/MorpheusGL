@@ -37,6 +37,9 @@
     <Filter Include="Header Files\scene">
       <UniqueIdentifier>{6941b612-850e-4c86-89f6-b0a1754ac921}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\renderer">
+      <UniqueIdentifier>{27678e70-85b5-4469-9572-21f5e5173226}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp">
@@ -63,29 +66,32 @@
     <ClInclude Include="shader.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="basic_shader.hpp">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="geometry.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="scene.h">
+    <ClInclude Include="dynamicmanager.hpp">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="staticmanager.h">
+    <ClInclude Include="region.hpp">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="dynamicmanager.h">
+    <ClInclude Include="scene.hpp">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="region.h">
+    <ClInclude Include="staticmanager.hpp">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="renderer.h">
+    <ClInclude Include="halfedge.hpp">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="cooktorrance.hpp">
       <Filter>Header Files\renderer</Filter>
     </ClInclude>
-    <ClInclude Include="halfedge.h">
-      <Filter>Header Files\util</Filter>
+    <ClInclude Include="forwardrenderer.hpp">
+      <Filter>Header Files\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderqueue.hpp">
+      <Filter>Header Files\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="geometry.hpp">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -107,9 +113,6 @@
     <ClCompile Include="shader.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="basic_shader.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
     <ClCompile Include="content.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
@@ -118,6 +121,12 @@
     </ClCompile>
     <ClCompile Include="halfedge.cpp">
       <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="cooktorrance.cpp">
+      <Filter>Source Files\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="forwardrenderer.cpp">
+      <Filter>Source Files\renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +139,15 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\basic.json">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\cooktorrance.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\cooktorrance.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\cooktorrance.json">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

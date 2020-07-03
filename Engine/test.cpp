@@ -2,6 +2,7 @@
 #include "engine.hpp"
 #include "content.hpp"
 #include "shader.hpp"
+#include "cooktorrance.hpp"
 #include <GLFW/glfw3.h>
 
 using namespace std;
@@ -32,7 +33,9 @@ int main() {
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
 
-		auto shader = content().loadRef<IShader>("shaders/basic.json");
+		auto shader = content().loadRef<CookTorranceShader>("shaders/cooktorrance.json");
+
+		glm::mat4 id = glm::identity<glm::mat4>();
 
 		// Make a thing
 		while (en.valid()) {
@@ -44,6 +47,10 @@ int main() {
 			glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glUseProgram(shader->id());
+			shader->mWorld.set(id);
+			shader->mView.set(id);
+			shader->mProjection.set(id);
+			shader->mWorldInverseTranspose.set(id);
 			glBindVertexArray(vertexArray);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
 

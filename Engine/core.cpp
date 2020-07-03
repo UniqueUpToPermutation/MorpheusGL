@@ -7,19 +7,19 @@ namespace Morpheus {
 	bool NodeMetadata::content[(uint32_t)NodeType::END];
 	bool NodeMetadata::pooled[(uint32_t)NodeType::END];
 
-	template <uint32_t iType> void NodeMetadata::init_() {
-		pooled[iType] = IS_POOLED((NodeType)iType);
-		content[iType] = IS_CONTENT((NodeType)iType);
-		sceneChild[iType] = IS_SCENE_CHILD((NodeType)iType);
-		disposable[iType] = IS_DISPOSABLE((NodeType)iType);
+	template <NodeType iType> void NodeMetadata::init_() {
+		pooled[(uint32_t)iType] = IS_POOLED_<iType>::RESULT;
+		content[(uint32_t)iType] = IS_CONTENT_<iType>::RESULT;
+		sceneChild[(uint32_t)iType] = IS_SCENE_CHILD_<iType>::RESULT;
+		disposable[(uint32_t)iType] = IS_DISPOSABLE_<iType>::RESULT;
 			
-		init_<iType + 1>();
+		init_<(NodeType)((uint32_t)iType + 1)>();
 	}
 
-	template <> void NodeMetadata::init_<(uint32_t)NodeType::END>() {
+	template <> void NodeMetadata::init_<NodeType::END>() {
 	}
 
 	void NodeMetadata::init() {
-		init_<0>();
+		init_<NodeType::START>();
 	}
 }

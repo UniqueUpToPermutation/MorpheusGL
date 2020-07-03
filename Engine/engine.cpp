@@ -69,7 +69,6 @@ namespace Morpheus {
 
 		// Create content manager
 		mContent = new ContentManager();
-		mGraph.addNode<ContentManager>(mContent, mHandle);
 
 		// Set valid
 		bValid = true;

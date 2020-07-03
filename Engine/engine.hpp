@@ -9,6 +9,8 @@ namespace Morpheus {
 		nlohmann::json mConfig;
 		NodeGraph mGraph;
 		ContentManager* mContent;
+		IRenderer* mRenderer;
+	
 		NodeHandle mHandle;
 		bool bValid;
 
@@ -18,6 +20,7 @@ namespace Morpheus {
 		inline NodeHandle handle() const { return mHandle; }
 		inline ContentManager& content() { return *mContent; }
 		inline GLFWwindow* window() { return mWindow; }
+		inline IRenderer* renderer() { return mRenderer; }
 
 		Engine();
 
@@ -35,5 +38,11 @@ namespace Morpheus {
 	}
 	inline ContentManager& content() {
 		return engine().content();
+	}
+	inline IRenderer* renderer() {
+		return engine().renderer();
+	}
+	inline nlohmann::json& config() {
+		return engine().config();
 	}
 }

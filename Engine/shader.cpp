@@ -1,5 +1,5 @@
 #include "shader.hpp"
-#include "basic_shader.hpp"
+#include "cooktorrance.hpp"
 #include "json.hpp"
 
 #include <fstream>
@@ -72,7 +72,7 @@ namespace Morpheus {
 
 	ContentFactory<IShader>::ContentFactory()
 	{
-		REGISTER_SHADER(BasicShader, "basic");
+		REGISTER_SHADER(CookTorranceShader, "cooktorrance");
 	}
 
 	ref<void> ContentFactory<IShader>::load(const std::string& source) {

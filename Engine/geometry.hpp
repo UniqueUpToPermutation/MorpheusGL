@@ -25,8 +25,7 @@ namespace Morpheus {
 
 		friend class ContentFactory<Geometry>;
 	};
-	REGISTER_NODE_TYPE(Geometry, NodeType::GEOMETRY);
-	REGISTER_CONTENT_BASE_TYPE(Geometry, Geometry);
+	SET_NODE_TYPE(Geometry, GEOMETRY);
 
 	template <>
 	class ContentFactory<Geometry> : public IContentFactory {

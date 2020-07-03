@@ -4,7 +4,7 @@
 
 #include "content.hpp"
 
-#define DEFINE_SHADER(name) class name; REGISTER_CONTENT_BASE_TYPE(name, IShader); class name : public IShader 
+#define DEFINE_SHADER(name) class name; SET_BASE_TYPE(name, IShader); class name : public IShader 
 
 #define SHADER_BODY protected: \
 void init() override; \
@@ -19,6 +19,11 @@ ShaderUniform<type> name;
 
 #define REGISTER_SHADER(name, str_class_name) std::function<IShader*(void)> name_f_ptr = []() { return new name(); }; \
 	shaderRegistry()[str_class_name] = name_f_ptr;
+
+#define SET_WORLD(loc_str) mWorld.mLoc = glGetUniformLocation(id(), loc_str)
+#define SET_VIEW(loc_str) mView.mLoc = glGetUniformLocation(id(), loc_str)
+#define SET_PROJECTION(loc_str) mProjection.mLoc = glGetUniformLocation(id(), loc_str)
+#define SET_WORLDINVTRANSPOSE(loc_str) mWorldInverseTranspose.mLoc = glGetUniformLocation(id(), loc_str)
 
 namespace Morpheus {
 
@@ -99,12 +104,16 @@ namespace Morpheus {
 		virtual void init() = 0;
 
 	public:
+		ShaderUniform<glm::mat4> mWorld;
+		ShaderUniform<glm::mat4> mView;
+		ShaderUniform<glm::mat4> mProjection;
+		ShaderUniform<glm::mat4> mWorldInverseTranspose;
+
 		inline GLuint id() const { return mId; }
 
 		friend class ContentFactory<IShader>;
 	};
-	REGISTER_NODE_TYPE(IShader, NodeType::SHADER);
-	REGISTER_CONTENT_BASE_TYPE(IShader, IShader);
+	SET_NODE_TYPE(IShader, SHADER);
 
 	template <>
 	class ContentFactory<IShader> : public IContentFactory {

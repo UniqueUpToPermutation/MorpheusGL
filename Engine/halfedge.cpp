@@ -1,4 +1,4 @@
-#include "halfedge.h"
+#include "halfedge.hpp"
 #include "json.hpp"
 
 #include <iostream>

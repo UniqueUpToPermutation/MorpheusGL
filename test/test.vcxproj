@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -21,10 +21,9 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{26fc6ade-b792-4ee8-a2fc-c4b6c9dc09a7}</ProjectGuid>
-    <RootNamespace>Morpheus</RootNamespace>
+    <ProjectGuid>{0baaf531-0d29-417d-bf16-d46c7572dd68}</ProjectGuid>
+    <RootNamespace>test</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Engine</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -73,7 +72,6 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../glad/GL/include/;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -94,7 +92,6 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -142,61 +139,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="content.hpp" />
-    <ClInclude Include="cooktorrance.hpp" />
-    <ClInclude Include="core.hpp" />
-    <ClInclude Include="digraph.hpp" />
-    <ClInclude Include="dynamicmanager.hpp" />
-    <ClInclude Include="engine.hpp" />
-    <ClInclude Include="geometry.hpp" />
-    <ClInclude Include="halfedge.hpp" />
-    <ClInclude Include="json.hpp" />
-    <ClInclude Include="mapcpy.hpp" />
-    <ClInclude Include="pool.hpp" />
-    <ClInclude Include="region.hpp" />
-    <ClInclude Include="forwardrenderer.hpp" />
-    <ClInclude Include="renderqueue.hpp" />
-    <ClInclude Include="scene.hpp" />
-    <ClInclude Include="shader.hpp" />
-    <ClInclude Include="staticmanager.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\glad\GL\src\glad.c" />
-    <ClCompile Include="content.cpp" />
-    <ClCompile Include="cooktorrance.cpp" />
-    <ClCompile Include="core.cpp" />
-    <ClCompile Include="digraph.cpp" />
-    <ClCompile Include="engine.cpp" />
-    <ClCompile Include="geometry.cpp" />
-    <ClCompile Include="halfedge.cpp" />
-    <ClCompile Include="forwardrenderer.cpp" />
-    <ClCompile Include="shader.cpp" />
-    <ClCompile Include="test.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="config.json" />
-    <None Include="packages.config" />
-    <None Include="shaders\basic.frag" />
-    <None Include="shaders\basic.json" />
-    <None Include="shaders\basic.vert" />
-    <None Include="shaders\cooktorrance.frag" />
-    <None Include="shaders\cooktorrance.json" />
-    <None Include="shaders\cooktorrance.vert" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\glfw.3.3.2\build\native\glfw.targets" Condition="Exists('..\packages\glfw.3.3.2\build\native\glfw.targets')" />
-    <Import Project="..\packages\glm.0.9.9.800\build\native\glm.targets" Condition="Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" />
-    <Import Project="..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets" Condition="Exists('..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets')" />
-    <Import Project="..\packages\Assimp.3.0.0\build\native\Assimp.targets" Condition="Exists('..\packages\Assimp.3.0.0\build\native\Assimp.targets')" />
   </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\glfw.3.3.2\build\native\glfw.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glfw.3.3.2\build\native\glfw.targets'))" />
-    <Error Condition="!Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glm.0.9.9.800\build\native\glm.targets'))" />
-    <Error Condition="!Exists('..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\Assimp.3.0.0\build\native\Assimp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Assimp.3.0.0\build\native\Assimp.targets'))" />
-  </Target>
 </Project>
