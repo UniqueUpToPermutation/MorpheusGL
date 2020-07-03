@@ -19,7 +19,7 @@ namespace Morpheus {
 		delete mImporter;
 	}
 
-	ref<void> ContentFactory<Geometry>::load(const std::string& source) {
+	ref<void> ContentFactory<Geometry>::load(const std::string& source, Node& loadInto) {
 		const aiScene* pScene = mImporter->ReadFile(source.c_str(),
 			aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices |
 			aiProcess_GenUVCoords | aiProcess_CalcTangentSpace | aiProcessPreset_TargetRealtime_Quality);

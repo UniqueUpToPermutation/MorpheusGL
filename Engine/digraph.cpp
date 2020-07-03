@@ -28,7 +28,9 @@ namespace Morpheus {
 		mVertexActiveBlock(0),
 		mEdgeActiveBlock(0),
 		mEdgeCount(0),
-		mVertexCount(0) 
+		mVertexCount(0),
+		mDatasCreated(0),
+		mLookupsCreated(0)
 	{
 		mVertices = new DigraphVertexRaw[reserveVertices];
 		mVertexReserve = reserveVertices;
@@ -239,4 +241,53 @@ namespace Morpheus {
 		delete[] vmap;
 		delete[] emap;
 	}
+
+	DigraphBreadthFirstSearch::DigraphBreadthFirstSearch(DigraphVertex& start) {
+		digraph = start.graph();
+		mVisited = digraph->createVertexData<bool>();
+		mVisited.memset(false);
+		mVertexQueue.push(start.id());
+	}
+
+	DigraphBreadthFirstSearch::DigraphBreadthFirstSearch() : digraph(nullptr) { }
+
+	DigraphBreadthFirstSearch::~DigraphBreadthFirstSearch() {
+		if (digraph)
+			digraph->destroyData(mVisited);
+	}
+
+	void DigraphBreadthFirstSearch::restart(DigraphVertex& start) {
+		if (!digraph) {
+			digraph = start.graph();
+			mVisited = digraph->createVertexData<bool>();
+			mVisited.memset(false);
+		}
+		mVertexQueue = std::queue<int>();
+		mVertexQueue.push(start.id());
+	}
+
+	DigraphDepthFirstSearch::DigraphDepthFirstSearch(DigraphVertex& start) {
+		digraph = start.graph();
+		mVisited = digraph->createVertexData<bool>();
+		mVisited.memset(false);
+		mVertexStack.push(start.id());
+	}
+
+	DigraphDepthFirstSearch::DigraphDepthFirstSearch() : digraph(nullptr) { }
+
+	DigraphDepthFirstSearch::~DigraphDepthFirstSearch() {
+		if (digraph)
+			digraph->destroyData(mVisited);
+	}
+
+	void DigraphDepthFirstSearch::restart(DigraphVertex& start) {
+		if (!digraph) {
+			digraph = start.graph();
+			mVisited = digraph->createVertexData<bool>();
+			mVisited.memset(false);
+		}
+		mVertexStack = std::stack<int>();
+		mVertexStack.push(start.id());
+	}
+
 }

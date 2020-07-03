@@ -75,7 +75,7 @@ namespace Morpheus {
 		REGISTER_SHADER(CookTorranceShader, "cooktorrance");
 	}
 
-	ref<void> ContentFactory<IShader>::load(const std::string& source) {
+	ref<void> ContentFactory<IShader>::load(const std::string& source, Node& loadInto) {
 		json j;
 		ifstream f(source);
 

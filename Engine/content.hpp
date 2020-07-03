@@ -1,3 +1,13 @@
+/*
+*	Morpheus Graphics Engine
+*	Author: Philip Etter
+*
+*	File: content.hpp
+*	Description: Defines the ContentManager, which manages assets that are loaded
+*	by the engine. Loading and unloading assets is done through content factories.
+*	The ContentManager also does basic garbage collection for assets which are no
+*	longer in use.
+*/
 #pragma once
 
 #include "core.hpp"
@@ -8,7 +18,7 @@
 
 /*
 *	Every piece of content is treated as a node in the node graph.
-*	A piece of content is owned by the content manager unless otherwise specified
+*	A piece of content is owned by the content manager unless otherwise specified.
 */
 
 namespace Morpheus {
@@ -20,15 +30,14 @@ namespace Morpheus {
 		typedef void Base;
 	};
 
+	/// <summary>
+	/// An interface that all content factories must inherit from.
+	/// Defines the interface for loading and unloading assets.
+	/// </summary>
 	class IContentFactory : public IDisposable {
-	private:
-		NodeHandle mHandle;
-
 	public:
-		virtual ref<void> load(const std::string& source) = 0;
+		virtual ref<void> load(const std::string& source, Node& loadInto) = 0;
 		virtual void unload(ref<void>& ref) = 0;
-		inline NodeHandle handle() const { return mHandle; }
-		Node node() const { return graph()[mHandle]; }
 
 		friend class ContentManager;
 	};
@@ -36,6 +45,14 @@ namespace Morpheus {
 	template <typename ContentType>
 	class ContentFactory;
 
+	/// <summary>
+	/// Manages all loaded assets for the engine. Assets are loaded and unloaded from content
+	/// factories. All loaded assets are placed into the scene graph, and typically have the
+	/// content manager as one of their parents. The content manager can also do basic garbage
+	/// collection, whereby it checks for each of its children whether or not they have exactly
+	/// one parent - if they do, they are unloaded by their respective content manager and removed
+	/// from the scene graph. 
+	/// </summary>
 	class ContentManager : public IDisposable {
 	private:
 		NodeHandle mHandle;
@@ -44,105 +61,142 @@ namespace Morpheus {
 		DigraphVertexLookupView<std::string> mSources;
 
 	public:
+		/// <summary>
+		/// The handle of this content manager in the scene graph.
+		/// </summary>
+		/// <returns>The handle of this content manager.</returns>
 		NodeHandle handle() const { return mHandle; }
+		/// <summary>
+		/// The node of this content manager in the scene graph.
+		/// Do not store this value as it may change if the graph's
+		/// memory is altered.
+		/// </summary>
+		/// <returns>The node of this content manager.</returns>
 		Node node() const { return graph()[mHandle]; }
 
 		ContentManager();
 
+		/// <summary>
+		/// Add a factory to this content manager.
+		/// </summary>
+		/// <typeparam name="ContentType">The content type of the factory to add.</typeparam>
 		template <typename ContentType> void addFactory() {
 			IContentFactory* factory = new ContentFactory<ContentType>();
 			mFactories.insert(factory);
 			mTypeToFactory[NODE_TYPE(ContentType)] = factory;
-			auto v = graph().addNode<IContentFactory>(factory, mHandle);
-			factory->mHandle = graph().issueHandle(v);
 		}
 
+		/// <summary>
+		/// Remove a factory from this content manager.
+		/// </summary>
+		/// <typeparam name="ContentType">The content type of the factory to remove.</typeparam>
 		template <typename ContentType> void removeFactory() {
 			auto type = NODE_TYPE(ContentType);
 			auto factory = mTypeToFactory[type];
 			mFactories.erase(factory);
 			mTypeToFactory.erase(type);
-			graph().recallHandle(factory->getHandle());
 			delete factory;
 		}
 
+		/// <summary>
+		/// Transfer ownership of an already existing node to the content manager.
+		/// </summary>
+		/// <param name="content">The node for which to transfer ownership.</param>
 		void addContentNode(Node& content) {
-		
+			auto self = node();
+			graph().createEdge(self, content);
 		}
 
+		/// <summary>
+		/// Loads an asset for a parent node.
+		/// </summary>
+		/// <typeparam name="ContentType">Specifies the type of content. This determines which content factory is used.</typeparam>
+		/// <param name="source">The source (i.e., file path) to load from.</param>
+		/// <param name="parent">Set a parent of the newly created node.</param>
+		/// <param name="refOut">If this is not null, a ref to the loaded asset will be written to it.</param>
+		/// <returns>A node containing the asset.</returns>
 		template <typename ContentType>
-		Node loadNode(const std::string& source, Node& parent) {
+		Node load(const std::string& source, const Node& parent, ref<ContentType>* refOut = nullptr) {
+			auto& graph_ = graph();
 			Node v;
 			if (mSources.tryFind(source, &v))
 				return v;
 			else {
-				NodeType type = NODE_TYPE(ContentType);
+				// Create a vertex to load the content into
+				v = graph_.createVertex();
+				// Add the new vertex as a child of the content manager
+				graph_.createEdge(node(), v);
+				
+				// Load a ref via the correct content factory
+				auto type = NODE_TYPE(ContentType);
+				auto ref = mTypeToFactory[type]->load(source, v);
 
-				auto factory = mTypeToFactory[type];
-				auto ref = factory->load(source);
-				v = graph().addNode<CONTENT_BASE_TYPE(ContentType)>(ref, parent);
+				// Set the node description of the created node appropriately
+				auto desc = graph_.desc(v);
+				desc.type = type;
+				desc.owner = ref;
+				
+				// If a parent was passed, add the created content as a child of the parent
+				if (parent.isValid())
+					graph_.createEdge(parent, v);
+
 				mSources.set(v, source);
+
+				// Return the ref for convienience.
+				if (refOut)
+					*refOut = ref.as<ContentType>();
+
 				return v;
 			}
 		}
 
+		/// <summary>
+		/// Loads an asset for a parent node.
+		/// </summary>
+		/// <typeparam name="ContentType">Specifies the type of content. This determines which content factory is used.</typeparam>
+		/// <param name="source">The source (i.e., file path) to load from.</param>
+		/// <param name="parentHandle">Set a parent of the newly created node.</param>
+		/// <param name="refOut">If this is not null, a ref to the loaded asset will be written to it.</param>
+		/// <returns>A node containing the asset.</returns>
 		template <typename ContentType>
-		ref<ContentType> loadRef(const std::string& source, Node& parent) {
-			Node v;
-			if (mSources.tryFind(source, &v))
-				return graph().desc(v).owner.as<ContentType>();
-			else {
-				NodeType type = NODE_TYPE(ContentType);
-
-				auto factory = mTypeToFactory[type];
-				auto ref = factory->load(source);
-				v = graph().addNode(ref, type, parent);
-				mSources.set(v, source);
-				return ref.as<ContentType>();
-			}
-		}
-
-		template <typename ContentType>
-		inline Node loadNode(const std::string& source, const NodeHandle parentHandle) {
+		inline Node load(const std::string& source, const NodeHandle parentHandle, ref<ContentType>* refOut = nullptr) {
 			Node v = graph()[parentHandle];
-			return loadNode<ContentType>(source, v);
+			return load<ContentType>(source, v, refOut);
 		}
 
-		template <typename ContentType>
-		inline ref<ContentType> loadRef(const std::string& source, const NodeHandle parentHandle) {
-			Node v = graph()[parentHandle];
-			return loadRef<ContentType>(source, v);
-		}
-
+		/// <summary>
+		/// Loads an asset.
+		/// </summary>
+		/// <typeparam name="ContentType">Specifies the type of content. This determines which content factory is used.</typeparam>
+		/// <param name="source">The source (i.e., file path) to load from.</param>
+		/// <param name="refOut">If this is not null, a ref to the loaded asset will be written to it.</param>
+		/// <returns>A node containing the asset.</returns>
 		template <typename ContentType> 
-		inline Node loadNode(const std::string& source) {
+		inline Node load(const std::string& source, ref<ContentType>* refOut = nullptr) {
 			// Set self as the parent of the new object
-			return loadNode<ContentType>(source, mHandle);
+			return load<ContentType>(source, Node::invalid(), refOut);
 		}
 
-		template <typename ContentType>
-		inline ref<ContentType> loadRef(const std::string& source) {
-			// Set self as the parent of the new object
-			return loadRef<ContentType>(source, mHandle);
-		}
+		/// <summary>
+		/// Perform garbage collection for all descendents that are no longer
+		/// in use.
+		/// </summary>
+		void collectGarbage();
 
-		void unloadNode(Node& node) {
-			auto desc = graph().desc(node);
-			// Get factory from type
-			auto factory = mTypeToFactory[desc.type];
-			if (factory != nullptr)
-				factory->unload(desc.owner);
-		}
+		/// <summary>
+		/// Unload a node via its content factory and then remove it from the scene graph.
+		/// </summary>
+		/// <param name="node">The node to unload</param>
+		void unload(Node& node);
 
-		void unloadAll() {
-			for (auto it = graph()[mHandle].getOutgoingNeighbors(); it.valid(); it.next()) {
-				Node v = it();
-				unloadNode(v);
-			}
-		}
+		/// <summary>
+		/// Unload all children.
+		/// </summary>
+		void unloadAll();
 
-		void dispose() override {
-			unloadAll();
-		}
+		/// <summary>
+		/// Dispose of the content manager
+		/// </summary>
+		void dispose() override;
 	};
 }

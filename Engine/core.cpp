@@ -5,6 +5,8 @@ namespace Morpheus {
 	bool NodeMetadata::sceneChild[(uint32_t)NodeType::END];
 	bool NodeMetadata::disposable[(uint32_t)NodeType::END];
 	bool NodeMetadata::pooled[(uint32_t)NodeType::END];
+	NodeType NodeMetadata::instanceToPrototype[(uint32_t)NodeType::END];
+	NodeType NodeMetadata::prototypeToInstance[(uint32_t)NodeType::END];
 
 	template <NodeType iType> void NodeMetadata::init_() {
 		pooled[(uint32_t)iType] = IS_POOLED_<iType>::RESULT;

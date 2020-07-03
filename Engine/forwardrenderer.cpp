@@ -41,6 +41,12 @@ namespace Morpheus {
 		}
 		case NodeType::MATERIAL_INSTANCE:
 		{
+			// Found a material
+			break;
+		}
+		case NodeType::GEOMETRY_INSTANCE:
+		{
+			// Found some geometry
 			break;
 		}
 		}
@@ -71,6 +77,10 @@ namespace Morpheus {
 
 		assert(mTransformStack.empty());
 		assert(mIsStaticStack.empty());
+	}
+
+	void ForwardRenderer::draw(const Queues& renderQueues, const DrawParams& params)
+	{
 	}
 
 	void ForwardRenderer::draw(Node& scene) {

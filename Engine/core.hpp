@@ -1,6 +1,11 @@
 /*
 *	Morpheus Graphics Engine
 *	Author: Philip Etter
+*
+*	File: core.hpp
+*	Description: Defines all core functionality that the engine depends on.
+*	This principally includes the scene graph, as well as metadata for different
+*	node types in the scene graph.
 */
 
 #pragma once
@@ -95,7 +100,6 @@ namespace Morpheus {
 		// All nodes that are children of the content manager
 		CONTENT_BEGIN,
 		CONTENT_MANAGER,
-		CONTENT_FACTORY,
 		GEOMETRY,
 		MATERIAL,
 		SHADER,
@@ -158,7 +162,6 @@ namespace Morpheus {
 	SET_POOLED(GEOMETRY_INSTANCE, false);
 
 	SET_POOLED(CONTENT_MANAGER, false);
-	SET_POOLED(CONTENT_FACTORY, false);
 	SET_POOLED(GEOMETRY, false);
 	SET_POOLED(MATERIAL, false);
 	SET_POOLED(SHADER, false);
@@ -183,7 +186,6 @@ namespace Morpheus {
 	SET_SCENE_CHILD(CAMERA, true);
 
 	SET_SCENE_CHILD(CONTENT_MANAGER, false);
-	SET_SCENE_CHILD(CONTENT_FACTORY, false);
 	SET_SCENE_CHILD(GEOMETRY, false);
 	SET_SCENE_CHILD(MATERIAL, false);
 	SET_SCENE_CHILD(SHADER, false);
@@ -208,7 +210,6 @@ namespace Morpheus {
 	SET_DISPOSABLE(CAMERA, true);
 
 	SET_DISPOSABLE(CONTENT_MANAGER, true);
-	SET_DISPOSABLE(CONTENT_FACTORY, true);
 	SET_DISPOSABLE(GEOMETRY, false);
 	SET_DISPOSABLE(MATERIAL, false);
 	SET_DISPOSABLE(SHADER, false);
@@ -340,7 +341,7 @@ namespace Morpheus {
 			r.p.mHandle = PoolHandle<void>(mHandle);
 		}
 		inline static T* getAs(ref<void>& r) {
-			return PoolHandle<T>(r.p).get();
+			return static_cast<T*>(r.p.mPtr);
 		}
 	};
 
@@ -368,7 +369,7 @@ namespace Morpheus {
 	template<typename T>
 	inline T* Morpheus::ref<void>::getAs()
 	{
-		return REF_POOL_GATE_<T, IS_POOLED(NODE_TYPE(T))>::getAs(*this);
+		return REF_POOL_GATE_<T, IS_POOLED_<NODE_TYPE(T)>::RESULT>::getAs(*this);
 	}
 
 	template <typename T>
@@ -436,7 +437,7 @@ namespace Morpheus {
 		inline NodeDataView& descs() { 
 			return mDescs; 
 		}
-		inline NodeData desc(const Node& v) {
+		inline NodeData& desc(const Node& v) {
 			return mDescs[v];
 		}
 		inline NodeHandleLookupView handles() {
@@ -524,19 +525,19 @@ namespace Morpheus {
 		}
 		template <typename OwnerType>
 		inline Node addNode(ref<void> owner, Node& parent) {
-			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
+			auto v = addNode(owner, NODE_TYPE(OwnerType));
 			createEdge(parent, v);
 			return v;
 		}
 		template <typename OwnerType>
 		inline Node addNode(ref<void> owner, NodeHandle parentHandle) {
-			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
+			auto v = addNode(owner, NODE_TYPE(OwnerType));
 			createEdge(mHandles[parentHandle], v);
 			return v;
 		}
 		template <typename OwnerType>
 		inline Node addNode(ref<void> owner, const std::string& parentName) {
-			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
+			auto v = addNode(owner, NODE_TYPE(OwnerType));
 			createEdge(mNames[parentName], v);
 			return v;
 		}
@@ -666,7 +667,6 @@ namespace Morpheus {
 
 	SET_NODE_TYPE(Engine, ENGINE);
 	SET_NODE_TYPE(ContentManager, CONTENT_MANAGER);
-	SET_NODE_TYPE(IContentFactory, CONTENT_FACTORY);
 	SET_NODE_TYPE(BoundingBox, BOUNDING_BOX);
 	SET_NODE_TYPE(char, EMPTY);
 	SET_NODE_TYPE(StaticTransform, STATIC_TRANSFORM);

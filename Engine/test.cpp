@@ -5,7 +5,6 @@
 #include "cooktorrance.hpp"
 #include <GLFW/glfw3.h>
 
-using namespace std;
 using namespace Morpheus;
 
 int main() {
@@ -33,7 +32,8 @@ int main() {
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
 
-		auto shader = content().loadRef<CookTorranceShader>("shaders/cooktorrance.json");
+		ref<CookTorranceShader> shader(nullptr);
+		content().load<CookTorranceShader>("shaders/cooktorrance.json", &shader);
 
 		glm::mat4 id = glm::identity<glm::mat4>();
 

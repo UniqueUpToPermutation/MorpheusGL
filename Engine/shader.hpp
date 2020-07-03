@@ -119,7 +119,7 @@ namespace Morpheus {
 	class ContentFactory<IShader> : public IContentFactory {
 	public:
 		ContentFactory();
-		ref<void> load(const std::string& source) override;
+		ref<void> load(const std::string& source, Node& loadInto) override;
 		void unload(ref<void>& ref) override;
 		void dispose() override;
 	};

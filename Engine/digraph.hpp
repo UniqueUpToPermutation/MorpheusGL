@@ -6,6 +6,10 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <queue>
+#include <stack>
+#include <assert.h>
+#include <sstream>
 
 #include "mapcpy.hpp"
 
@@ -29,6 +33,8 @@ namespace Morpheus {
 	struct DigraphVertexLookupView;
 	template <typename T>
 	struct DigraphEdgeLookupView;
+	template <typename T>
+	struct DigraphSparseDataView;
 
 	struct DigraphVertexRaw {
 		int mInEdge;
@@ -53,10 +59,17 @@ namespace Morpheus {
 		inline explicit DigraphIterator(Digraph* ptr, int current) :
 			mPtr(ptr), mCurrent(current) { }
 
+		/// <summary>
+		/// Returns whether or not this iterator is still valid.
+		/// </summary>
+		/// <returns></returns>
 		inline bool valid() { return mCurrent != -1; }
 		inline int id() const { return mCurrent; }
 	};
 
+	/// <summary>
+	/// A vertex in a directed graph.
+	/// </summary>
 	class DigraphVertex {
 	private:
 		Digraph* mPtr;
@@ -67,16 +80,68 @@ namespace Morpheus {
 		inline explicit DigraphVertex(Digraph* ptr, int id) :
 			mPtr(ptr), mId(id) { }
 
+		/// <summary>
+		/// Get an iterator over all outgoing edges of this vertex.
+		/// </summary>
+		/// <returns>An iterator over all outgoing edges.</returns>
 		inline DigraphEdgeIteratorF getOutgoingEdges();
+		/// <summary>
+		/// Get an iterator over all ingoing edges of this vertex.
+		/// </summary>
+		/// <returns>An iterator over all ingoing edges.</returns>
 		inline DigraphEdgeIteratorB getIngoingEdges();
+		/// <summary>
+		/// Get an iterator over all children of this vertex.
+		/// </summary>
+		/// <returns>An iterator over all children.</returns>
 		inline DigraphVertexIteratorF getOutgoingNeighbors();
+		/// <summary>
+		/// Get an iterator over all parents of this vertex.
+		/// </summary>
+		/// <returns>An iterator over all parents.</returns>
 		inline DigraphVertexIteratorB getIngoingNeighbors();
+		/// <summary>
+		/// Get the id of this vertex.
+		/// </summary>
+		/// <returns>The vertex id.</returns>
 		inline int id() const { return mId; }
+		/// <summary>
+		/// Get the out degree of this vertex.
+		/// </summary>
+		/// <returns>The out degree of this vertex.</returns>
 		inline uint32_t outDegree();
+		/// <summary>
+		/// Get the in degree of this vertex.
+		/// </summary>
+		/// <returns>The in degree of this vertex.</returns>
 		inline uint32_t inDegree();
+		/// <summary>
+		/// Whether or not this is a valid vertex.
+		/// </summary>
+		/// <returns></returns>
+		inline bool isValid() const { return mId != -1; }
+		/// <summary>
+		/// Returns the graph this vertex belongs to.
+		/// </summary>
+		/// <returns>The graph this vertex belongs to.</returns>
+		inline Digraph* graph() { return mPtr; }
 
+		/// <summary>
+		/// Query data associated with this vertex by name.
+		/// </summary>
+		/// <typeparam name="T">The data type to return.</typeparam>
+		/// <param name="s">The name of the data.</param>
+		/// <returns>Data associated with this vertex.</returns>
 		template <typename T>
 		inline T& data(const std::string& s);
+
+		/// <summary>
+		/// Create an invalid vertex.
+		/// </summary>
+		/// <returns>An invalid vertex.</returns>
+		static inline DigraphVertex invalid() {
+			return DigraphVertex(nullptr, -1);
+		}
 	};
 
 	class DigraphEdge {
@@ -114,6 +179,8 @@ namespace Morpheus {
 		uint32_t mEdgeReserve;
 		uint32_t mVertexActiveBlock;
 		uint32_t mEdgeActiveBlock;
+		uint32_t mDatasCreated;
+		uint32_t mLookupsCreated;
 		int mFirstUnusedEdge;
 		int mFirstUnusedVertex;
 		float mRescaleFactor;
@@ -133,46 +200,239 @@ namespace Morpheus {
 		~Digraph();
 		Digraph(uint32_t reserveVertices, uint32_t reserveEdges);
 
+		/// <summary>
+		/// Create a vertex in the graph.
+		/// </summary>
+		/// <returns>The vertex created.</returns>
 		DigraphVertex createVertex();
+		/// <summary>
+		/// Create an edge in the graph.
+		/// </summary>
+		/// <param name="tail">The numerical id of the tail vertex of the edge to create.</param>
+		/// <param name="head">The numerical id of the head vertex of the edge to create.</param>
+		/// <returns>The edge created.</returns>
 		DigraphEdge createEdge(int tail, int head);
+		/// <summary>
+		/// Create an edge in the graph.
+		/// </summary>
+		/// <param name="tail">The tail vertex of the edge to create.</param>
+		/// <param name="head">The head vertex of the edge to create.</param>
+		/// <returns>The create edge.</returns>
 		inline DigraphEdge createEdge(DigraphVertex& tail, DigraphVertex& head) { return createEdge(tail.id(), head.id()); }
+		/// <summary>
+		/// Create an edge in the graph.
+		/// </summary>
+		/// <param name="tail">The tail vertex of the edge to create.</param>
+		/// <param name="head">The head vertex of the edge to create.</param>
+		/// <returns>The create edge.</returns>
+		inline DigraphEdge createEdge(const DigraphVertex& tail, const DigraphVertex& head) { return createEdge(tail.id(), head.id()); }
+		/// <summary>
+		/// Deletes a vertex in the graph. Removes all ingoing and outgoing edges.
+		/// </summary>
+		/// <param name="v">The vertex to delete.</param>
 		void deleteVertex(DigraphVertex& v);
+		/// <summary>
+		/// Deletes a vertex in the graph. Removes all ingoing and outgoing edges.
+		/// </summary>
+		/// <param name="v">The numerical id of the vertex to delete.</param>
 		void deleteVertex(int v);
+		/// <summary>
+		/// Deletes an edge in the graph.
+		/// </summary>
+		/// <param name="e">The edge to delete.</param>
 		void deleteEdge(DigraphEdge& e);
+		/// <summary>
+		/// Attempts to reduce the amount of memory needed to store the graph.
+		/// </summary>
+		/// <param name="bTight">Whether or not the amount of memory to use should be exactly the amount needed.</param>
 		void compress(bool bTight = false);
 
+		/// <summary>
+		/// Returns the number of edges in the graph.
+		/// </summary>
+		/// <returns>The number of edges in the graph.</returns>
 		uint32_t edgeCount() const { return mEdgeCount; }
+		/// <summary>
+		/// Returns the number of vertices in the graph.
+		/// </summary>
+		/// <returns>The number of vertices in the graph.</returns>
 		uint32_t vertexCount() const { return mVertexCount; }
 
+		/// <summary>
+		/// Returns the size of reserved memory for vertices.
+		/// </summary>
+		/// <returns>The size of the vertex reserve memory.</returns>
 		inline uint32_t vertexReserve() const { return mVertexReserve; }
+		/// <summary>
+		/// Returns the size of reserved memory for edges.
+		/// </summary>
+		/// <returns>The size of edge reserve memory.</returns>
 		inline uint32_t edgeReserve() const { return mEdgeReserve; }
+		/// <summary>
+		/// Returns the size of the memory block containing active vertices.
+		/// </summary>
+		/// <returns>The size of the memory block containing active vertices.</returns>
 		inline uint32_t vertexActiveBlock() const { return mVertexActiveBlock; }
+		/// <summary>
+		/// Returns the size of the memory block containing active edges.
+		/// </summary>
+		/// <returns>The size of the memory block containing active edges.</returns>
 		inline uint32_t edgeActiveBlock() const { return mEdgeActiveBlock; }
 
+		/// <summary>
+		/// Get a vertex by id.
+		/// </summary>
+		/// <param name="id">The id of the vertex to get.</param>
+		/// <returns>The vertex.</returns>
 		inline DigraphVertex getVertex(int id) { return DigraphVertex(this, id); }
+		/// <summary>
+		/// Get an edge by id.
+		/// </summary>
+		/// <param name="id">The id of the edge to get.</param>
+		/// <returns>The edge.</returns>
 		inline DigraphEdge getEdge(int id) { return DigraphEdge(this, id); }
 
+		/// <summary>
+		/// Gets an iterator over all edges of the graph.
+		/// </summary>
+		/// <returns>An iterator over all edges of the graph.</returns>
 		inline DigraphEdgeIteratorAll edges();
+		/// <summary>
+		/// Gets an iterator over all vertices of the graph.
+		/// </summary>
+		/// <returns>An iterator over all vertices of the graph.</returns>
 		inline DigraphVertexIteratorAll vertices();
 
+		/// <summary>
+		/// Create a new sparse data attachment of type T over the vertices.
+		/// </summary>
+		/// <typeparam name="T">The type of the data attachment.</typeparam>
+		/// <returns>A view to the data attachment.</returns>
+		template <typename T>
+		DigraphSparseDataView<T> createSparseVertexData(const T& default_);
+		/// <summary>
+		/// Create a new sparse data attachment of type T over the edges.
+		/// </summary>
+		/// <typeparam name="T">The type of the data attachment.</typeparam>
+		/// <returns>A view to the data attachment.</returns>
+		template <typename T>
+		DigraphSparseDataView<T> createSparseEdgeData(const T& default_);
+		/// <summary>
+		/// Create a new sparse data attachment of type T over the vertices.
+		/// </summary>
+		/// <param name="name">The name of the data attachment.</param>
+		/// <typeparam name="T">The type of the data attachment.</typeparam>
+		/// <returns>A view to the data attachment.</returns>
+		template <typename T>
+		DigraphSparseDataView<T> createSparseVertexData(const T& default_, const std::string& name);
+		/// <summary>
+		/// Create a new sparse data attachment of type T over the edges.
+		/// </summary>
+		/// <param name="name">The name of the data attachment.</param>
+		/// <typeparam name="T">The type of the data attachment.</typeparam>
+		/// <returns>A view to the data attachment.</returns>
+		template <typename T>
+		DigraphSparseDataView<T> createSparseEdgeData(const T& default_, const std::string& name);
+
+		/// <summary>
+		/// Create a new data attachment of type T over the vertices.
+		/// </summary>
+		/// <typeparam name="T">The type of the data attachment.</typeparam>
+		/// <returns>A view to the created data.</returns>
+		template <typename T>
+		DigraphDataView<T> createVertexData();
+
+		/// <summary>
+		/// Create a new data attachment of type T over the edges.
+		/// </summary>
+		/// <typeparam name="T">The type of the data attachment.</typeparam>
+		/// <returns>A view to the created data.</returns>
+		template <typename T>
+		DigraphDataView<T> createEdgeData();
+
+		/// <summary>
+		/// Create a new data attachment of type T over the edges.
+		/// </summary>
+		/// <typeparam name="T">The type of the data attachment.</typeparam>
+		/// <param name="name">The name of the data attachment.</param>
+		/// <returns>A view to the created data.</returns>
 		template <typename T>
 		DigraphDataView<T> createEdgeData(const std::string& name);
-
+		
+		/// <summary>
+		/// Create a new data attachment of type T over the vertices.
+		/// </summary>
+		/// <typeparam name="T">The type of the data attachment.</typeparam>
+		/// <param name="name">The name of the data attachment.</param>
+		/// <returns>A view to the created data.</returns>
 		template <typename T>
 		DigraphDataView<T> createVertexData(const std::string& name);
 
+		/// <summary>
+		/// Creates a lookup attachment of type T over the vertices.
+		/// </summary>
+		/// <typeparam name="T">The type of the lookup attachment.</typeparam>
+		/// <returns>A view to the created lookup.</returns>
+		template <typename T>
+		DigraphVertexLookupView<T> createVertexLookup();
+
+		/// <summary>
+		/// Creates a lookup attachment of type T over the edges.
+		/// </summary>
+		/// <typeparam name="T">The type of the lookup attachment.</typeparam>
+		/// <returns>A view to the created lookup.</returns>
+		template <typename T>
+		DigraphEdgeLookupView<T> createEdgeLookup();
+
+		/// <summary>
+		/// Creates a lookup attachment of type T over the vertices.
+		/// </summary>
+		/// <typeparam name="T">The type of the lookup attachment.</typeparam>
+		/// <param name="name">The name of the lookup attachment.</param>
+		/// <returns>A view to the created lookup.</returns>
 		template <typename T>
 		DigraphVertexLookupView<T> createVertexLookup(const std::string& name);
 
+		/// <summary>
+		/// Creates a lookup attachment of type T over the edges.
+		/// </summary>
+		/// <typeparam name="T">The type of the lookup attachment.</typeparam>
+		/// <param name="name">The name of the lookup attachment.</param>
+		/// <returns>A view to the created lookup.</returns>
 		template <typename T>
 		DigraphEdgeLookupView<T> createEdgeLookup(const std::string& name);
 
+		/// <summary>
+		/// Destroys a data attachment from its view.
+		/// </summary>
+		/// <typeparam name="T">The type of the data attachment</typeparam>
+		/// <param name="view">The view to the data attachment to destroy</param>
 		template <typename T>
 		void destroyData(DigraphDataView<T>& view);
 
+		/// <summary>
+		/// Destroys a data attachment from its view.
+		/// </summary>
+		/// <typeparam name="T">The type of the data attachment</typeparam>
+		/// <param name="view">The view to the data attachment to destroy</param>
+		template <typename T>
+		void destroyData(DigraphSparseDataView<T>& view);
+
+		/// <summary>
+		/// Get an edge data attachment by name.
+		/// </summary>
+		/// <typeparam name="T">The type of the attachment.</typeparam>
+		/// <param name="name">The name of the attachment.</param>
+		/// <returns>A view to the data attachment.</returns>
 		template <typename T>
 		inline DigraphDataView<T> getEdgeData(const std::string& name);
 
+		/// <summary>
+		/// Get a vertex data attachment by name.
+		/// </summary>
+		/// <typeparam name="T">The type of the attachment.</typeparam>
+		/// <param name="name">The name of the attachment.</param>
+		/// <returns>A view to the data attachment.</returns>
 		template <typename T>
 		inline DigraphDataView<T> getVertexData(const std::string& name);
 
@@ -196,7 +456,12 @@ namespace Morpheus {
 
 	template <typename T>
 	class DigraphData;
+	template <typename T>
+	class DigraphSparseData;
 
+	/// <summary>
+	/// An interface to a graph data attachment.
+	/// </summary>
 	class IDigraphData {
 	protected:
 		virtual void resize(uint32_t newSize) = 0;
@@ -214,6 +479,10 @@ namespace Morpheus {
 		friend class Digraph;
 	};
 
+	/// <summary>
+	/// A digraph data attachment by type.
+	/// </summary>
+	/// <typeparam name="T">The type of the attachment.</typeparam>
 	template <typename T>
 	class DigraphData : public IDigraphData {
 	protected:
@@ -247,10 +516,10 @@ namespace Morpheus {
 			return mName;
 		}
 
-		explicit DigraphData(Digraph* parent, const std::string& name) :
+		explicit DigraphData(Digraph* parent, const std::string& name, const DigraphDataType type_) :
 			mParent(parent), mName(name) {
 
-			switch (type()) {
+			switch (type_) {
 			case DigraphDataType::EDGE:
 				mDataSize = parent->edgeReserve();
 				break;
@@ -258,6 +527,7 @@ namespace Morpheus {
 				mDataSize = parent->vertexReserve();
 				break;
 			default:
+				assert(false);
 				mDataSize = parent->vertexReserve();
 				break;
 			}
@@ -274,16 +544,65 @@ namespace Morpheus {
 	};
 
 
+	/// <summary>
+	/// A digraph data attachment by type.
+	/// </summary>
+	/// <typeparam name="T">The type of the attachment.</typeparam>
+	template <typename T>
+	class DigraphSparseData : public IDigraphData {
+	protected:
+		Digraph* mParent;
+		std::unordered_map<int, T> mMap;
+		std::string mName;
+		T mDefault;
+
+		virtual DigraphDataType type() const {
+			return DigraphDataType::UNKNOWN;
+		}
+
+		void resize(const uint32_t newSize) override {
+		}
+		void compress(const int map[], const uint32_t mapSize, const uint32_t newSize) override {
+
+			std::unordered_map<int, T> newMap;
+
+			for (auto& it : mMap)
+				newMap[map[it.first]] = it.second;
+
+			std::swap(mMap, newMap);
+		}
+
+	public:
+
+		std::string name() const override {
+			return mName;
+		}
+
+		explicit DigraphSparseData(Digraph* parent, const std::string& name, const T& default_) :
+			mParent(parent), mName(name), mDefault(default_) {
+		}
+
+		friend struct DigraphSparseDataView<T>;
+	};
+
+
 	enum class DigraphLookupType {
 		VERTEX,
 		EDGE
 	};
 
+	/// <summary>
+	/// An interface to a digraph lookup attachment.
+	/// </summary>
 	class IDigraphLookup {
 	public:
 		virtual void applyMap(const int map[], const uint32_t mapSize) = 0;
 	};
 
+	/// <summary>
+	/// A digraph lookup attachment by type.
+	/// </summary>
+	/// <typeparam name="T">The type of the lookup.</typeparam>
 	template <typename T>
 	class DigraphLookup : public IDigraphLookup {
 	private:
@@ -319,6 +638,10 @@ namespace Morpheus {
 		friend struct DigraphEdgeLookupView<T>;
 	};
 
+	/// <summary>
+	/// A view to a lookup attachment on vertices of a graph.
+	/// </summary>
+	/// <typeparam name="T">The type of the lookup</typeparam>
 	template <typename T>
 	struct DigraphVertexLookupView {
 	private:
@@ -331,12 +654,27 @@ namespace Morpheus {
 		inline DigraphVertex operator[](const T& t) {
 			return mLookup->mParent->getVertex(mLookup->mTtoId[t]);
 		}
+		/// <summary>
+		/// Assigns a vertex to a value in this lookup.
+		/// </summary>
+		/// <param name="v">The vertex to assign to this value.</param>
+		/// <param name="t">The value.</param>
 		inline void set(const DigraphVertex& v, const T& t) {
 			mLookup->mTtoId[t] = v.id();
 		}
+		/// <summary>
+		/// Clear this value in the lookup.
+		/// </summary>
+		/// <param name="t">The value to clear.</param>
 		inline void clear(const T& t) {
 			mLookup->mTtoId.erase(t);
 		}
+		/// <summary>
+		/// Try to find this value in the lookup.
+		/// </summary>
+		/// <param name="t">The value to find.</param>
+		/// <param name="out">The vertex found.</param>
+		/// <returns>Whether or not a vertex was found.</returns>
 		inline bool tryFind(const T& t, DigraphVertex* out) {
 			auto it = mLookup->mTtoId.find(t);
 			if (it == mLookup->mTtoId.end())
@@ -348,6 +686,10 @@ namespace Morpheus {
 		}
 	};
 
+	/// <summary>
+	/// A view to a lookup attachment on edges of a graph.
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
 	template <typename T>
 	struct DigraphEdgeLookupView {
 	private:
@@ -360,12 +702,27 @@ namespace Morpheus {
 		inline DigraphEdge operator[](const T& t) {
 			mLookup->mParent->getEdge(mLookup->mTtoId[t]);
 		}
+		/// <summary>
+		/// Assigns a vertex to a value in this lookup.
+		/// </summary>
+		/// <param name="v">The vertex to assign to this value.</param>
+		/// <param name="t">The value.</param>
 		inline void set(const DigraphEdge& e, const T& t) {
 			mLookup->mTtoId[t] = e.id();
 		}
+		/// <summary>
+		/// Clear this value in the lookup.
+		/// </summary>
+		/// <param name="t">The value to clear.</param>
 		inline void clear(const T& t) {
 			mLookup->mTtoId.erase(t);
 		}
+		/// <summary>
+		/// Try to find this value in the lookup.
+		/// </summary>
+		/// <param name="t">The value to find.</param>
+		/// <param name="out">The vertex found.</param>
+		/// <returns>Whether or not a vertex was found.</returns>
 		inline bool tryFind(const T& t, DigraphVertex* out) {
 			auto it = mLookup->mTtoId.find(t);
 			if (it == mLookup->mTtoId.end())
@@ -386,7 +743,7 @@ namespace Morpheus {
 
 	public:
 		explicit inline DigraphEdgeData(Digraph* parent, const std::string& name) :
-			DigraphData<T>(parent, name) { }
+			DigraphData<T>(parent, name, DigraphDataType::EDGE) { }
 	};
 
 	template <typename T>
@@ -398,9 +755,37 @@ namespace Morpheus {
 
 	public:
 		explicit inline DigraphVertexData(Digraph* parent, const std::string& name) :
-			DigraphData<T>(parent, name) { }
+			DigraphData<T>(parent, name, DigraphDataType::VERTEX) { }
 	};
 
+	template <typename T>
+	class DigraphSparseVertexData : public DigraphSparseData<T> {
+	protected:
+		DigraphDataType type() const override {
+			return DigraphDataType::VERTEX;
+		}
+
+	public:
+		explicit inline DigraphSparseVertexData(Digraph* parent, const std::string& name, const T& default_) :
+			DigraphSparseData<T>(parent, name, default_) { }
+	};
+
+	template <typename T>
+	class DigraphSparseEdgeData : public DigraphSparseData<T> {
+	protected:
+		DigraphDataType type() const override {
+			return DigraphDataType::EDGE;
+		}
+
+	public:
+		explicit inline DigraphSparseEdgeData(Digraph* parent, const std::string& name, const T& default_) :
+			DigraphSparseData<T>(parent, name, default_) { }
+	};
+
+	/// <summary>
+	/// A view to a data attachment of a directed graph.
+	/// </summary>
+	/// <typeparam name="T">The type of the data.</typeparam>
 	template <typename T>
 	struct DigraphDataView {
 	private:
@@ -410,11 +795,48 @@ namespace Morpheus {
 		explicit inline DigraphDataView(DigraphData<T>* ptr) : mPtr(ptr) { }
 		explicit inline DigraphDataView() : mPtr(nullptr) { }
 
+		inline void memset(const T& val) {
+			for (uint32_t i = 0; i < mPtr->mDataSize; ++i)
+				mPtr->mData[i] = val;
+		}
 		inline DigraphDataType type() const { return mPtr->type(); }
 		inline T& operator[](const int id) { return mPtr->mData[id]; }
 		inline T& operator[](const DigraphVertex& v) { return mPtr->mData[v.id()]; }
 		inline T& operator[](const DigraphEdge& e) { return mPtr->mData[e.id()]; }
-		inline std::string& name() { return mPtr->name(); }
+		inline std::string name() { return mPtr->name(); }
+
+		friend class Digraph;
+	};
+
+	/// <summary>
+	/// A view to a sparse data attachment of a directed graph.
+	/// </summary>
+	/// <typeparam name="T">The type of the data.</typeparam>
+	template <typename T>
+	struct DigraphSparseDataView {
+	private:
+		DigraphSparseData<T>* mPtr;
+
+	public:
+		explicit inline DigraphSparseDataView(DigraphSparseData<T>* ptr) : mPtr(ptr) { }
+		explicit inline DigraphSparseDataView() : mPtr(nullptr) { }
+
+		inline void memset(const T& val) {
+			mPtr->mDefault = val;
+			mPtr->mMap.clear();
+		}
+		inline DigraphDataType type() const { return mPtr->type(); }
+		inline void set(const DigraphVertex& v, const T& val) {
+			mPtr->mMap[v.id()] = val;
+		}
+		inline T get(const DigraphVertex& v) {
+			auto it = mPtr->mMap.find(v.id());
+			if (it == mPtr->mMap.end())
+				return mPtr->mDefault;
+			else
+				return it->second;
+		}
+		inline std::string name() const { return mPtr->name(); }
 
 		friend class Digraph;
 	};
@@ -532,6 +954,69 @@ namespace Morpheus {
 		}
 	};
 
+	/// <summary>
+	/// An iterator for a depth first search of a digraph starting at a given node.
+	/// </summary>
+	class DigraphDepthFirstSearch {
+	private:
+		std::stack<int> mVertexStack;
+		DigraphDataView<bool> mVisited;
+		Digraph* digraph;
+
+	public:
+		DigraphDepthFirstSearch(DigraphVertex& start);
+		DigraphDepthFirstSearch();
+		~DigraphDepthFirstSearch();
+
+		void restart(DigraphVertex& start);
+
+		inline bool valid() {
+			return !mVertexStack.empty();
+		}
+
+		inline DigraphVertex next() {
+			DigraphVertex v(digraph, mVertexStack.top());
+			mVertexStack.pop();
+			for (auto it = v.getOutgoingNeighbors(); it.valid(); it.next()) {
+				auto neighbor = it();
+				if (!mVisited[neighbor])
+					mVertexStack.push(neighbor.id());
+			}
+			return v;
+		}
+	};
+
+	/// <summary>
+	/// An iterator for a breadth first search of a digraph starting at a given node.
+	/// </summary>
+	class DigraphBreadthFirstSearch {
+	private:
+		std::queue<int> mVertexQueue;
+		DigraphDataView<bool> mVisited;
+		Digraph* digraph;
+
+	public:
+		DigraphBreadthFirstSearch(DigraphVertex& start);
+		DigraphBreadthFirstSearch();
+		~DigraphBreadthFirstSearch();
+		void restart(DigraphVertex& start);
+
+		inline bool valid() {
+			return !mVertexQueue.empty();
+		}
+
+		inline DigraphVertex next() {
+			DigraphVertex v(digraph, mVertexQueue.front());
+			mVertexQueue.pop();
+			for (auto it = v.getOutgoingNeighbors(); it.valid(); it.next()) {
+				auto neighbor = it();
+				if (!mVisited[neighbor])
+					mVertexQueue.push(neighbor.id());
+			}
+			return v;
+		}
+	};
+
 	inline DigraphVertex DigraphEdge::head() {
 		return DigraphVertex(mPtr, mPtr->mEdges[mId].mHead);
 	}
@@ -561,9 +1046,29 @@ namespace Morpheus {
 	}
 
 	template <typename T>
+	DigraphDataView<T> Digraph::createVertexData() {
+		std::stringstream s;
+		s << "__unamed__";
+		s << mDatasCreated;
+		s << "__";
+		return createVertexData<T>(s.str());
+	}
+
+	template <typename T>
+	DigraphDataView<T> Digraph::createEdgeData() {
+		std::stringstream s;
+		s << "__unamed__";
+		s << mDatasCreated;
+		s << "__";
+		return createEdgeData<T>(s.str());
+	}
+
+
+	template <typename T>
 	DigraphDataView<T> Digraph::createEdgeData(const std::string& name) {
 		auto ptr = new DigraphEdgeData<T>(this, name);
 		mEdgeDatas[name] = ptr;
+		++mDatasCreated;
 		return DigraphDataView<T>(ptr);
 	}
 
@@ -571,6 +1076,7 @@ namespace Morpheus {
 	DigraphDataView<T> Digraph::createVertexData(const std::string& name) {
 		auto ptr = new DigraphVertexData<T>(this, name);
 		mVertexDatas[name] = ptr;
+		++mDatasCreated;
 		return DigraphDataView<T>(ptr);
 	}
 
@@ -578,10 +1084,23 @@ namespace Morpheus {
 	void Digraph::destroyData(DigraphDataView<T>& view) {
 		switch (view.type()) {
 		case DigraphDataType::VERTEX:
-			mVertexDatas.erase(view->name());
+			mVertexDatas.erase(view.name());
 			break;
 		case DigraphDataType::EDGE:
-			mEdgeDatas.erase(view->name());
+			mEdgeDatas.erase(view.name());
+			break;
+		}
+		delete view.mPtr;
+	}
+
+	template <typename T>
+	void Digraph::destroyData(DigraphSparseDataView<T>& view) {
+		switch (view.type()) {
+		case DigraphDataType::VERTEX:
+			mVertexDatas.erase(view.name());
+			break;
+		case DigraphDataType::EDGE:
+			mEdgeDatas.erase(view.name());
 			break;
 		}
 		delete view.mPtr;
@@ -624,6 +1143,7 @@ namespace Morpheus {
 	DigraphVertexLookupView<T> Digraph::createVertexLookup(const std::string& name) {
 		auto lookup = new DigraphLookup<T>(this, DigraphLookupType::VERTEX);
 		mVertexLookups[name] = lookup;
+		++mLookupsCreated;
 		return DigraphVertexLookupView<T>(lookup);
 	}
 
@@ -631,7 +1151,60 @@ namespace Morpheus {
 	DigraphEdgeLookupView<T> Digraph::createEdgeLookup(const std::string& name) {
 		auto lookup = new DigraphLookup<T>(this, DigraphLookupType::EDGE);
 		mEdgeLookups[name] = lookup;
+		++mLookupsCreated;
 		return DigraphEdgeLookupView<T>(lookup);
+	}
+
+	template <typename T>
+	DigraphVertexLookupView<T> Digraph::createVertexLookup() {
+		std::stringstream s;
+		s << "__unamed__";
+		s << mLookupsCreated;
+		s << "__";
+		return createVertexLookup(s.str());
+	}
+
+	template <typename T>
+	DigraphEdgeLookupView<T> Digraph::createEdgeLookup() {
+		std::stringstream s;
+		s << "__unamed__";
+		s << mLookupsCreated;
+		s << "__";
+		return createEdgeLookup(s.str());
+	}
+
+	template <typename T>
+	DigraphSparseDataView<T> Digraph::createSparseVertexData(const T& default_) {
+		std::stringstream s;
+		s << "__unamed__";
+		s << mDatasCreated;
+		s << "__";
+		return createSparseVertexData<T>(default_, s.str());
+	}
+
+	template <typename T>
+	DigraphSparseDataView<T> Digraph::createSparseEdgeData(const T& default_) {
+		std::stringstream s;
+		s << "__unamed__";
+		s << mDatasCreated;
+		s << "__";
+		return createSparseEdgeData<T>(default_, s.str());
+	}
+	
+	template <typename T>
+	DigraphSparseDataView<T> Digraph::createSparseVertexData(const T& default_, const std::string& name) {
+		DigraphSparseVertexData<T>* dat = new DigraphSparseVertexData<T>(this, name, default_);
+		mVertexDatas[name] = dat;
+		++mDatasCreated;
+		return DigraphSparseDataView<T>(dat);
+	}
+
+	template <typename T>
+	DigraphSparseDataView<T> Digraph::createSparseEdgeData(const T& default_, const std::string& name) {
+		DigraphSparseEdgeData<T>* dat = new DigraphSparseEdgeData<T>(this, name, default_);
+		mEdgeDatas[name] = dat;
+		++mDatasCreated;
+		return DigraphSparseDataView<T>(dat);
 	}
 }	
 
