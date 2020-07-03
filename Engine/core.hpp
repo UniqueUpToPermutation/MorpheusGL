@@ -1,3 +1,8 @@
+/*
+*	Morpheus Graphics Engine
+*	Author: Philip Etter
+*/
+
 #pragma once
 
 #include "json.hpp"
@@ -5,7 +10,7 @@
 #include "pool.hpp"
 
 #include <glm/glm.hpp>
-#include <glm/ext/quaternion_float.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <string>
 
 #define HANDLE_INVALID 0
@@ -32,6 +37,11 @@
 
 #define NODE_TYPE(OwnerType) NODE_TYPE_<typename BASE_TYPE_<OwnerType>::RESULT>::RESULT
 
+#define DEF_INSTANCE(InstanceType, NodeType_) template<> struct INSTANCE_TO_PROTOTYPE_<NodeType::InstanceType> \
+	{ static const NodeType RESULT = NodeType::NodeType_; }; \
+	template<> struct PROTOTYPE_TO_BASE_<NodeType::NodeType_> \
+	{ static const NodeType RESULT = NodeType::InstanceType; } ;
+
 struct GLFWwindow;
 
 namespace Morpheus {
@@ -41,6 +51,7 @@ namespace Morpheus {
 	struct Transform;
 	class IContentFactory;
 
+	typedef DigraphVertex Node;
 	typedef uint32_t NodeHandle;
 	
 	class IDisposable {
@@ -52,13 +63,7 @@ namespace Morpheus {
 		FORWARD
 	};
 
-	class IRenderer : public IDisposable {
-	public:
-		virtual void init() = 0;
-		virtual void draw(DigraphVertex& scene) = 0;
-		virtual NodeHandle handle() const = 0;
-		virtual RendererType getType() const = 0;
-	};
+	class IRenderer;
 
 	struct BoundingBox {
 		glm::vec3 mLower;
@@ -73,14 +78,18 @@ namespace Morpheus {
 
 		// All nodes that are found inside of a scene
 		SCENE_BEGIN,
+		CAMERA,
 		EMPTY,
 		SCENE_ROOT,
 		LOGIC,
-		TRANSFORM,
+		STATIC_TRANSFORM,
+		DYNAMIC_TRANSFORM,
 		REGION,
 		BOUNDING_BOX,
 		STATIC_OBJECT_MANAGER,
 		DYNAMIC_OBJECT_MANAGER,
+		MATERIAL_INSTANCE,
+		GEOMETRY_INSTANCE,
 		SCENE_END,
 
 		// All nodes that are children of the content manager
@@ -116,10 +125,6 @@ namespace Morpheus {
 	struct IS_POOLED_ {
 		static const bool RESULT = false;
 	};
-	template <NodeType> 
-	struct IS_CONTENT_ {
-		static const bool RESULT = false;
-	};
 	template <NodeType>
 	struct IS_SCENE_CHILD_ {
 		static const bool RESULT = true;
@@ -128,17 +133,29 @@ namespace Morpheus {
 	struct IS_DISPOSABLE_ {
 		static const bool RESULT = true;
 	};
+	template <NodeType t>
+	struct INSTANCE_TO_PROTOTYPE_ {
+		static const NodeType RESULT = t;
+	};
+	template <NodeType t>
+	struct PROTOTYPE_TO_BASE_ {
+		static const NodeType RESULT = t;
+	};
 
 	// IS_POOLED Flag
 	SET_POOLED(ENGINE, false);
 	SET_POOLED(RENDERER, false);
 	SET_POOLED(EMPTY, false);
 	SET_POOLED(LOGIC, false);
-	SET_POOLED(TRANSFORM, true);
+	SET_POOLED(STATIC_TRANSFORM, true);
+	SET_POOLED(DYNAMIC_TRANSFORM, true);
 	SET_POOLED(REGION, false);
 	SET_POOLED(BOUNDING_BOX, true);
 	SET_POOLED(STATIC_OBJECT_MANAGER, false);
 	SET_POOLED(DYNAMIC_OBJECT_MANAGER, false);
+	SET_POOLED(CAMERA, false);
+	SET_POOLED(MATERIAL_INSTANCE, false);
+	SET_POOLED(GEOMETRY_INSTANCE, false);
 
 	SET_POOLED(CONTENT_MANAGER, false);
 	SET_POOLED(CONTENT_FACTORY, false);
@@ -152,39 +169,18 @@ namespace Morpheus {
 	SET_POOLED(TEXTURE_2D_ARRAY, false);
 	SET_POOLED(STATIC_MESH, false);
 
-	// IS_CONTENT Flag
-	SET_CONTENT(ENGINE, false);
-	SET_CONTENT(RENDERER, false);
-	SET_CONTENT(EMPTY, false);
-	SET_CONTENT(LOGIC, false);
-	SET_CONTENT(TRANSFORM, false);
-	SET_CONTENT(REGION, false);
-	SET_CONTENT(BOUNDING_BOX, false);
-	SET_CONTENT(STATIC_OBJECT_MANAGER, false);
-	SET_CONTENT(DYNAMIC_OBJECT_MANAGER, false);
-
-	SET_CONTENT(CONTENT_MANAGER, true);
-	SET_CONTENT(CONTENT_FACTORY, true);
-	SET_CONTENT(GEOMETRY, true);
-	SET_CONTENT(MATERIAL, true);
-	SET_CONTENT(SHADER, true);
-	SET_CONTENT(TEXTURE_1D, true);
-	SET_CONTENT(TEXTURE_2D, true);
-	SET_CONTENT(TEXTURE_3D, true);
-	SET_CONTENT(CUBE_MAP, true);
-	SET_CONTENT(TEXTURE_2D_ARRAY, true);
-	SET_CONTENT(STATIC_MESH, true);
-
 	// IS_SCENE_CHILD Flag
 	SET_SCENE_CHILD(ENGINE, false);
 	SET_SCENE_CHILD(RENDERER, false);
 	SET_SCENE_CHILD(EMPTY, true);
 	SET_SCENE_CHILD(LOGIC, true);
-	SET_SCENE_CHILD(TRANSFORM, true);
+	SET_SCENE_CHILD(STATIC_TRANSFORM, true);
+	SET_SCENE_CHILD(DYNAMIC_TRANSFORM, true);
 	SET_SCENE_CHILD(REGION, true);
 	SET_SCENE_CHILD(BOUNDING_BOX, true);
 	SET_SCENE_CHILD(STATIC_OBJECT_MANAGER, true);
 	SET_SCENE_CHILD(DYNAMIC_OBJECT_MANAGER, true);
+	SET_SCENE_CHILD(CAMERA, true);
 
 	SET_SCENE_CHILD(CONTENT_MANAGER, false);
 	SET_SCENE_CHILD(CONTENT_FACTORY, false);
@@ -203,11 +199,13 @@ namespace Morpheus {
 	SET_DISPOSABLE(RENDERER, true);
 	SET_DISPOSABLE(EMPTY, false);
 	SET_DISPOSABLE(LOGIC, true);
-	SET_DISPOSABLE(TRANSFORM, false);
+	SET_DISPOSABLE(STATIC_TRANSFORM, false);
+	SET_DISPOSABLE(DYNAMIC_TRANSFORM, false);
 	SET_DISPOSABLE(REGION, true);
 	SET_DISPOSABLE(BOUNDING_BOX, false);
 	SET_DISPOSABLE(STATIC_OBJECT_MANAGER, true);
 	SET_DISPOSABLE(DYNAMIC_OBJECT_MANAGER, true);
+	SET_DISPOSABLE(CAMERA, true);
 
 	SET_DISPOSABLE(CONTENT_MANAGER, true);
 	SET_DISPOSABLE(CONTENT_FACTORY, true);
@@ -224,36 +222,79 @@ namespace Morpheus {
 	template <typename T>
 	struct ref;
 
+	/// <summary>
+	/// A static class used to obtain template metaprogramming values during runtime.
+	/// </summary>
 	class NodeMetadata {
 	public:
 		typedef void (*disposer)(ref<void>&);
 
 	private:
 		static bool pooled[(uint32_t)NodeType::END];
-		static bool content[(uint32_t)NodeType::END];
 		static bool sceneChild[(uint32_t)NodeType::END];
 		static bool disposable[(uint32_t)NodeType::END];
+		static NodeType instanceToPrototype[(uint32_t)NodeType::END];
+		static NodeType prototypeToInstance[(uint32_t)NodeType::END];
 
 		template <NodeType iType> 
 		static void init_();
 		template <> 
 		static void init_<NodeType::END>();
 
-	public:
 		static void init();
-		static inline bool isPooled(NodeType t) { return pooled[(uint32_t)t]; }
-		static inline bool isContent(NodeType t) { return content[(uint32_t)t]; }
-		static inline bool isSceneChild(NodeType t) { return sceneChild[(uint32_t)t]; }
-		static inline bool isDisposable(NodeType t) { return disposable[(uint32_t)t]; }
-	};
 
-	SET_NODE_TYPE(Engine, ENGINE);
-	SET_NODE_TYPE(ContentManager, CONTENT_MANAGER);
-	SET_NODE_TYPE(IContentFactory, CONTENT_FACTORY);
-	SET_NODE_TYPE(BoundingBox, BOUNDING_BOX);
-	SET_NODE_TYPE(char, EMPTY);
-	SET_NODE_TYPE(Transform, TRANSFORM);
-	SET_NODE_TYPE(IRenderer, RENDERER);
+	public:
+		/// <summary>
+		/// Returns whether or not the given node type is a pooled type. Pooled types
+		/// are allocated from an object pool and must be referenced through a Pool handle,
+		/// as the memory for the object may be moved during runtime.
+		/// </summary>
+		/// <param name="t">The type to query.</param>
+		/// <returns>Whether or not t is a pooled type.</returns>
+		static inline bool isPooled(NodeType t) { return pooled[(uint32_t)t]; }
+
+		/// <summary>
+		/// Returns whether or not the given node type is a scene child. Scene children are
+		/// the only nodes which may be traversed by the renderer. Anything which is not a scene
+		/// child is ignored by the renderer. Note that some node types may be prototypes for instances
+		/// which are scene children, even if they themselves are not.
+		/// </summary>
+		/// <param name="t">The type to query.</param>
+		/// <returns>Whether or not t is a scene child type.</returns>
+		static inline bool isSceneChild(NodeType t) { return sceneChild[(uint32_t)t]; }
+		
+		/// <summary>
+		/// Returns whether or not this node type implements the IDisposable interface. Disposable nodes
+		/// typically contain memory that is not managed by the ContentManager or a Pool and must be
+		/// deallocated separately.
+		/// </summary>
+		/// <param name="t">The type to query.</param>
+		/// <returns>Whether or not t is a disposable type.</returns>
+		static inline bool isDisposable(NodeType t) { return disposable[(uint32_t)t]; }
+
+		/// <summary>
+		/// Gets the instance type of a prototype type. Some types have instance versions, i.e., MATERIAL
+		/// and MATERIAL_INSTANCE, that may have different properties. For example, MATERIAL_INSTANCE is
+		/// a scene child, but MATERIAL is not. This means that the renderer will ignore a MATERIAL node,
+		/// but not a MATERIAL_INSTANCE node, a distinction which is used for garbage collection by the
+		/// ContentManager. You must register instance types with the DEF_INSTANCE macro. if an instance
+		/// type is not registered, the function will return t.
+		/// </summary>
+		/// <param name="t">The type to query.</param>
+		/// <returns>The instance type of t.</returns>
+		static inline NodeType getInstanceType(NodeType t) { return prototypeToInstance[(uint32_t)t]; }
+
+		/// <summary>
+		/// The opposite of getInstanceType. Given an instance type, i.e., MATERIAL_INSTANCE, this returns
+		/// the prototype type, i.e., MATERIAL. You must register instance types with the DEF_INSTANCE macro. 
+		/// if an instance type is not registered, the function will return t.
+		/// </summary>
+		/// <param name="t">The type to query.</param>
+		/// <returns>The prototype type of t.</returns>
+		static inline NodeType getPrototypeType(NodeType t) { return instanceToPrototype[(uint32_t)t]; }
+
+		friend class Engine;
+	};
 
 	template <>
 	struct ref<void> {
@@ -280,10 +321,10 @@ namespace Morpheus {
 	};
 
 	template <typename T, bool pooled>
-	struct ref_pool_gate;
+	struct REF_POOL_GATE_;
 
 	template <typename T>
-	struct ref_pool_gate<T, true> {
+	struct REF_POOL_GATE_<T, true> {
 		PoolHandle<T> mHandle;
 		inline T* get() { return mHandle.get(); }
 		inline void from(T* ptr) {
@@ -304,7 +345,7 @@ namespace Morpheus {
 	};
 
 	template <typename T>
-	struct ref_pool_gate<T, false> {
+	struct REF_POOL_GATE_<T, false> {
 		T* mPtr;
 		inline T* get() { return mPtr; }
 		inline void from(T* newPtr) {
@@ -327,13 +368,13 @@ namespace Morpheus {
 	template<typename T>
 	inline T* Morpheus::ref<void>::getAs()
 	{
-		return ref_pool_gate<T, IS_POOLED(NODE_TYPE(T))>::getAs(*this);
+		return REF_POOL_GATE_<T, IS_POOLED(NODE_TYPE(T))>::getAs(*this);
 	}
 
 	template <typename T>
 	struct ref {
 	private:
-		ref_pool_gate<T, IS_POOLED_<NODE_TYPE_<typename 
+		REF_POOL_GATE_<T, IS_POOLED_<NODE_TYPE_<typename 
 			BASE_TYPE_<T>::RESULT>::RESULT>::RESULT> mPoolGate;
 
 	public:
@@ -380,6 +421,9 @@ namespace Morpheus {
 	typedef DigraphVertexLookupView<NodeHandle> NodeHandleLookupView;
 	typedef DigraphVertexLookupView<std::string> NodeNameLookupView;
 
+	/// <summary>
+	/// A directed graph containing all nodes of the current engine instance.
+	/// </summary>
 	class NodeGraph : public Digraph {
 	private:
 		// Descriptions of the types and owners of each node
@@ -392,7 +436,7 @@ namespace Morpheus {
 		inline NodeDataView& descs() { 
 			return mDescs; 
 		}
-		inline NodeData desc(const DigraphVertex& v) {
+		inline NodeData desc(const Node& v) {
 			return mDescs[v];
 		}
 		inline NodeHandleLookupView handles() {
@@ -401,14 +445,14 @@ namespace Morpheus {
 		inline NodeNameLookupView names() {
 			return mNames;
 		}
-		inline DigraphVertex operator[](const NodeHandle handle) {
+		inline Node operator[](const NodeHandle handle) {
 			return mHandles[handle];
 		}
-		inline DigraphVertex operator[](const std::string& name) {
+		inline Node operator[](const std::string& name) {
 			return mNames[name];
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerType* owner, NodeType type) {
+		inline Node addNode(OwnerType* owner, NodeType type) {
 			NodeData data;
 			data.type = type;
 			data.owner = ref<void>(owner);
@@ -417,43 +461,43 @@ namespace Morpheus {
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerType* owner, NodeType type, DigraphVertex& parent) {
+		inline Node addNode(OwnerType* owner, NodeType type, Node& parent) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(parent, v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerType* owner, NodeType type, NodeHandle parentHandle) {
+		inline Node addNode(OwnerType* owner, NodeType type, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(mHandles[parentHandle], v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerType* owner, NodeType type, const std::string& parentName) {
+		inline Node addNode(OwnerType* owner, NodeType type, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, type);
 			createEdge(mNames[parentName], v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerType* owner, DigraphVertex& parent) {
+		inline Node addNode(OwnerType* owner, Node& parent) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(parent, v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerType* owner, NodeHandle parentHandle) {
+		inline Node addNode(OwnerType* owner, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
-			DigraphVertex u = mHandles[parentHandle];
+			Node u = mHandles[parentHandle];
 			createEdge(u, v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(OwnerType* owner, const std::string& parentName) {
+		inline Node addNode(OwnerType* owner, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(mNames[parentName], v);
 			return v;
 		}
-		inline DigraphVertex addNode(ref<void> owner, NodeType type) {
+		inline Node addNode(ref<void> owner, NodeType type) {
 			NodeData data;
 			data.type = type;
 			data.owner = owner;
@@ -461,56 +505,107 @@ namespace Morpheus {
 			mDescs[v] = data;
 			return v;
 		}
-		inline DigraphVertex addNode(ref<void> owner, NodeType type, DigraphVertex& parent) {
+		inline Node addNode(ref<void> owner, NodeType type, Node& parent) {
 			auto v = addNode(owner, type);
 			createEdge(parent, v);
 			return v;
 		}
-		inline DigraphVertex addNode(ref<void> owner, NodeType type, NodeHandle parentHandle) {
+		inline Node addNode(ref<void> owner, NodeType type, NodeHandle parentHandle) {
 			auto v = addNode(owner, type);
 			auto p = mHandles[parentHandle];
 			createEdge(p, v);
 			return v;
 		}
-		inline DigraphVertex addNode(ref<void> owner, NodeType type, const std::string& parentName) {
+		inline Node addNode(ref<void> owner, NodeType type, const std::string& parentName) {
 			auto v = addNode(owner, type);
 			auto p = mNames[parentName];
 			createEdge(p, v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(ref<void> owner, DigraphVertex& parent) {
+		inline Node addNode(ref<void> owner, Node& parent) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(parent, v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(ref<void> owner, NodeHandle parentHandle) {
+		inline Node addNode(ref<void> owner, NodeHandle parentHandle) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(mHandles[parentHandle], v);
 			return v;
 		}
 		template <typename OwnerType>
-		inline DigraphVertex addNode(ref<void> owner, const std::string& parentName) {
+		inline Node addNode(ref<void> owner, const std::string& parentName) {
 			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
 			createEdge(mNames[parentName], v);
 			return v;
 		}
 
-		inline DigraphVertex addNode(Engine* owner) {
+		/// <summary>
+		/// Make an instance of the node type. To automatically add the prototype 
+		/// as a child of the instance, use makeContentInstance instead.
+		/// </summary>
+		/// <param name="base">The prototype of the instance.</param>
+		/// <returns>An instance node of the prototype.</returns>
+		Node makeInstance(const Node& base) {
+			auto& desc = mDescs[base];
+			NodeType instanceType = NodeMetadata::getInstanceType(desc.type);
+			assert(instanceType != desc.type);
+			return addNode(desc.owner, instanceType);
+		}
+
+		/// <summary>
+		/// Same as makeInstance, except that the prototype is added as a child to the
+		/// instance node. This is useful for content types, so that the prototype isn't
+		/// collected by the ContentManager garbage collector while it is in use through
+		/// an instance node.
+		/// </summary>
+		/// <param name="base">The prototype of the instance.</param>
+		/// <returns>An instance node of the prototype.</returns>
+		Node makeContentInstance(Node& base) {
+			auto& desc = mDescs[base];
+			NodeType instanceType = NodeMetadata::getInstanceType(desc.type);
+			assert(instanceType != desc.type);
+			return addNode(desc.owner, instanceType, base);
+		}
+
+		inline Node addNode(Engine* owner) {
 			return addNode(owner, NodeType::ENGINE);
 		}
-		inline NodeHandle issueHandle(const DigraphVertex& vertex) {
+		/// <summary>
+		/// Issues a handle for the specified node. The location of the node may be moved
+		/// in memory during runtime, so a handle assures consistent access to the node
+		/// even if it is moved. You can use a handle to aquire a Node object via the
+		/// [] operator.
+		/// </summary>
+		/// <param name="vertex">The vertex to issue a handle for.</param>
+		/// <returns>A handle for the vertex.</returns>
+		inline NodeHandle issueHandle(const Node& vertex) {
 			NodeHandle h = ++mLargestHandle;
 			mHandles.set(vertex, h);
 			return h;
 		}
+		/// <summary>
+		/// Recalls a handle that has been issued by the graph, specifying that it is no
+		/// longer in use. 
+		/// </summary>
+		/// <param name="handle">The handle to recall.</param>
 		inline void recallHandle(const NodeHandle handle) {
 			mHandles.clear(handle);
 		}
-		inline void setName(const DigraphVertex& vertex, const std::string& name) {
+		/// <summary>
+		/// Sets the name of a vertex. Vertices assigned a name can be accessed via 
+		/// the [] operator.
+		/// </summary>
+		/// <param name="vertex">The vertex to assign a name to.</param>
+		/// <param name="name">The name to assign.</param>
+		inline void setName(const Node& vertex, const std::string& name) {
 			mNames.set(vertex, name);
 		}
+		/// <summary>
+		/// Specifies to the graph that the given name is no longer in use.
+		/// </summary>
+		/// <param name="name">The name to assign.</param>
 		inline void recallName(const std::string& name) {
 			mNames.clear(name);
 		}
@@ -522,11 +617,28 @@ namespace Morpheus {
 		}
 	};
 
-	struct Transform {
+	struct DynamicTransform {
 		glm::vec3 mTranslation;
 		glm::vec3 mScale;
 		glm::quat mRotation;
+
+		inline glm::mat4 apply(const glm::mat4& mat) const {
+			auto ret = glm::scale(mat, mScale);
+			ret = glm::translate(ret, mTranslation);
+			return ret * glm::mat4_cast(mRotation);
+		}
+
+		inline glm::mat4 mat() const {
+			return apply(glm::identity<glm::mat4>());
+		}
+	};
+
+	struct StaticTransform {
 		glm::mat4 mCache;
+
+		inline void from(const DynamicTransform& transform) {
+			mCache = transform.mat();
+		}
 	};
 
 	enum class ErrorCode {
@@ -551,4 +663,16 @@ namespace Morpheus {
 
 		inline explicit Error(const ErrorCode code) : mCode(code) { }
 	};
+
+	SET_NODE_TYPE(Engine, ENGINE);
+	SET_NODE_TYPE(ContentManager, CONTENT_MANAGER);
+	SET_NODE_TYPE(IContentFactory, CONTENT_FACTORY);
+	SET_NODE_TYPE(BoundingBox, BOUNDING_BOX);
+	SET_NODE_TYPE(char, EMPTY);
+	SET_NODE_TYPE(StaticTransform, STATIC_TRANSFORM);
+	SET_NODE_TYPE(DynamicTransform, DYNAMIC_TRANSFORM);
+	SET_NODE_TYPE(IRenderer, RENDERER);
+
+	DEF_INSTANCE(GEOMETRY_INSTANCE, GEOMETRY);
+	DEF_INSTANCE(MATERIAL_INSTANCE, MATERIAL);
 }

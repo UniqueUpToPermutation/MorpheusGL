@@ -4,6 +4,7 @@
 #include "mapcpy.hpp"
 
 #include <stack>
+#include <algorithm>
 
 namespace Morpheus {
 	
@@ -24,7 +25,7 @@ namespace Morpheus {
 		uint32_t mOffset;
 
 	public:
-		inline PoolHandle(T* ptr, uint32_t offset);
+		inline PoolHandle(Pool<T>* ptr, uint32_t offset);
 		inline PoolHandle(PoolHandle<void>& handle);
 		inline PoolHandle() { }
 
@@ -132,19 +133,20 @@ namespace Morpheus {
 		PoolHandle<T> alloc() {
 			size_t cnt = mFreeIndices.size();
 			if (cnt > 0) {
-				uint32_t of = mFreeIndices.pop();
-				return PoolHandle<T>(&mData[of], of);
+				uint32_t of = mFreeIndices.top();
+				mFreeIndices.pop();
+				return PoolHandle<T>(this, of);
 			}
 			else if (mFreeBlockStart == mDataSize) {
 				if (mDataSize == 0)
 					mDataSize = 50;
 				resize((uint32_t)(mDataSize * mRescaleFactor));
 				uint32_t of = mFreeBlockStart++;
-				return PoolHandle<T>(&mData[of], of);
+				return PoolHandle<T>(this, of);
 			}
 			else {
 				uint32_t of = mFreeBlockStart++;
-				return PoolHandle<T>(&mData[of], of);
+				return PoolHandle<T>(this, of);
 			}
 		}
 
@@ -160,7 +162,7 @@ namespace Morpheus {
 	};
 
 	template<typename T>
-	inline PoolHandle<T>::PoolHandle(T* ptr, uint32_t offset) 
+	inline PoolHandle<T>::PoolHandle(Pool<T>* ptr, uint32_t offset) 
 		: mPoolPtr(ptr), mOffset(offset)
 	{
 	}

@@ -28,6 +28,7 @@ namespace Morpheus {
 		virtual ref<void> load(const std::string& source) = 0;
 		virtual void unload(ref<void>& ref) = 0;
 		inline NodeHandle handle() const { return mHandle; }
+		Node node() const { return graph()[mHandle]; }
 
 		friend class ContentManager;
 	};
@@ -44,6 +45,7 @@ namespace Morpheus {
 
 	public:
 		NodeHandle handle() const { return mHandle; }
+		Node node() const { return graph()[mHandle]; }
 
 		ContentManager();
 
@@ -64,13 +66,13 @@ namespace Morpheus {
 			delete factory;
 		}
 
-		void addContentNode(DigraphVertex& content) {
+		void addContentNode(Node& content) {
 		
 		}
 
 		template <typename ContentType>
-		DigraphVertex loadNode(const std::string& source, DigraphVertex& parent) {
-			DigraphVertex v;
+		Node loadNode(const std::string& source, Node& parent) {
+			Node v;
 			if (mSources.tryFind(source, &v))
 				return v;
 			else {
@@ -85,8 +87,8 @@ namespace Morpheus {
 		}
 
 		template <typename ContentType>
-		ref<ContentType> loadRef(const std::string& source, DigraphVertex& parent) {
-			DigraphVertex v;
+		ref<ContentType> loadRef(const std::string& source, Node& parent) {
+			Node v;
 			if (mSources.tryFind(source, &v))
 				return graph().desc(v).owner.as<ContentType>();
 			else {
@@ -101,19 +103,19 @@ namespace Morpheus {
 		}
 
 		template <typename ContentType>
-		inline DigraphVertex loadNode(const std::string& source, const NodeHandle parentHandle) {
-			DigraphVertex v = graph()[parentHandle];
+		inline Node loadNode(const std::string& source, const NodeHandle parentHandle) {
+			Node v = graph()[parentHandle];
 			return loadNode<ContentType>(source, v);
 		}
 
 		template <typename ContentType>
 		inline ref<ContentType> loadRef(const std::string& source, const NodeHandle parentHandle) {
-			DigraphVertex v = graph()[parentHandle];
+			Node v = graph()[parentHandle];
 			return loadRef<ContentType>(source, v);
 		}
 
 		template <typename ContentType> 
-		inline DigraphVertex loadNode(const std::string& source) {
+		inline Node loadNode(const std::string& source) {
 			// Set self as the parent of the new object
 			return loadNode<ContentType>(source, mHandle);
 		}
@@ -124,7 +126,7 @@ namespace Morpheus {
 			return loadRef<ContentType>(source, mHandle);
 		}
 
-		void unloadNode(DigraphVertex& node) {
+		void unloadNode(Node& node) {
 			auto desc = graph().desc(node);
 			// Get factory from type
 			auto factory = mTypeToFactory[desc.type];
@@ -134,7 +136,7 @@ namespace Morpheus {
 
 		void unloadAll() {
 			for (auto it = graph()[mHandle].getOutgoingNeighbors(); it.valid(); it.next()) {
-				DigraphVertex v = it();
+				Node v = it();
 				unloadNode(v);
 			}
 		}

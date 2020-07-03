@@ -142,6 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="camera.hpp" />
     <ClInclude Include="content.hpp" />
     <ClInclude Include="cooktorrance.hpp" />
     <ClInclude Include="core.hpp" />
@@ -162,6 +163,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\glad\GL\src\glad.c" />
+    <ClCompile Include="camera.cpp" />
     <ClCompile Include="content.cpp" />
     <ClCompile Include="cooktorrance.cpp" />
     <ClCompile Include="core.cpp" />

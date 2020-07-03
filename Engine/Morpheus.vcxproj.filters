@@ -93,6 +93,9 @@
     <ClInclude Include="geometry.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
+    <ClInclude Include="camera.hpp">
+      <Filter>Header Files\renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="digraph.cpp">
@@ -126,6 +129,9 @@
       <Filter>Source Files\renderer</Filter>
     </ClCompile>
     <ClCompile Include="forwardrenderer.cpp">
+      <Filter>Source Files\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="camera.cpp">
       <Filter>Source Files\renderer</Filter>
     </ClCompile>
   </ItemGroup>
