@@ -5,19 +5,19 @@
 #include "shader.hpp"
 
 namespace Morpheus {
-	class IMaterial;
-	SET_NODE_TYPE(IMaterial, MATERIAL);
+	class Material;
+	SET_NODE_TYPE(Material, MATERIAL);
 
-	class IMaterial {
+	class Material {
 	protected:
-		ref<IShader> mShader;
+		ref<Shader> mShader;
 
 	public:
-		virtual ref<IMaterial> copy() const = 0;
+		virtual ref<Material> copy() const = 0;
 	};
 
 	template <>
-	class ContentFactory<IMaterial> : public IContentFactory {
+	class ContentFactory<Material> : public IContentFactory {
 	public:
 		ref<void> load(const std::string& source, Node& loadInto) override;
 		void unload(ref<void>& ref) override;

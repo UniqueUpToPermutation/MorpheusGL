@@ -4,22 +4,6 @@
 
 #include "content.hpp"
 
-#define DEFINE_SHADER(name) class name; SET_BASE_TYPE(name, IShader); class name : public IShader 
-
-#define SHADER_BODY protected: \
-void init() override; \
-public:
-
-#define SHADER_UNIFORM(type, name) \
-ShaderUniform<type> name;
-
-#define BEGIN_UNIFORM_LINK(name) void name::init() {
-#define LINK_UNIFORM(unif, loc_str) unif.mLoc = glGetUniformLocation(id(), loc_str)
-#define END_UNIFORM_LINK }
-
-#define REGISTER_SHADER(name, str_class_name) std::function<IShader*(void)> name_f_ptr = []() { return new name(); }; \
-	shaderRegistry()[str_class_name] = name_f_ptr;
-
 #define SET_WORLD(loc_str) mWorld.mLoc = glGetUniformLocation(id(), loc_str)
 #define SET_VIEW(loc_str) mView.mLoc = glGetUniformLocation(id(), loc_str)
 #define SET_PROJECTION(loc_str) mProjection.mLoc = glGetUniformLocation(id(), loc_str)
@@ -91,38 +75,34 @@ namespace Morpheus {
 		inline void set(const glm::dmat4& m) { glUniformMatrix4dv(mLoc, 1, false, &m[0][0]); }
 	};
 
+	enum class ShaderParameterType {
+		UNIFORM,
+		SAMPLER
+	};
+
 	enum class ShaderType {
 		VERTEX,
 		FRAGMENT
 	};
 
-	class IShader {
+	class Shader {
 	private:
 		GLuint mId;
 
-	protected:
-		virtual void init() = 0;
-
 	public:
-		ShaderUniform<glm::mat4> mWorld;
-		ShaderUniform<glm::mat4> mView;
-		ShaderUniform<glm::mat4> mProjection;
-		ShaderUniform<glm::mat4> mWorldInverseTranspose;
 
 		inline GLuint id() const { return mId; }
 
-		friend class ContentFactory<IShader>;
+		friend class ContentFactory<Shader>;
 	};
-	SET_NODE_TYPE(IShader, SHADER);
+	SET_NODE_TYPE(Shader, SHADER);
 
 	template <>
-	class ContentFactory<IShader> : public IContentFactory {
+	class ContentFactory<Shader> : public IContentFactory {
 	public:
 		ContentFactory();
 		ref<void> load(const std::string& source, Node& loadInto) override;
 		void unload(ref<void>& ref) override;
 		void dispose() override;
 	};
-
-	std::unordered_map<std::string, std::function<IShader*(void)>>& shaderRegistry();
 }

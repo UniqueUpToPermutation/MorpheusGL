@@ -1,5 +1,4 @@
 #include "shader.hpp"
-#include "cooktorrance.hpp"
 #include "json.hpp"
 
 #include <fstream>
@@ -11,7 +10,10 @@ using namespace std;
 
 namespace Morpheus {
 
-	IShader* makeShader(const std::string& className);
+	ContentFactory<Shader>::ContentFactory() {
+
+	}
+
 	GLuint compileShader(const std::string& code, const ShaderType type);
 
 	void preprocessor(const string& path, vector<string>& paths, stringstream& builder) {
@@ -70,12 +72,8 @@ namespace Morpheus {
 		}
 	}
 
-	ContentFactory<IShader>::ContentFactory()
-	{
-		REGISTER_SHADER(CookTorranceShader, "cooktorrance");
-	}
 
-	ref<void> ContentFactory<IShader>::load(const std::string& source, Node& loadInto) {
+	ref<void> ContentFactory<Shader>::load(const std::string& source, Node& loadInto) {
 		json j;
 		ifstream f(source);
 
@@ -90,7 +88,7 @@ namespace Morpheus {
 		f.close();
 
 		// Instantiate the C++ code surrounding the shader
-		IShader* shader = makeShader(j["shader_class"]);
+		Shader* shader = new Shader();
 
 		string prefix_include_path = "";
 
@@ -146,13 +144,13 @@ namespace Morpheus {
 		return r;
 	}
 
-	void ContentFactory<IShader>::unload(ref<void>& ref) {
-		IShader* shad = ref.as<IShader>().get();
+	void ContentFactory<Shader>::unload(ref<void>& ref) {
+		Shader* shad = ref.as<Shader>().get();
 		glDeleteProgram(shad->mId);
 		delete shad;
 	}
 
-	void ContentFactory<IShader>::dispose() {
+	void ContentFactory<Shader>::dispose() {
 
 	}
 
@@ -185,15 +183,5 @@ namespace Morpheus {
 			delete[] compiler_log;
 		}
 		return id;
-	}
-
-	std::unordered_map<std::string, std::function<IShader*(void)>> registry;
-	std::unordered_map<std::string, std::function<IShader*(void)>>& shaderRegistry()
-	{
-		return registry;
-	}
-
-	IShader* makeShader(const std::string& className) {
-		return registry[className]();
 	}
 }

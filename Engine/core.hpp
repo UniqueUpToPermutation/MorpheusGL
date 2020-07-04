@@ -95,6 +95,7 @@ namespace Morpheus {
 		DYNAMIC_OBJECT_MANAGER,
 		MATERIAL_INSTANCE,
 		GEOMETRY_INSTANCE,
+		NANOGUI_SCREEN,
 		SCENE_END,
 
 		// All nodes that are children of the content manager

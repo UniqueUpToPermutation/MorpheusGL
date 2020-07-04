@@ -73,7 +73,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../glad/GL/include/;$(IncludePath)</IncludePath>
+    <IncludePath>../glad/GL/include/;../nanogui/include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -144,12 +144,12 @@
   <ItemGroup>
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="content.hpp" />
-    <ClInclude Include="cooktorrance.hpp" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="digraph.hpp" />
     <ClInclude Include="dynamicmanager.hpp" />
     <ClInclude Include="engine.hpp" />
     <ClInclude Include="geometry.hpp" />
+    <ClInclude Include="gui.h" />
     <ClInclude Include="halfedge.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="mapcpy.hpp" />
@@ -166,11 +166,11 @@
     <ClCompile Include="..\glad\GL\src\glad.c" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="content.cpp" />
-    <ClCompile Include="cooktorrance.cpp" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="digraph.cpp" />
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="geometry.cpp" />
+    <ClCompile Include="gui.cpp" />
     <ClCompile Include="halfedge.cpp" />
     <ClCompile Include="forwardrenderer.cpp" />
     <ClCompile Include="material.cpp" />

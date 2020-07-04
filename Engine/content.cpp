@@ -8,7 +8,7 @@ namespace Morpheus {
 		mSources = graph().createVertexLookup<std::string>("content_src");
 
 		// Make shader factory
-		addFactory<IShader>();
+		addFactory<Shader>();
 	}
 
 	void ContentManager::unload(Node& node) {

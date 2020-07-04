@@ -40,6 +40,9 @@
     <Filter Include="Source Files\renderer">
       <UniqueIdentifier>{27678e70-85b5-4469-9572-21f5e5173226}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\scene">
+      <UniqueIdentifier>{3aaeeb6e-0c21-4603-b083-ab05e4d06f3c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp">
@@ -81,9 +84,6 @@
     <ClInclude Include="halfedge.hpp">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="cooktorrance.hpp">
-      <Filter>Header Files\renderer</Filter>
-    </ClInclude>
     <ClInclude Include="forwardrenderer.hpp">
       <Filter>Header Files\renderer</Filter>
     </ClInclude>
@@ -98,6 +98,9 @@
     </ClInclude>
     <ClInclude Include="material.hpp">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="gui.h">
+      <Filter>Header Files\scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -128,9 +131,6 @@
     <ClCompile Include="halfedge.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
-    <ClCompile Include="cooktorrance.cpp">
-      <Filter>Source Files\renderer</Filter>
-    </ClCompile>
     <ClCompile Include="forwardrenderer.cpp">
       <Filter>Source Files\renderer</Filter>
     </ClCompile>
@@ -139,6 +139,9 @@
     </ClCompile>
     <ClCompile Include="material.cpp">
       <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="gui.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
