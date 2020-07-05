@@ -1,7 +1,6 @@
-#include "gui.h"
+#include "gui.hpp"
 
 #include <glad/glad.h>
-
 #include <nanogui/nanogui.h>
 
 namespace Morpheus {
@@ -9,7 +8,7 @@ namespace Morpheus {
 		auto en = engine();
 
 		mScreen = new nanogui::Screen();
-		mScreen->initialize(en.window(), false);
+		mScreen->initialize(en->window(), false);
 
 		mCursorPosHandler = [this](GLFWwindow*, double x, double y) {
 			mScreen->cursorPosCallbackEvent(x, y);
@@ -39,13 +38,13 @@ namespace Morpheus {
 			mScreen->resizeCallbackEvent(width, height);
 		};
 
-		en.bindCursorPosEvent(&mCursorPosHandler);
-		en.bindMouseButtonEvent(&mMouseButtonHandler);
-		en.bindKeyEvent(&mKeyHandler);
-		en.bindCharEvent(&mCharHandler);
-		en.bindDropEvent(&mDropHandler);
-		en.bindScrollEvent(&mScrollHandler);
-		en.bindFramebufferSizeEvent(&mFramebufferSizeHandler);
+		en->bindCursorPosEvent(&mCursorPosHandler);
+		en->bindMouseButtonEvent(&mMouseButtonHandler);
+		en->bindKeyEvent(&mKeyHandler);
+		en->bindCharEvent(&mCharHandler);
+		en->bindDropEvent(&mDropHandler);
+		en->bindScrollEvent(&mScrollHandler);
+		en->bindFramebufferSizeEvent(&mFramebufferSizeHandler);
 
 		initGui();
 	}
@@ -53,15 +52,14 @@ namespace Morpheus {
 	void GuiBase::dispose() {
 		auto en = engine();
 
-		en.unbindCursorPosEvent(&mCursorPosHandler);
-		en.unbindMouseButtonEvent(&mMouseButtonHandler);
-		en.unbindKeyEvent(&mKeyHandler);
-		en.unbindCharEvent(&mCharHandler);
-		en.unbindDropEvent(&mDropHandler);
-		en.unbindScrollEvent(&mScrollHandler);
-		en.unbindFramebufferSizeEvent(&mFramebufferSizeHandler);
+		en->unbindCursorPosEvent(&mCursorPosHandler);
+		en->unbindMouseButtonEvent(&mMouseButtonHandler);
+		en->unbindKeyEvent(&mKeyHandler);
+		en->unbindCharEvent(&mCharHandler);
+		en->unbindDropEvent(&mDropHandler);
+		en->unbindScrollEvent(&mScrollHandler);
+		en->unbindFramebufferSizeEvent(&mFramebufferSizeHandler);
 
-		delete mScreen;
 		delete this;
 	}
 }

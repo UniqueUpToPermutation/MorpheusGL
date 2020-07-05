@@ -7,19 +7,11 @@
 #include "pool.hpp"
 #include "geometry.hpp"
 #include "renderqueue.hpp"
-#include "gui.h"
+#include "engine.hpp"
+#include "gui.hpp"
 
 namespace Morpheus {
 	
-	class IRenderer : public IDisposable {
-	public:
-		virtual void init() = 0;
-		virtual void draw(Node& scene) = 0;
-		virtual NodeHandle handle() const = 0;
-		virtual RendererType getType() const = 0;
-		inline Node node() const { return graph()[handle()]; }
-	};
-
 	struct StaticMeshRenderInstance {
 		ref<Geometry> mGeometry;
 		ref<Transform> mTransform;
@@ -57,8 +49,11 @@ namespace Morpheus {
 		NodeHandle handle() const override;
 		RendererType getType() const override;
 		void init() override;
+		void postGlfwRequests() override;
 		void draw(Node& scene) override;
-		void subdraw(Node& scene) override;
 		void dispose() override;
+
+		friend class Engine;
 	};
+	SET_BASE_TYPE(ForwardRenderer, IRenderer);
 }

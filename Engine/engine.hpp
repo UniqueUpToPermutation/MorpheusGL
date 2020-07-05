@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core.hpp"
+#include "updater.hpp"
 
 #include <set>
 
@@ -39,6 +40,9 @@ namespace Morpheus {
 		IRenderer* mRenderer;
 		// The handle for the engine node in the scene graph
 		NodeHandle mHandle;
+		// Component responsible for updating logic entities, any child of the
+		// updater will be updated through the IUpdateable interface
+		Updater mUpdater;
 		// Whether or not the engine is still valid, i.e., not exitting.
 		bool bValid;
 
@@ -99,6 +103,11 @@ namespace Morpheus {
 		/// </summary>
 		/// <returns>A pointer to the engine's renderer.</returns>
 		inline IRenderer* renderer() { return mRenderer; }
+		/// <summary>
+		/// The engine's updater.
+		/// </summary>
+		/// <returns>A reference to the engine's updater.</returns>
+		inline Updater& updater() { return mUpdater; }
 
 		Engine();
 
@@ -112,10 +121,6 @@ namespace Morpheus {
 		/// Updates all necessary components of the engine.
 		/// </summary>
 		void update();
-		/// <summary>
-		/// Perform a render.
-		/// </summary>
-		void render();
 		/// <summary>
 		/// Release all memory in use and perform any necessary cleanup routines.
 		/// </summary>
@@ -143,33 +148,57 @@ namespace Morpheus {
 	/// The global engine.
 	/// </summary>
 	/// <returns>A reference to the engine.</returns>
-	Engine& engine();
+	Engine* engine();
 	/// <summary>
 	/// The global scene graph.
 	/// </summary>
 	/// <returns>A reference to the scene graph.</returns>
-	inline NodeGraph& graph() {
-		return engine().graph();
+	inline NodeGraph* graph() {
+		return &engine()->graph();
 	}
 	/// <summary>
 	/// The global content manager.
 	/// </summary>
 	/// <returns>A reference to the content manager.</returns>
-	inline ContentManager& content() {
-		return engine().content();
+	inline ContentManager* content() {
+		return &engine()->content();
 	}
 	/// <summary>
 	/// The global renderer.
 	/// </summary>
 	/// <returns>A pointer to the renderer.</returns>
 	inline IRenderer* renderer() {
-		return engine().renderer();
+		return engine()->renderer();
 	}
 	/// <summary>
 	/// The global JSON configuration.
 	/// </summary>
 	/// <returns>A reference to the configuration of the engine.</returns>
-	inline nlohmann::json& config() {
-		return engine().config();
+	inline nlohmann::json* config() {
+		return &engine()->config();
 	}
+	/// <summary>
+	/// The GLFW window the engine is using.
+	/// </summary>
+	/// <returns>The GLFW window.</returns>
+	inline GLFWwindow* window() {
+		return engine()->window();
+	}
+	/// <summary>
+	/// A reference to the global updater
+	/// </summary>
+	/// <returns>The global updater.</returns>
+	inline Updater* updater() {
+		return &engine()->updater();
+	}
+
+	class IRenderer : public IDisposable {
+	public:
+		virtual void init() = 0;
+		virtual void postGlfwRequests() = 0;
+		virtual void draw(Node& scene) = 0;
+		virtual NodeHandle handle() const = 0;
+		virtual RendererType getType() const = 0;
+		inline Node node() const { return (*graph())[handle()]; }
+	};
 }

@@ -1,18 +1,18 @@
 #include <iostream>
+#include <fstream>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <fstream>
+
 #include "engine.hpp"
 #include "content.hpp"
+#include "forwardrenderer.hpp"
 
 using namespace std;
 
-#define DEFAULT_VERSION_MAJOR 3
-#define DEFAULT_VERSION_MINOR 3
-
 namespace Morpheus {
 	Engine* gEngine = nullptr;
-	Engine& engine() { return *gEngine; }
+	Engine* engine() { return gEngine; }
 
 	void error_callback(int error, const char* description)
 	{
@@ -114,33 +114,26 @@ namespace Morpheus {
 			return err;
 		}
 
+		// Start building the engine graph
+		auto v = mGraph.addNode(this);
+		mHandle = mGraph.issueHandle(v);
+
 		// Load config
 		ifstream f(configPath);
 		f >> mConfig;
 
-		auto glConfig = mConfig["opengl"];
-		uint32_t majorVersion = DEFAULT_VERSION_MAJOR;
-		uint32_t minorVersion = DEFAULT_VERSION_MINOR;
-		glConfig["v_major"].get_to(majorVersion);
-		glConfig["v_minor"].get_to(minorVersion);
+		// Create renderer
+		auto renderer = new ForwardRenderer();
+		v = mGraph.addNode(renderer, mHandle);
+		renderer->mHandle = mGraph.issueHandle(v);
+		mRenderer = renderer;
 
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, majorVersion);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minorVersion);
-		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-		glfwWindowHint(GLFW_SAMPLES, 0);
-		glfwWindowHint(GLFW_RED_BITS, 8);
-		glfwWindowHint(GLFW_GREEN_BITS, 8);
-		glfwWindowHint(GLFW_BLUE_BITS, 8);
-		glfwWindowHint(GLFW_ALPHA_BITS, 8);
-		glfwWindowHint(GLFW_STENCIL_BITS, 8);
-		glfwWindowHint(GLFW_DEPTH_BITS, 24);
-		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+		// Renderer may request framebuffer features from GLFW
+		mRenderer->postGlfwRequests();
 
 		glfwSetErrorCallback(error_callback);
 
-		mWindow = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
+		mWindow = glfwCreateWindow(640, 480, "Morpheus Engine", NULL, NULL);
 		if (!mWindow)
 		{
 			Error err(ErrorCode::FAIL_GLFW_WINDOW_INIT);
@@ -151,15 +144,22 @@ namespace Morpheus {
 		}
 
 		glfwMakeContextCurrent(mWindow);
-		gladLoadGL(); // Use GLAD to load necessary extensions
-		glfwSwapInterval(1); // Set VSync on
 
-		// Start building the engine graph
-		auto v = mGraph.addNode(this);
-		mHandle = mGraph.issueHandle(v);
+		// Load OpenGL extensions
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+			throw std::runtime_error("Could not initialize GLAD!");
 
-		// Create content manager
+		// Create content manager with handle
 		mContent = new ContentManager();
+		v = mGraph.addNode(mContent, mHandle);
+		mContent->mHandle = mGraph.issueHandle(v);
+		
+		// Add updater to the graph
+		v = mGraph.addNode(&mUpdater, mHandle);
+		mUpdater.mHandle = mGraph.issueHandle(v);
+
+		// Initialize the renderer
+		mRenderer->init(); 
 
 		// Set valid
 		bValid = true;
@@ -182,17 +182,8 @@ namespace Morpheus {
 
 	void Engine::update() {
 		glfwPollEvents(); // Update window!
-	}
 
-	void Engine::render() {
-		int width, height;
-		glfwGetFramebufferSize(mWindow, &width, &height);
-		glViewport(0, 0, width, height);
-
-		glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glfwSwapBuffers(mWindow);
+		mUpdater.updateChildren(); // Update everything else
 	}
 
 	void Engine::shutdown() {

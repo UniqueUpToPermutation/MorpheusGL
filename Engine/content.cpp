@@ -1,27 +1,27 @@
 #include "content.hpp"
 #include "shader.hpp"
+#include "material.hpp"
+#include "geometry.hpp"
 
 namespace Morpheus {
 	ContentManager::ContentManager() {
-		auto v = graph().addNode(this, engine().handle());
-		mHandle = graph().issueHandle(v);
-		mSources = graph().createVertexLookup<std::string>("content_src");
-
 		// Make shader factory
 		addFactory<Shader>();
+		// Make geometry factory
+		addFactory<Geometry>();
 	}
 
 	void ContentManager::unload(Node& node) {
-		auto desc = graph().desc(node);
+		auto desc = graph()->desc(node);
 		// Get factory from type
 		auto factory = mTypeToFactory[desc.type];
 		if (factory != nullptr)
 			factory->unload(desc.owner);
-		graph().deleteVertex(node);
+		graph()->deleteVertex(node);
 	}
 
 	void ContentManager::unloadAll() {
-		for (auto it = graph()[mHandle].getOutgoingNeighbors(); it.valid(); it.next()) {
+		for (auto it = (*graph())[mHandle].getOutgoingNeighbors(); it.valid(); it.next()) {
 			Node v = it();
 			unload(v);
 		}
@@ -32,7 +32,7 @@ namespace Morpheus {
 	}
 
 	void ContentManager::collectGarbage() {
-		DigraphSparseDataView<uint32_t> degrees = graph().createSparseVertexData<uint32_t>(0, "__content__manager__degree__data__");
+		DigraphSparseDataView<uint32_t> degrees = graph()->createSparseVertexData<uint32_t>(0, "__content__manager__degree__data__");
 
 		std::stack<Node> toCollect;
 
@@ -63,6 +63,6 @@ namespace Morpheus {
 			unload(top);
 		}
 
-		graph().destroyData(degrees);
+		graph()->destroyData(degrees);
 	}
 }

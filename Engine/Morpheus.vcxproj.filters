@@ -25,9 +25,6 @@
     <Filter Include="Source Files\core">
       <UniqueIdentifier>{b04f2d26-41c1-4f03-b2c5-62846556e1fd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\gl">
-      <UniqueIdentifier>{8b402877-0fba-4789-98db-2a96cf56c6eb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{fa663aaa-aadc-4d7e-915e-eedae3c40d94}</UniqueIdentifier>
     </Filter>
@@ -102,22 +99,22 @@
     <ClInclude Include="material.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="gui.h">
+    <ClInclude Include="gui.hpp">
       <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="updater.hpp">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="halfedgeloader.hpp">
+      <Filter>Header Files\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="digraph.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
-    <ClCompile Include="test.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="core.cpp">
       <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\glad\GL\src\glad.c">
-      <Filter>Source Files\gl</Filter>
     </ClCompile>
     <ClCompile Include="engine.cpp">
       <Filter>Source Files\core</Filter>
@@ -146,6 +143,12 @@
     <ClCompile Include="gui.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
+    <ClCompile Include="updater.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -170,7 +173,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\nanogui\out\build\x86-Debug\nanogui.dll">
+    <CopyFileToFolders Include="..\nanogui\out\build\x64-Debug\nanogui.dll">
       <Filter>Copy Files</Filter>
     </CopyFileToFolders>
   </ItemGroup>

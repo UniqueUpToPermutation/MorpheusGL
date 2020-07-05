@@ -8,7 +8,7 @@ using namespace std;
 using namespace nlohmann;
 
 namespace Morpheus {
-	HalfEdgeGeometry* load(const std::string& path)
+	HalfEdgeGeometry* loadBinary(const std::string& path)
 	{
 		auto geo = new HalfEdgeGeometry();
 
@@ -137,7 +137,7 @@ namespace Morpheus {
 		}
 	}
 
-	void HalfEdgeGeometry::save(const std::string& path)
+	void HalfEdgeGeometry::saveBinary(const std::string& path)
 	{
 		ofstream f(path, ios::out | ios::binary);
 
@@ -151,9 +151,9 @@ namespace Morpheus {
 		f.write(&hasNormals, sizeof(char));
 		f.write(&hasTangents, sizeof(char));
 
-		int vertexCount = vertices.size();
-		int edgeCount = edges.size();
-		int faceCount = faces.size();
+		size_t vertexCount = vertices.size();
+		size_t edgeCount = edges.size();
+		size_t faceCount = faces.size();
 
 		f.write(reinterpret_cast<char*>(&vertexCount), sizeof(int));
 		f.write(reinterpret_cast<char*>(&edgeCount), sizeof(int));
@@ -162,7 +162,7 @@ namespace Morpheus {
 		char* buf = new char[sizeof(float) * 3 * vertexCount];
 		auto floatBuf = reinterpret_cast<float*>(buf);
 		if (hasPositions) {
-			for (int i = 0, j = 0; i < vertexCount; ++i) {
+			for (size_t i = 0, j = 0; i < vertexCount; ++i) {
 				floatBuf[j++] = (float)vertexPositions[i].x;
 				floatBuf[j++] = (float)vertexPositions[i].y;
 				floatBuf[j++] = (float)vertexPositions[i].z;
@@ -170,14 +170,14 @@ namespace Morpheus {
 			f.write(buf, sizeof(float) * 3 * vertexCount);
 		}
 		if (hasUvs) {
-			for (int i = 0, j = 0; i < vertexCount; ++i) {
+			for (size_t i = 0, j = 0; i < vertexCount; ++i) {
 				floatBuf[j++] = (float)vertexUVs[i].x;
 				floatBuf[j++] = (float)vertexUVs[i].y;
 			}
 			f.write(buf, sizeof(float) * 2 * vertexCount);
 		}
 		if (hasNormals) {
-			for (int i = 0, j = 0; i < vertexCount; ++i) {
+			for (size_t i = 0, j = 0; i < vertexCount; ++i) {
 				floatBuf[j++] = (float)vertexNormals[i].x;
 				floatBuf[j++] = (float)vertexNormals[i].y;
 				floatBuf[j++] = (float)vertexNormals[i].z;
@@ -185,7 +185,7 @@ namespace Morpheus {
 			f.write(buf, sizeof(float) * 3 * vertexCount);
 		}
 		if (hasTangents) {
-			for (int i = 0, j = 0; i < vertexCount; ++i) {
+			for (size_t i = 0, j = 0; i < vertexCount; ++i) {
 				floatBuf[j++] = (float)vertexTangents[i].x;
 				floatBuf[j++] = (float)vertexTangents[i].y;
 				floatBuf[j++] = (float)vertexTangents[i].z;
@@ -350,23 +350,23 @@ namespace Morpheus {
 		bool hasNormals = vertexNormals.size() > 0;
 		bool hasTangents = vertexTangents.size() > 0;
 
-		int vertexCount = vertexAttrEdge.size();
-		int edgeCount = edgeAttrNext.size();
-		int faceCount = faceAttrEdge.size();
+		size_t vertexCount = vertexAttrEdge.size();
+		size_t edgeCount = edgeAttrNext.size();
+		size_t faceCount = faceAttrEdge.size();
 
 		if (hasPositions) {
 			geo->vertexPositions.reserve(vertexCount);
-			for (int i = 0; i < vertexCount * 3; i += 3)
+			for (size_t i = 0; i < vertexCount * 3; i += 3)
 				geo->vertexPositions.emplace_back(vec3type{ vertexPositions[i], vertexPositions[i + 1], vertexPositions[i + 2] });
 		}
 		if (hasUvs) {
 			geo->vertexUVs.reserve(vertexCount);
-			for (int i = 0; i < vertexCount * 2; i += 2)
+			for (size_t i = 0; i < vertexCount * 2; i += 2)
 				geo->vertexUVs.emplace_back(vec2type{ vertexUvs[i], vertexUvs[i + 1] });
 		}
 		if (hasNormals) {
 			geo->vertexNormals.reserve(vertexCount);
-			for (int i = 0; i < vertexCount * 3; i += 3)
+			for (size_t i = 0; i < vertexCount * 3; i += 3)
 				geo->vertexNormals.emplace_back(vec3type{ vertexNormals[i], vertexNormals[i + 1], vertexNormals[i + 2] });
 		}
 		if (hasTangents) {

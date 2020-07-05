@@ -11,7 +11,6 @@ using namespace std;
 namespace Morpheus {
 
 	ContentFactory<Shader>::ContentFactory() {
-
 	}
 
 	GLuint compileShader(const std::string& code, const ShaderType type);
@@ -40,7 +39,7 @@ namespace Morpheus {
 			std::istreambuf_iterator<char>());
 		f.close();
 
-		uint32_t start = 0;
+		size_t start = 0;
 
 		while (start < code.length()) {
 			auto found = code.find("#include", start);
@@ -77,7 +76,7 @@ namespace Morpheus {
 		json j;
 		ifstream f(source);
 
-		cout << "Loading Shader " << source << endl;
+		cout << "Loading Shader " << source << "..." << endl;
 
 		if (!f.is_open()) {
 			ref<void> r(nullptr);

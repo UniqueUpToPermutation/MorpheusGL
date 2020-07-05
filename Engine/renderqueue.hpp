@@ -52,7 +52,7 @@ namespace Morpheus {
 
 		inline void push(const T& t) {
 			if (mSize == mAlloc)
-				resize(std::max(mSize, 1u) * 2);
+				resize(std::max<size_t>(mSize, 1u) * 2);
 			mMem[mSize] = t;
 			++mSize;
 		}

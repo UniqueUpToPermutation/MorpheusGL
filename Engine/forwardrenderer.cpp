@@ -1,12 +1,19 @@
 #include "forwardrenderer.hpp"
 #include "engine.hpp"
+#include "gui.hpp"
 
 #include <stack>
+#include <iostream>
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
 
 using namespace std;
 using namespace glm;
+
+#define DEFAULT_VERSION_MAJOR 3
+#define DEFAULT_VERSION_MINOR 3
 
 namespace Morpheus {
 
@@ -22,7 +29,7 @@ namespace Morpheus {
 		auto& desc = mNodeDataView[current];
 
 		// Ignore anything that is not a scene child.
-		if (NodeMetadata::isSceneChild(desc.type))
+		if (!NodeMetadata::isSceneChild(desc.type))
 			return;
 
 		// Visiting a node on the way down
@@ -74,15 +81,15 @@ namespace Morpheus {
 		}
 	}
 
-	void ForwardRenderer::collect(Node& start) {
+	void ForwardRenderer::collect(Node& start, ForwardRenderCollectParams& params) {
 		mQueues.mGuis.clear();
 		mQueues.mStaticMesh.clear();
 
-		mNodeDataView = graph().descs();
+		mNodeDataView = graph()->descs();
 
 		mTransformStack.push(identity<mat4>());
 		mIsStaticStack.push(false);
-		collectRecursive(start);
+		collectRecursive(start, params);
 		mTransformStack.pop();
 		mIsStaticStack.pop();
 
@@ -90,10 +97,17 @@ namespace Morpheus {
 		assert(mIsStaticStack.empty());
 	}
 
-	void ForwardRenderer::draw(const ForwardRenderer::Queues& renderQueues, const ForwardRenderer::DrawParams& params)
+	void ForwardRenderer::draw(const ForwardRenderQueue* queue, const ForwardRenderDrawParams& params)
 	{
+		int width;
+		int height;
+		glfwGetFramebufferSize(window(), &width, &height);
+
+		glViewport(0, 0, width, height);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 		// Just draw GUIs for now
-		for (auto guiPtr = renderQueues.mGuis.begin(); guiPtr != renderQueues.mGuis.end(); ++guiPtr) {
+		for (auto guiPtr = queue->mGuis.begin(); guiPtr != queue->mGuis.end(); ++guiPtr) {
 			auto screen = (*guiPtr)->screen();
 			screen->drawContents();
 			screen->drawWidgets();
@@ -101,13 +115,46 @@ namespace Morpheus {
 	}
 
 	void ForwardRenderer::draw(Node& scene) {
-		collect(scene);
-		draw(mQueues, mDrawParams);
+		ForwardRenderCollectParams collectParams;
+		collectParams.mQueues = &mQueues;
+		collectParams.mIsStaticStack = &mIsStaticStack;
+		collectParams.mTransformStack = &mTransformStack;
+
+		ForwardRenderDrawParams drawParams;
+
+		collect(scene, collectParams);
+		draw(&mQueues, drawParams);
+	}
+	void ForwardRenderer::postGlfwRequests() {
+		auto& glConfig = (*config())["opengl"];
+
+		uint32_t majorVersion = DEFAULT_VERSION_MAJOR;
+		uint32_t minorVersion = DEFAULT_VERSION_MINOR;
+		glConfig["v_major"].get_to(majorVersion);
+		glConfig["v_minor"].get_to(minorVersion);
+
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, majorVersion);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minorVersion);
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+		glfwWindowHint(GLFW_SAMPLES, 0);
+		glfwWindowHint(GLFW_RED_BITS, 8);
+		glfwWindowHint(GLFW_GREEN_BITS, 8);
+		glfwWindowHint(GLFW_BLUE_BITS, 8);
+		glfwWindowHint(GLFW_ALPHA_BITS, 8);
+		glfwWindowHint(GLFW_STENCIL_BITS, 8);
+		glfwWindowHint(GLFW_DEPTH_BITS, 24);
+		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	}
 	void ForwardRenderer::init()
 	{
-		auto v = graph().addNode(this, engine().handle());
-		mHandle = graph().issueHandle(v);
+		// Set VSync on
+		glfwSwapInterval(1); 
+
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_STENCIL_TEST);
+		glEnable(GL_TEXTURE);
 	}
 	void ForwardRenderer::dispose() {
 

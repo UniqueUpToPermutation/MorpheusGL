@@ -81,6 +81,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;$(IncludePath)</IncludePath>
+    <LibraryPath>..\nanogui\out\build\x64-Debug\;..\nanogui\out\build\x64-Debug\ext_build\glfw\src;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -122,12 +124,14 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;NANOGUI_USE_OPENGL;NANOGUI_GLAD;NANOGUI_SHARED;GLAD_GLAPI_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>nanogui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -154,8 +158,9 @@
     <ClInclude Include="dynamicmanager.hpp" />
     <ClInclude Include="engine.hpp" />
     <ClInclude Include="geometry.hpp" />
-    <ClInclude Include="gui.h" />
+    <ClInclude Include="gui.hpp" />
     <ClInclude Include="halfedge.hpp" />
+    <ClInclude Include="halfedgeloader.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="mapcpy.hpp" />
     <ClInclude Include="material.hpp" />
@@ -166,9 +171,9 @@
     <ClInclude Include="scene.hpp" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="staticmanager.hpp" />
+    <ClInclude Include="updater.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\glad\GL\src\glad.c" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="content.cpp" />
     <ClCompile Include="core.cpp" />
@@ -180,13 +185,15 @@
     <ClCompile Include="forwardrenderer.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="shader.cpp" />
-    <ClCompile Include="test.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="updater.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\nanogui\out\build\x86-Debug\nanogui.dll">
+    <CopyFileToFolders Include="..\nanogui\out\build\x64-Debug\nanogui.dll">
       <DeploymentContent>false</DeploymentContent>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
+      <FileType>Text</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </CopyFileToFolders>
     <None Include="config.json" />
     <None Include="packages.config" />
@@ -199,7 +206,6 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\glfw.3.3.2\build\native\glfw.targets" Condition="Exists('..\packages\glfw.3.3.2\build\native\glfw.targets')" />
     <Import Project="..\packages\glm.0.9.9.800\build\native\glm.targets" Condition="Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" />
     <Import Project="..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets" Condition="Exists('..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets')" />
     <Import Project="..\packages\Assimp.3.0.0\build\native\Assimp.targets" Condition="Exists('..\packages\Assimp.3.0.0\build\native\Assimp.targets')" />
@@ -208,7 +214,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\glfw.3.3.2\build\native\glfw.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glfw.3.3.2\build\native\glfw.targets'))" />
     <Error Condition="!Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glm.0.9.9.800\build\native\glm.targets'))" />
     <Error Condition="!Exists('..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets'))" />
     <Error Condition="!Exists('..\packages\Assimp.3.0.0\build\native\Assimp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Assimp.3.0.0\build\native\Assimp.targets'))" />

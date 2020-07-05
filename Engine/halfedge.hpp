@@ -2,6 +2,10 @@
 
 #include "core.hpp"
 
+namespace Assimp {
+
+}
+
 namespace Morpheus {
 	typedef glm::vec3 vec3type;
 	typedef glm::vec2 vec2type;
@@ -317,7 +321,7 @@ namespace Morpheus {
 		}
 		void updateBoundingBox();
 
-		void save(const std::string& path);
+		void saveBinary(const std::string& path);
 		void saveJson(const std::string& path);
 
 		HalfEdgeGeometry* deepCopy() const;
@@ -327,11 +331,11 @@ namespace Morpheus {
 		friend class Edge;
 		friend class Face;
 
-		friend HalfEdgeGeometry* load(const std::string& path);
+		friend HalfEdgeGeometry* loadBinary(const std::string& path);
 		friend HalfEdgeGeometry* loadJson(const std::string& path);
 	};
 
-	HalfEdgeGeometry* load(const std::string& path);
+	HalfEdgeGeometry* loadBinary(const std::string& path);
 	HalfEdgeGeometry* loadJson(const std::string& path);
 
 	inline vec3type* Vertex::ptrPosition() {

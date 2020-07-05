@@ -72,7 +72,7 @@ namespace Morpheus {
 		/// memory is altered.
 		/// </summary>
 		/// <returns>The node of this content manager.</returns>
-		Node node() const { return graph()[mHandle]; }
+		Node node() const { return (*graph())[mHandle]; }
 
 		ContentManager();
 
@@ -104,7 +104,7 @@ namespace Morpheus {
 		/// <param name="content">The node for which to transfer ownership.</param>
 		void addContentNode(Node& content) {
 			auto self = node();
-			graph().createEdge(self, content);
+			graph()->createEdge(self, content);
 		}
 
 		/// <summary>
@@ -198,5 +198,7 @@ namespace Morpheus {
 		/// Dispose of the content manager
 		/// </summary>
 		void dispose() override;
+
+		friend class Engine;
 	};
 }

@@ -64,6 +64,13 @@ namespace Morpheus {
 		virtual void dispose() = 0;
 	};
 
+	class IUpdateable {
+	public:
+		virtual bool isEnabled() const = 0;
+		virtual void setEnabled(const bool value) = 0;
+		virtual void update(const double dt) = 0;
+	};
+
 	enum class RendererType {
 		FORWARD
 	};
@@ -80,6 +87,7 @@ namespace Morpheus {
 
 		ENGINE,
 		RENDERER,
+		UPDATER,
 
 		// All nodes that are found inside of a scene
 		SCENE_BEGIN,
@@ -150,6 +158,7 @@ namespace Morpheus {
 	// IS_POOLED Flag
 	SET_POOLED(ENGINE, false);
 	SET_POOLED(RENDERER, false);
+	SET_POOLED(UPDATER, false);
 	SET_POOLED(EMPTY, false);
 	SET_POOLED(LOGIC, false);
 	SET_POOLED(STATIC_TRANSFORM, true);
@@ -160,6 +169,7 @@ namespace Morpheus {
 	SET_POOLED(DYNAMIC_OBJECT_MANAGER, false);
 	SET_POOLED(CAMERA, false);
 	SET_POOLED(MATERIAL_INSTANCE, false);
+	SET_POOLED(NANOGUI_SCREEN, false);
 	SET_POOLED(GEOMETRY_INSTANCE, false);
 
 	SET_POOLED(CONTENT_MANAGER, false);
@@ -176,6 +186,7 @@ namespace Morpheus {
 	// IS_SCENE_CHILD Flag
 	SET_SCENE_CHILD(ENGINE, false);
 	SET_SCENE_CHILD(RENDERER, false);
+	SET_SCENE_CHILD(UPDATER, false);
 	SET_SCENE_CHILD(EMPTY, true);
 	SET_SCENE_CHILD(LOGIC, true);
 	SET_SCENE_CHILD(STATIC_TRANSFORM, true);
@@ -185,6 +196,7 @@ namespace Morpheus {
 	SET_SCENE_CHILD(STATIC_OBJECT_MANAGER, true);
 	SET_SCENE_CHILD(DYNAMIC_OBJECT_MANAGER, true);
 	SET_SCENE_CHILD(CAMERA, true);
+	SET_SCENE_CHILD(NANOGUI_SCREEN, true);
 
 	SET_SCENE_CHILD(CONTENT_MANAGER, false);
 	SET_SCENE_CHILD(GEOMETRY, false);
@@ -200,6 +212,7 @@ namespace Morpheus {
 	// IS_DISPOSABLE Flag
 	SET_DISPOSABLE(ENGINE, false);
 	SET_DISPOSABLE(RENDERER, true);
+	SET_DISPOSABLE(UPDATER, false);
 	SET_DISPOSABLE(EMPTY, false);
 	SET_DISPOSABLE(LOGIC, true);
 	SET_DISPOSABLE(STATIC_TRANSFORM, false);
@@ -209,6 +222,7 @@ namespace Morpheus {
 	SET_DISPOSABLE(STATIC_OBJECT_MANAGER, true);
 	SET_DISPOSABLE(DYNAMIC_OBJECT_MANAGER, true);
 	SET_DISPOSABLE(CAMERA, true);
+	SET_DISPOSABLE(NANOGUI_SCREEN, true);
 
 	SET_DISPOSABLE(CONTENT_MANAGER, true);
 	SET_DISPOSABLE(GEOMETRY, false);
@@ -253,7 +267,9 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="t">The type to query.</param>
 		/// <returns>Whether or not t is a pooled type.</returns>
-		static inline bool isPooled(NodeType t) { return pooled[(uint32_t)t]; }
+		static inline bool isPooled(NodeType t) { 
+			return pooled[(uint32_t)t]; 
+		}
 
 		/// <summary>
 		/// Returns whether or not the given node type is a scene child. Scene children are
@@ -263,7 +279,9 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="t">The type to query.</param>
 		/// <returns>Whether or not t is a scene child type.</returns>
-		static inline bool isSceneChild(NodeType t) { return sceneChild[(uint32_t)t]; }
+		static inline bool isSceneChild(NodeType t) { 
+			return sceneChild[(uint32_t)t]; 
+		}
 		
 		/// <summary>
 		/// Returns whether or not this node type implements the IDisposable interface. Disposable nodes
@@ -272,7 +290,9 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="t">The type to query.</param>
 		/// <returns>Whether or not t is a disposable type.</returns>
-		static inline bool isDisposable(NodeType t) { return disposable[(uint32_t)t]; }
+		static inline bool isDisposable(NodeType t) { 
+			return disposable[(uint32_t)t]; 
+		}
 
 		/// <summary>
 		/// Gets the instance type of a prototype type. Some types have instance versions, i.e., MATERIAL
@@ -284,7 +304,9 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="t">The type to query.</param>
 		/// <returns>The instance type of t.</returns>
-		static inline NodeType getInstanceType(NodeType t) { return prototypeToInstance[(uint32_t)t]; }
+		static inline NodeType getInstanceType(NodeType t) { 
+			return prototypeToInstance[(uint32_t)t]; 
+		}
 
 		/// <summary>
 		/// The opposite of getInstanceType. Given an instance type, i.e., MATERIAL_INSTANCE, this returns
@@ -293,7 +315,9 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="t">The type to query.</param>
 		/// <returns>The prototype type of t.</returns>
-		static inline NodeType getPrototypeType(NodeType t) { return instanceToPrototype[(uint32_t)t]; }
+		static inline NodeType getPrototypeType(NodeType t) { 
+			return instanceToPrototype[(uint32_t)t]; 
+		}
 
 		friend class Engine;
 	};
@@ -465,6 +489,7 @@ namespace Morpheus {
 		}
 		template <typename OwnerType>
 		inline Node addNode(OwnerType* owner, NodeType type) {
+			assert(type != NodeType::END);
 			NodeData data;
 			data.type = type;
 			data.owner = ref<void>(owner);
