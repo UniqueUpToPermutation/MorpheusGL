@@ -7,6 +7,7 @@
 #include "pool.hpp"
 #include "geometry.hpp"
 #include "renderqueue.hpp"
+#include "gui.h"
 
 namespace Morpheus {
 	
@@ -24,31 +25,40 @@ namespace Morpheus {
 		ref<Transform> mTransform;
 	};
 
+	struct ForwardRenderQueue {
+		RenderQueue<StaticMeshRenderInstance> mStaticMesh;
+		RenderQueue<ref<GuiBase>> mGuis;
+	};
+
+	struct ForwardRenderCollectParams {
+		ForwardRenderQueue* mQueues;
+		std::stack<bool>* mIsStaticStack;
+		std::stack<glm::mat4>* mTransformStack;
+		StaticTransform* mCurrentStaticTransform;
+	};
+
+	struct ForwardRenderDrawParams {
+
+	};
+
 	class ForwardRenderer : public IRenderer {
 	private:
 		NodeHandle mHandle;
 		NodeDataView mNodeDataView;
+		ForwardRenderQueue mQueues;
 		std::stack<bool> mIsStaticStack;
 		std::stack<glm::mat4> mTransformStack;
-		StaticTransform* mCurrentStaticTransform;
 
-		struct Queues {
-			RenderQueue<StaticMeshRenderInstance> mStaticMesh;
-		} mQueues;
-
-		struct DrawParams {
-
-		} mDrawParams;
-
-		void collectRecursive(Node& current);
-		void collect(Node& start);
-		void draw(const Queues& renderQueues, const DrawParams& params);
+		void collectRecursive(Node& current, ForwardRenderCollectParams& params);
+		void collect(Node& start, ForwardRenderCollectParams& params);
+		void draw(const ForwardRenderQueue* queue, const ForwardRenderDrawParams& params);
 
 	public:
 		NodeHandle handle() const override;
 		RendererType getType() const override;
 		void init() override;
 		void draw(Node& scene) override;
+		void subdraw(Node& scene) override;
 		void dispose() override;
 	};
 }

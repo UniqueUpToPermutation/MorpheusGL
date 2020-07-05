@@ -344,6 +344,10 @@ namespace Morpheus {
 		inline static T* getAs(ref<void>& r) {
 			return static_cast<T*>(r.p.mPtr);
 		}
+		inline bool compare(const REF_POOL_GATE_<T, true>& other) {
+			return (mHandle.mPoolPtr == other.mHandle.mPoolPtr &&
+				mHandle.mOffset == other.mHandle.mOffset);
+		}
 	};
 
 	template <typename T>
@@ -365,6 +369,9 @@ namespace Morpheus {
 		inline static T* getAs(ref<void>& r) {
 			return static_cast<T*>(r.p.mPtr);
 		}
+		inline bool compare(const REF_POOL_GATE_<T, false>& other) {
+			return (mPtr == other.mPtr);
+		}
 	};
 
 	template<typename T>
@@ -382,12 +389,15 @@ namespace Morpheus {
 	public:
 		inline T* get() { return mPoolGate.get(); }
 		inline T* operator->() { return mPoolGate.get(); }
+		inline bool operator==(const ref<T>& other) { return mPoolGate.compare(other.mPoolGate); }
 
 		inline ref<void> asvoid() {
 			ref<void> r;
 			mPoolGate.to(r);
 			return r;
 		}
+
+		inline ref() { }
 
 		inline ref(T* ptr) {
 			mPoolGate.from(ptr);

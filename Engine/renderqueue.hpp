@@ -11,8 +11,8 @@ namespace Morpheus {
 	public:
 		inline T& operator[](const uint32_t i)	{ return mMem[i]; }
 		inline size_t size() const				{ return mSize; }
-		inline T& begin() const					{ return *mMem; }
-		inline T& end() const					{ return mMem[mSize]; }
+		inline T* begin() const					{ return mMem; }
+		inline T* end() const					{ return &mMem[mSize]; }
 		inline void clear()						{ mSize = 0; }
 
 		inline void reserve(const size_t n) {
@@ -20,6 +20,17 @@ namespace Morpheus {
 				delete mMem;
 			mMem = new T[n];
 			mAlloc = n;
+		}
+
+		inline void resize(const size_t n) {
+			if (mMem) {
+				T* newPtr = new T[n];
+				std::memcpy(newPtr, mMem, sizeof(T) * mSize);
+				delete[] mMem;
+				mMem = newPtr;
+			}
+			else
+				reserve(n);
 		}
 
 		RenderQueue(const size_t initialSize) {
@@ -41,7 +52,7 @@ namespace Morpheus {
 
 		inline void push(const T& t) {
 			if (mSize == mAlloc)
-				resize(std::max(mSize, 1) * 2);
+				resize(std::max(mSize, 1u) * 2);
 			mMem[mSize] = t;
 			++mSize;
 		}

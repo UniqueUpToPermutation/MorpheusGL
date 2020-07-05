@@ -133,7 +133,7 @@ namespace Morpheus {
 		friend void cursorPosHandler(GLFWwindow* win, double x, double y);
 		friend void mouseButtonHandler(GLFWwindow* win, int button, int action, int modifiers);
 		friend void keyHandler(GLFWwindow* win, int key, int scancode, int action, int mods);
-		friend void charHandle(GLFWwindow* win, unsigned int codepoint);
+		friend void charHandler(GLFWwindow* win, unsigned int codepoint);
 		friend void dropHandler(GLFWwindow* win, int count, const char** filenames);
 		friend void scrollHandler(GLFWwindow* win, double x, double y);
 		friend void framebufferSizeHandler(GLFWwindow* win, int width, int height);

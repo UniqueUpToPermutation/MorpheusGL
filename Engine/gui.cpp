@@ -1,5 +1,7 @@
 #include "gui.h"
 
+#include <glad/glad.h>
+
 #include <nanogui/nanogui.h>
 
 namespace Morpheus {
