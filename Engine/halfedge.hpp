@@ -14,6 +14,7 @@ namespace Morpheus {
 	struct RawVertex {
 		int edge;
 
+		inline RawVertex() { }
 		inline RawVertex(const int edge) : edge(edge) {}
 	};
 
@@ -23,6 +24,7 @@ namespace Morpheus {
 		int next;
 		int opposite;
 
+		inline RawEdge() { }
 		inline RawEdge(const int face, const int head, const int next, const int opposite) :
 			face(face), head(head), next(next), opposite(opposite) {}
 	};
@@ -30,6 +32,7 @@ namespace Morpheus {
 	struct RawFace {
 		int edge;
 
+		inline RawFace() { }
 		inline RawFace(const int edge) : edge(edge) {}
 	};
 
@@ -112,6 +115,7 @@ namespace Morpheus {
 		inline Edge nextById() const;
 		inline bool isValid() const;
 		inline vec3type direction() const;
+		inline EdgeIterator edgesOnFace() const;
 
 		friend class Vertex;
 		friend class Face;
@@ -333,6 +337,7 @@ namespace Morpheus {
 
 		friend HalfEdgeGeometry* loadBinary(const std::string& path);
 		friend HalfEdgeGeometry* loadJson(const std::string& path);
+		friend class HalfEdgeLoader;
 	};
 
 	HalfEdgeGeometry* loadBinary(const std::string& path);
@@ -414,6 +419,9 @@ namespace Morpheus {
 	}
 	inline EdgeIterator Vertex::incoming() const {
 		return EdgeIterator(edge().opposite(), &EdgeIterator::nextIngoing);
+	}
+	inline EdgeIterator Edge::edgesOnFace() const {
+		return EdgeIterator(*this, &EdgeIterator::nextOnFace);
 	}
 	inline VertexIterator Vertex::neighbors() const {
 		return VertexIterator(edge(), &VertexIterator::nextAdjacent);

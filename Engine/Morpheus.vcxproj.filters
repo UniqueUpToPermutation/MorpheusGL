@@ -108,6 +108,9 @@
     <ClInclude Include="halfedgeloader.hpp">
       <Filter>Header Files\util</Filter>
     </ClInclude>
+    <ClInclude Include="meshlap.hpp">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="digraph.cpp">
@@ -148,6 +151,12 @@
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="halfedgeloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="meshlap.cpp">
+      <Filter>Source Files\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

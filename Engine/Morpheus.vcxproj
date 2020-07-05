@@ -164,6 +164,7 @@
     <ClInclude Include="json.hpp" />
     <ClInclude Include="mapcpy.hpp" />
     <ClInclude Include="material.hpp" />
+    <ClInclude Include="meshlap.hpp" />
     <ClInclude Include="pool.hpp" />
     <ClInclude Include="region.hpp" />
     <ClInclude Include="forwardrenderer.hpp" />
@@ -183,7 +184,9 @@
     <ClCompile Include="gui.cpp" />
     <ClCompile Include="halfedge.cpp" />
     <ClCompile Include="forwardrenderer.cpp" />
+    <ClCompile Include="halfedgeloader.cpp" />
     <ClCompile Include="material.cpp" />
+    <ClCompile Include="meshlap.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="updater.cpp" />
