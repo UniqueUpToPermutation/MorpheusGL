@@ -5,16 +5,26 @@
 #include "shader.hpp"
 
 namespace Morpheus {
-	class Material;
-	SET_NODE_TYPE(Material, MATERIAL);
-
+	/// <summary>
+	/// A material is a shader plus overrides on different shader uniforms
+	/// </summary>
 	class Material {
-	protected:
+	private:
 		ref<Shader> mShader;
+		ShaderUniformAssignments mUniformAssigments;
 
 	public:
-		virtual ref<Material> copy() const = 0;
+		inline ref<Shader> shader() const { return mShader; }
+		inline const ShaderUniformAssignments& uniformAssignments() const {
+			return mUniformAssigments;
+		}
+
+		friend ref<Material> copy(const ref<Material>& a);
+		friend class ContentFactory<Material>;
 	};
+	SET_NODE_TYPE(Material, MATERIAL);
+
+	ref<Material> copy(const ref<Material>& a);
 
 	template <>
 	class ContentFactory<Material> : public IContentFactory {

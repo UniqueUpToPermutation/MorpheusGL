@@ -117,28 +117,28 @@ namespace Morpheus {
 		/// <returns>A node containing the asset.</returns>
 		template <typename ContentType>
 		Node load(const std::string& source, const Node& parent, ref<ContentType>* refOut = nullptr) {
-			auto& graph_ = graph();
+			auto graph_ = graph();
 			Node v;
 			if (mSources.tryFind(source, &v))
 				return v;
 			else {
 				// Create a vertex to load the content into
-				v = graph_.createVertex();
+				v = graph_->createVertex();
 				// Add the new vertex as a child of the content manager
-				graph_.createEdge(node(), v);
+				graph_->createEdge(node(), v);
 				
 				// Load a ref via the correct content factory
 				auto type = NODE_TYPE(ContentType);
 				auto ref = mTypeToFactory[type]->load(source, v);
 
 				// Set the node description of the created node appropriately
-				auto desc = graph_.desc(v);
+				auto desc = graph_->desc(v);
 				desc.type = type;
 				desc.owner = ref;
 				
 				// If a parent was passed, add the created content as a child of the parent
 				if (parent.isValid())
-					graph_.createEdge(parent, v);
+					graph_->createEdge(parent, v);
 
 				mSources.set(v, source);
 

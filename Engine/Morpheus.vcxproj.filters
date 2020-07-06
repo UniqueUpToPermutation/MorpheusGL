@@ -161,7 +161,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="config.json" />
     <None Include="shaders\basic.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -180,10 +179,14 @@
     <None Include="shaders\cooktorrance.json">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="material.json">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\nanogui\out\build\x64-Debug\nanogui.dll">
       <Filter>Copy Files</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="config.json" />
   </ItemGroup>
 </Project>

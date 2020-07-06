@@ -85,12 +85,50 @@ namespace Morpheus {
 		FRAGMENT
 	};
 
+	struct ShaderRenderView {
+		ShaderUniform<glm::mat4> mWorld;
+		ShaderUniform<glm::mat4> mView;
+		ShaderUniform<glm::mat4> mProjection;
+		ShaderUniform<glm::mat4> mWorldInverseTranspose;
+		ShaderUniform<glm::vec3> mEyePosition;
+
+		void init();
+	};
+
+	struct ShaderEditorView {
+		std::vector<GLint> mEditorUniforms;
+	};
+
+	struct ShaderVecUniformAssignment {
+		GLint mUniformLocation;
+		GLenum mUniformType;
+		union Value {
+			float vf1;
+			glm::vec2 vf2;
+			glm::vec3 vf3;
+			glm::vec4 vf4;
+			bool b;
+			int i;
+		} mUniformValue;
+	};
+
+	struct ShaderUniformAssignments {
+		std::vector<ShaderVecUniformAssignment> mVecs;
+	};
+
 	class Shader {
 	private:
 		GLuint mId;
+		ShaderRenderView mRenderView;
+		ShaderEditorView mEditorView;
+		ShaderUniformAssignments mDefaultAssignments;
 
 	public:
-
+		inline const ShaderUniformAssignments& defaultAssignments() const {
+			return mDefaultAssignments;
+		}
+		inline const ShaderRenderView& renderView() const { return mRenderView; }
+		inline const ShaderEditorView& editorView() const { return mEditorView; }
 		inline GLuint id() const { return mId; }
 
 		friend class ContentFactory<Shader>;
@@ -99,10 +137,18 @@ namespace Morpheus {
 
 	template <>
 	class ContentFactory<Shader> : public IContentFactory {
+	private:
+		void readJsonMetadata(const nlohmann::json& j, Shader* shad);
+
 	public:
 		ContentFactory();
 		ref<void> load(const std::string& source, Node& loadInto) override;
 		void unload(ref<void>& ref) override;
 		void dispose() override;
 	};
+
+	void readEditorUniforms(const nlohmann::json& j, const Shader* shad, ShaderEditorView* out);
+	void readRenderUniforms(const nlohmann::json& j, const Shader* shad, ShaderRenderView* out);
+	void readUniformDefaults(const nlohmann::json& j, const Shader* shad,
+		ShaderUniformAssignments* out, bool bAppend = false);
 }

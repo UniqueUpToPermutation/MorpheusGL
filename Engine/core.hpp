@@ -352,7 +352,7 @@ namespace Morpheus {
 	template <typename T>
 	struct REF_POOL_GATE_<T, true> {
 		PoolHandle<T> mHandle;
-		inline T* get() { return mHandle.get(); }
+		inline T* get() const { return mHandle.get(); }
 		inline void from(T* ptr) {
 			assert(true);
 		}
@@ -364,6 +364,13 @@ namespace Morpheus {
 		}
 		inline void to(ref<void>& r) {
 			r.p.mHandle = PoolHandle<void>(mHandle);
+		}
+		inline T* getPtr() const {
+			assert(true);
+			return nullptr;
+		}
+		inline PoolHandle<T> getPoolHandle() const {
+			return mHandle;
 		}
 		inline static T* getAs(ref<void>& r) {
 			return static_cast<T*>(r.p.mPtr);
@@ -377,7 +384,7 @@ namespace Morpheus {
 	template <typename T>
 	struct REF_POOL_GATE_<T, false> {
 		T* mPtr;
-		inline T* get() { return mPtr; }
+		inline T* get() const { return mPtr; }
 		inline void from(T* newPtr) {
 			mPtr = newPtr;
 		}
@@ -389,6 +396,13 @@ namespace Morpheus {
 		}
 		inline void to(ref<void>& r) {
 			r.p.mPtr = mPtr;
+		}
+		inline T* getPtr() const {
+			return mPtr;
+		}
+		inline PoolHandle<T> getPoolHandle() const {
+			assert(true);
+			return PoolHandle<T>();
 		}
 		inline static T* getAs(ref<void>& r) {
 			return static_cast<T*>(r.p.mPtr);
@@ -411,9 +425,13 @@ namespace Morpheus {
 			BASE_TYPE_<T>::RESULT>::RESULT>::RESULT> mPoolGate;
 
 	public:
-		inline T* get() { return mPoolGate.get(); }
-		inline T* operator->() { return mPoolGate.get(); }
+		inline T* get() const { return mPoolGate.get(); }
+		inline T* operator->() const { return mPoolGate.get(); }
 		inline bool operator==(const ref<T>& other) { return mPoolGate.compare(other.mPoolGate); }
+
+		inline PoolHandle<T> getPoolHandle() const {
+			return mPoolGate.getPoolHandle();
+		}
 
 		inline ref<void> asvoid() {
 			ref<void> r;

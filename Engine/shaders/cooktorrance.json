@@ -1,5 +1,28 @@
 {
   "shader_class": "cooktorrance",
   "vertex_shader": "cooktorrance.vert",
-  "fragment_shader": "cooktorrance.frag"
+  "fragment_shader": "cooktorrance.frag",
+
+  "editor_uniforms": [
+    "specularColor",
+    "F0",
+    "roughness"
+  ],
+
+  "uniform_defaults": {
+    "specularColor": [ 1.0, 1.0, 1.0 ],
+    "F0": 0.8,
+    "roughness": 0.1,
+    "lightColor": [ 1.0, 1.0, 1.0 ],
+    "ambientStrength": 0.0,
+    "lightIntensity": 1.0
+  },
+
+  "renderer_uniforms": {
+    "eye_position": "eyePosition",
+    "world": "model",
+    "worldInverseTranspose": "modelInverseTranspose",
+    "view": "view",
+    "projection": "projection"
+  }
 }

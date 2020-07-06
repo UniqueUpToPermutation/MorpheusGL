@@ -31,6 +31,7 @@ namespace Morpheus {
 
 		inline T* operator->();
 		inline T* get();
+		inline Pool<T>* getPool();
 
 		friend class Pool<T>;
 		friend class PoolHandle<void>;
@@ -176,6 +177,10 @@ namespace Morpheus {
 	inline T* PoolHandle<T>::get()
 	{
 		return &mPoolPtr->mData[mOffset];
+	}
+	template<typename T>
+	Pool<T>* PoolHandle<T>::getPool() {
+		return mPoolPtr;
 	}
 
 	template <typename T>
