@@ -152,10 +152,10 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="halfedgeloader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="meshlap.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="halfedgeloader.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
   </ItemGroup>

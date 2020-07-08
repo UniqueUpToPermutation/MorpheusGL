@@ -191,8 +191,8 @@ namespace Morpheus {
 		// Clean up anything disposable
 		for (auto nodeIt = mGraph.vertices(); nodeIt.valid(); nodeIt.next()) {
 			auto desc = mGraph.desc(nodeIt());
-			if (NodeMetadata::isDisposable(desc.type))
-				dispose(desc.owner);
+			if (NodeMetadata::isDisposable(desc->type))
+				dispose(desc->owner);
 		}
 
 		glfwDestroyWindow(mWindow);

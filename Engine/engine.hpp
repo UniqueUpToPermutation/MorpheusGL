@@ -89,6 +89,11 @@ namespace Morpheus {
 		/// <returns>The handle to the engine.</returns>
 		inline NodeHandle handle() const { return mHandle; }
 		/// <summary>
+		/// The node of the engine in the scene graph.
+		/// </summary>
+		/// <returns>The node of the engine in the scene graph</returns>
+		inline Node node() { return mGraph[mHandle]; }
+		/// <summary>
 		/// The content manager of the engine.
 		/// </summary>
 		/// <returns>A reference to the content manager.</returns>

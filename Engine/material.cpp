@@ -69,4 +69,7 @@ namespace Morpheus {
     void ContentFactory<Material>::unload(ref<void>& ref) {
 
     }
+    void ContentFactory<Material>::dispose() {
+
+    }
 }

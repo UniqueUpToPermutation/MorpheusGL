@@ -56,7 +56,7 @@ namespace Morpheus {
 				string include_path = code.substr(path_start + 1, path_end - path_start - 1);
 				string prefix_include_path = "";
 
-				auto extract_ptr = path.rfind('/');
+				auto extract_ptr = path.find_last_of("\\/");
 				if (extract_ptr != string::npos)
 					prefix_include_path = path.substr(0, extract_ptr+1);
 
@@ -212,13 +212,14 @@ namespace Morpheus {
 
 		for (auto& unif : j.items()) {
 			std::string name = unif.key();
-			GLint a = glGetUniformLocation(shad->id(), name.c_str());
+			std::string unifName = unif.value();
+			GLint a = glGetUniformLocation(shad->id(), unifName.c_str());
 			if (a >= 0) {
 				if (name == "eye_position") 
 					out->mEyePosition.mLoc = a;
 				else if (name == "world") 
 					out->mWorld.mLoc = a;
-				else if (name == "worldInverseTranspose")
+				else if (name == "world_inverse_transpose")
 					out->mWorldInverseTranspose.mLoc = a;
 				else if (name == "view") 
 					out->mView.mLoc = a;
@@ -274,9 +275,9 @@ namespace Morpheus {
 
 		string prefix_include_path = "";
 
-		auto extract_ptr = source.rfind('/');
+		auto extract_ptr = source.find_last_of("\\/");
 		if (extract_ptr != string::npos)
-			prefix_include_path = source.substr(0, extract_ptr+1);
+			prefix_include_path = source.substr(0, extract_ptr + 1);
 
 		// Compile an Open GL shader
 		string vertex_src = j["vertex_shader"];
@@ -321,6 +322,7 @@ namespace Morpheus {
 
 		// Set the shader ID!
 		shader->mId = id;
+		readJsonMetadata(j, shader);
 
 		ref<void> r(shader);
 		return r;

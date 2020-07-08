@@ -2,6 +2,7 @@
 #include "content.hpp"
 #include "shader.hpp"
 #include "gui.hpp"
+#include "material.hpp"
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
@@ -40,11 +41,14 @@ int main() {
 	Engine en;
 
 	if (en.startup("config.json").isSuccess()) {
+		content()->load<Material>("material.json");
 
 		GuiTest* gui = new GuiTest();
 		gui->init();
 
 		Node guiNode = graph()->addNode(gui, engine()->handle());
+
+		print(engine()->node());
 
 		// Make a thing
 		while (en.valid()) {

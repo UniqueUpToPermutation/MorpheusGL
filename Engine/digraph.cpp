@@ -289,5 +289,4 @@ namespace Morpheus {
 		mVertexStack = std::stack<int>();
 		mVertexStack.push(start.id());
 	}
-
 }

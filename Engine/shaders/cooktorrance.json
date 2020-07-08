@@ -21,7 +21,7 @@
   "renderer_uniforms": {
     "eye_position": "eyePosition",
     "world": "model",
-    "worldInverseTranspose": "modelInverseTranspose",
+    "world_inverse_transpose": "modelInverseTranspose",
     "view": "view",
     "projection": "projection"
   }

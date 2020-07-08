@@ -1,5 +1,5 @@
 {
-  "shader": "Shaders/cooktorrance.json",
+  "shader": "shaders/cooktorrance.json",
 
   "uniform_override": {
     "specularColor": [ 1.0, 1.0, 1.0 ],

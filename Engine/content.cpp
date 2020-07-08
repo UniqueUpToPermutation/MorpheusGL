@@ -9,26 +9,33 @@ namespace Morpheus {
 		addFactory<Shader>();
 		// Make geometry factory
 		addFactory<Geometry>();
+		// Make material factory
+		addFactory<Material>();
+
+		mSources = graph()->createVertexLookup<std::string>("__content__");
 	}
 
 	void ContentManager::unload(Node& node) {
 		auto desc = graph()->desc(node);
 		// Get factory from type
-		auto factory = mTypeToFactory[desc.type];
-		if (factory != nullptr)
-			factory->unload(desc.owner);
+		auto factory = mTypeToFactory[desc->type];
+		if (factory)
+			factory->unload(desc->owner);
 		graph()->deleteVertex(node);
 	}
 
 	void ContentManager::unloadAll() {
-		for (auto it = (*graph())[mHandle].getOutgoingNeighbors(); it.valid(); it.next()) {
+		for (auto it = (*graph())[mHandle].getOutgoingNeighbors(); it.valid();) {
 			Node v = it();
+			it.next();
 			unload(v);
 		}
 	}
 
 	void ContentManager::dispose() {
 		unloadAll();
+
+		graph()->destroyLookup(mSources);
 	}
 
 	void ContentManager::collectGarbage() {

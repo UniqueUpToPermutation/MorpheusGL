@@ -419,6 +419,22 @@ namespace Morpheus {
 		void destroyData(DigraphSparseDataView<T>& view);
 
 		/// <summary>
+		/// Destroys the lookup associated with this view
+		/// </summary>
+		/// <typeparam name="T">The type of the lookup attachment.</typeparam>
+		/// <param name="view">The view to the lookup attachment to destroy.</param>
+		template <typename T>
+		void destroyLookup(DigraphVertexLookupView<T>& view);
+
+		/// <summary>
+		/// Destroys the lookup associated with this view
+		/// </summary>
+		/// <typeparam name="T">The type of the lookup attachment.</typeparam>
+		/// <param name="view">The view to the lookup attachment to destroy.</param>
+		template <typename T>
+		void destroyLookup(DigraphEdgeLookupView<T>& view);
+
+		/// <summary>
 		/// Get an edge data attachment by name.
 		/// </summary>
 		/// <typeparam name="T">The type of the attachment.</typeparam>
@@ -609,6 +625,7 @@ namespace Morpheus {
 		Digraph* mParent;
 		DigraphLookupType mType;
 		std::unordered_map<T, int> mTtoId;
+		std::string mName;
 
 	protected:
 		void applyMap(const int map[], const uint32_t mapSize) override {
@@ -617,6 +634,9 @@ namespace Morpheus {
 		}
 
 	public:
+		inline std::string name() const {
+			return mName;
+		}
 		inline void setv(const DigraphVertex& v, const T& t) {
 			mTtoId[t] = v.id();
 		}
@@ -630,8 +650,9 @@ namespace Morpheus {
 			return mParent->getEdge(mTtoId[t]);
 		}
 
-		inline explicit DigraphLookup(Digraph* parent, const DigraphLookupType type) :
-			mParent(parent), mType(type) { }
+		inline explicit DigraphLookup(Digraph* parent, 
+			const DigraphLookupType type, const std::string& name) :
+			mParent(parent), mType(type), mName(name) { }
 
 		friend class Digraph;
 		friend struct DigraphVertexLookupView<T>;
@@ -650,6 +671,10 @@ namespace Morpheus {
 	public:
 		inline DigraphVertexLookupView(DigraphLookup<T>* lookup) : mLookup(lookup) { }
 		inline DigraphVertexLookupView() : mLookup(nullptr) { }
+
+		inline std::string name() {
+			return mLookup->mName;
+		}
 
 		inline DigraphVertex operator[](const T& t) {
 			return mLookup->mParent->getVertex(mLookup->mTtoId[t]);
@@ -698,6 +723,10 @@ namespace Morpheus {
 	public:
 		inline DigraphEdgeLookupView(DigraphLookup<T>* lookup) : mLookup(lookup) { }
 		inline DigraphEdgeLookupView() : mLookup(nullptr) { }
+
+		inline std::string name() {
+			return mLookup->mName;
+		}
 
 		inline DigraphEdge operator[](const T& t) {
 			mLookup->mParent->getEdge(mLookup->mTtoId[t]);
@@ -1107,6 +1136,16 @@ namespace Morpheus {
 	}
 
 	template <typename T>
+	void Digraph::destroyLookup(DigraphVertexLookupView<T>& view) {
+		mVertexLookups.erase(view.name());
+	}
+
+	template <typename T>
+	void Digraph::destroyLookup(DigraphEdgeLookupView<T>& view) {
+		mEdgeLookups.erase(view.name());
+	}
+
+	template <typename T>
 	inline T& DigraphVertex::data(const std::string& s) {
 		return mPtr->getVertexData<T>(s)[*this];
 	}
@@ -1141,7 +1180,7 @@ namespace Morpheus {
 
 	template <typename T>
 	DigraphVertexLookupView<T> Digraph::createVertexLookup(const std::string& name) {
-		auto lookup = new DigraphLookup<T>(this, DigraphLookupType::VERTEX);
+		auto lookup = new DigraphLookup<T>(this, DigraphLookupType::VERTEX, name);
 		mVertexLookups[name] = lookup;
 		++mLookupsCreated;
 		return DigraphVertexLookupView<T>(lookup);
@@ -1149,7 +1188,7 @@ namespace Morpheus {
 
 	template <typename T>
 	DigraphEdgeLookupView<T> Digraph::createEdgeLookup(const std::string& name) {
-		auto lookup = new DigraphLookup<T>(this, DigraphLookupType::EDGE);
+		auto lookup = new DigraphLookup<T>(this, DigraphLookupType::EDGE, name);
 		mEdgeLookups[name] = lookup;
 		++mLookupsCreated;
 		return DigraphEdgeLookupView<T>(lookup);

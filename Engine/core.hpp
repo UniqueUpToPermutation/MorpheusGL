@@ -490,13 +490,13 @@ namespace Morpheus {
 		inline NodeDataView& descs() { 
 			return mDescs; 
 		}
-		inline NodeData& desc(const Node& v) {
-			return mDescs[v];
+		inline NodeData* desc(const Node& v) {
+			return &(mDescs[v]);
 		}
-		inline NodeHandleLookupView handles() {
+		inline NodeHandleLookupView handles() const {
 			return mHandles;
 		}
-		inline NodeNameLookupView names() {
+		inline NodeNameLookupView names() const {
 			return mNames;
 		}
 		inline Node operator[](const NodeHandle handle) {
@@ -671,6 +671,9 @@ namespace Morpheus {
 			mNames = createVertexLookup<std::string>("name");
 		}
 	};
+
+	std::string nodeTypeString(NodeType t);
+	void print(Node node);
 
 	struct DynamicTransform {
 		glm::vec3 mTranslation;
