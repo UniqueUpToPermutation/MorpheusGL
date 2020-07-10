@@ -3,14 +3,42 @@
 #include "shader.hpp"
 #include "gui.hpp"
 #include "material.hpp"
+#include "staticmesh.hpp"
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
 #include <iostream>
 
 using namespace Morpheus;
+using namespace glm;
 
 nanogui::Color clr(1.0f, 1.0f, 1.0f, 1.0f);
+
+class CookTorranceView : public ShaderView {
+public:
+	ShaderUniform<vec3> mSpecularColor;
+	ShaderUniform<float> mF0;
+	ShaderUniform<float> mRoughness;
+	ShaderUniform<float> mK;
+	ShaderUniform<vec3> mLightColor;
+	ShaderUniform<float> mAmbientStrength;
+	ShaderUniform<float> mLightIntensity;
+	ShaderUniform<vec3> mEyePosition;
+	ShaderUniform<vec3> mLightPosition;
+
+	inline CookTorranceView(ref<Shader>& shader_) : ShaderView(shader_) 
+	{ 
+		link(mSpecularColor, "specularColor");
+		link(mF0, "F0");
+		link(mRoughness, "roughness");
+		link(mK, "k");
+		link(mLightColor, "lightColor");
+		link(mAmbientStrength, "ambientStrength");
+		link(mLightIntensity, "lightIntensity");
+		link(mEyePosition, "eyePosition");
+		link(mLightPosition, "lightPosition");
+	}
+};
 
 class GuiTest : public GuiBase {
 protected:
@@ -41,12 +69,14 @@ int main() {
 	Engine en;
 
 	if (en.startup("config.json").isSuccess()) {
-		content()->load<Material>("material.json");
-
 		GuiTest* gui = new GuiTest();
 		gui->init();
 
 		Node guiNode = graph()->addNode(gui, engine()->handle());
+
+		print(engine()->node());
+
+		Node staticMesh = content()->load<StaticMesh>("staticmesh.json");
 
 		print(engine()->node());
 

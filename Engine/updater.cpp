@@ -26,7 +26,7 @@ namespace Morpheus {
 		auto v = (*graph_)[mHandle];
 		for (auto it = v.getOutgoingNeighbors(); it.valid(); it.next()) {
 			auto desc = graph_->desc(it());
-			desc->owner.getAs<IUpdateable>()->update(dt);
+			desc->owner.getAs<IUpdatable>()->update(dt);
 		}
 	}
 }

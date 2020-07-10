@@ -43,6 +43,9 @@
     <Filter Include="Copy Files">
       <UniqueIdentifier>{20d9edef-7508-4c80-8197-5dedf27ca196}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Content">
+      <UniqueIdentifier>{13bb7455-feab-4531-93ad-dbe3b9dd7885}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp">
@@ -111,6 +114,9 @@
     <ClInclude Include="meshlap.hpp">
       <Filter>Header Files\util</Filter>
     </ClInclude>
+    <ClInclude Include="staticmesh.hpp">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="digraph.cpp">
@@ -158,6 +164,9 @@
     <ClCompile Include="halfedgeloader.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
+    <ClCompile Include="staticmesh.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -180,7 +189,13 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="material.json">
-      <Filter>Shaders</Filter>
+      <Filter>Content</Filter>
+    </None>
+    <None Include="staticmesh.json">
+      <Filter>Content</Filter>
+    </None>
+    <None Include="bunny.obj">
+      <Filter>Content</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

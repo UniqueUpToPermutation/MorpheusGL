@@ -8,7 +8,82 @@
 using namespace nlohmann;
 using namespace std;
 
+#define SIZE_CASE(type) case type: \
+	return sizeof(GL_TYPE_<type>::C_TYPE_)
+#define JSON_CASE(type, j, ptr) case type: \
+	{ \
+	GL_TYPE_<type>::C_TYPE_* ptr_cast = static_cast<GL_TYPE_<type>::C_TYPE_*>(ptr); \
+	GL_TYPE_<type>::readJson(j, ptr_cast); \
+	break; \
+	}
+
 namespace Morpheus {
+
+	uint32_t GLTypeMetadata::sizeOf(GLenum type) {
+		switch (type) {
+			SIZE_CASE(GL_INT);
+			SIZE_CASE(GL_UNSIGNED_INT);
+			SIZE_CASE(GL_SHORT);
+			SIZE_CASE(GL_UNSIGNED_SHORT);
+			SIZE_CASE(GL_BYTE);
+			SIZE_CASE(GL_UNSIGNED_BYTE);
+			SIZE_CASE(GL_BOOL);
+			SIZE_CASE(GL_FLOAT_VEC2);
+			SIZE_CASE(GL_FLOAT_VEC3);
+			SIZE_CASE(GL_FLOAT_VEC4);
+			SIZE_CASE(GL_FLOAT_MAT2);
+			SIZE_CASE(GL_FLOAT_MAT3);
+			SIZE_CASE(GL_FLOAT_MAT4);
+			SIZE_CASE(GL_FLOAT_MAT2x3);
+			SIZE_CASE(GL_FLOAT_MAT3x2);
+			SIZE_CASE(GL_FLOAT_MAT2x4);
+			SIZE_CASE(GL_FLOAT_MAT4x2);
+			SIZE_CASE(GL_FLOAT_MAT3x4);
+			SIZE_CASE(GL_FLOAT_MAT4x3);
+			SIZE_CASE(GL_DOUBLE_VEC2);
+			SIZE_CASE(GL_DOUBLE_VEC3);
+			SIZE_CASE(GL_DOUBLE_VEC4);
+			SIZE_CASE(GL_DOUBLE_MAT2);
+			SIZE_CASE(GL_DOUBLE_MAT3);
+			SIZE_CASE(GL_DOUBLE_MAT4);
+			SIZE_CASE(GL_DOUBLE_MAT2x3);
+			SIZE_CASE(GL_DOUBLE_MAT3x2);
+			SIZE_CASE(GL_DOUBLE_MAT2x4);
+			SIZE_CASE(GL_DOUBLE_MAT4x2);
+			SIZE_CASE(GL_DOUBLE_MAT3x4);
+			SIZE_CASE(GL_DOUBLE_MAT4x3);
+			SIZE_CASE(GL_INT_VEC2);
+			SIZE_CASE(GL_INT_VEC3);
+			SIZE_CASE(GL_INT_VEC4);
+		default:
+			assert(0);
+			return 0;
+		}
+	}
+
+	void GLTypeMetadata::fromJson(const nlohmann::json& j, GLenum type, void* out_ptr) {
+		switch (type) {
+			JSON_CASE(GL_INT, j, out_ptr);
+			JSON_CASE(GL_UNSIGNED_INT, j, out_ptr);
+			JSON_CASE(GL_SHORT, j, out_ptr);
+			JSON_CASE(GL_UNSIGNED_SHORT, j, out_ptr);
+			JSON_CASE(GL_BYTE, j, out_ptr);
+			JSON_CASE(GL_UNSIGNED_BYTE, j, out_ptr);
+			JSON_CASE(GL_BOOL, j, out_ptr);
+			JSON_CASE(GL_FLOAT_VEC2, j, out_ptr);
+			JSON_CASE(GL_FLOAT_VEC3, j, out_ptr);
+			JSON_CASE(GL_FLOAT_VEC4, j, out_ptr);
+			JSON_CASE(GL_DOUBLE_VEC2, j, out_ptr);
+			JSON_CASE(GL_DOUBLE_VEC3, j, out_ptr);
+			JSON_CASE(GL_DOUBLE_VEC4, j, out_ptr);
+			JSON_CASE(GL_INT_VEC2, j, out_ptr);
+			JSON_CASE(GL_INT_VEC3, j, out_ptr);
+			JSON_CASE(GL_INT_VEC4, j, out_ptr);
+		default:
+			assert(0);
+			break;
+		}
+	}
 
 	ContentFactory<Shader>::ContentFactory() {
 	}
@@ -71,7 +146,7 @@ namespace Morpheus {
 		}
 	}
 
-	void substitute(const ShaderVecUniformAssignment& assign, std::vector<ShaderVecUniformAssignment>* vec) {
+	void substitute(const ShaderUniformAssignment& assign, std::vector<ShaderUniformAssignment>* vec) {
 		bool bFound = false;
 		for (auto& oldAssign : *vec) {
 			if (oldAssign.mUniformLocation == assign.mUniformLocation) {
@@ -86,128 +161,49 @@ namespace Morpheus {
 	}
 	
 	void readUniformDefaults(const nlohmann::json& j, const Shader* shad, 
-		ShaderUniformAssignments* out, bool bAppend) {
+		ShaderUniformAssignments* out) {
+		vector<string> names;
+
+		out->mBindings.clear();
+
 		for (auto& unif : j.items()) {
 			std::string name = unif.key();
 			GLint a = glGetUniformLocation(shad->id(), name.c_str());
+			uint32_t offset = 0u;
 			if (a >= 0) {
 				GLint size;
 				GLenum type;
 
 				glGetActiveUniform(shad->id(), a, 0, nullptr, &size, &type, nullptr);
 
-				switch (type) {
-				case GL_FLOAT:
-				case GL_DOUBLE:
-				{
-					ShaderVecUniformAssignment assign;
-					assign.mUniformLocation = a;
-					assign.mUniformType = type;
-					float dat;
-					unif.value().get_to(dat);
-					assign.mUniformValue.vf1 = dat;
+				ShaderUniformAssignment assign;
+				assign.mUniformLocation = a;
+				assign.mUniformType = type;
+				assign.mOffset = offset;
+				offset += GLTypeMetadata::sizeOf(type);
 
-					if (bAppend)
-						substitute(assign, &out->mVecs);
-					else
-						out->mVecs.push_back(assign);
-					break;
-				}
-				case GL_FLOAT_VEC2:
-				case GL_DOUBLE_VEC2:
-				{
-					ShaderVecUniformAssignment assign;
-					assign.mUniformLocation = a;
-					assign.mUniformType = type;
-					std::vector<float> dat;
-					unif.value().get_to(dat);
-					assign.mUniformValue.vf2.x = dat[0];
-					assign.mUniformValue.vf2.y = dat[1];
-
-					if (bAppend)
-						substitute(assign, &out->mVecs);
-					else
-						out->mVecs.push_back(assign);
-				}
-					break;
-				case GL_FLOAT_VEC3:
-				case GL_DOUBLE_VEC3:
-				{
-					ShaderVecUniformAssignment assign;
-					assign.mUniformLocation = a;
-					assign.mUniformType = type;
-					std::vector<float> dat;
-					unif.value().get_to(dat);
-					assign.mUniformValue.vf3.x = dat[0];
-					assign.mUniformValue.vf3.y = dat[1];
-					assign.mUniformValue.vf3.z = dat[2];
-
-					if (bAppend)
-						substitute(assign, &out->mVecs);
-					else
-						out->mVecs.push_back(assign);
-				}
-					break;
-				case GL_FLOAT_VEC4:
-				case GL_DOUBLE_VEC4:
-				{
-					ShaderVecUniformAssignment assign;
-					assign.mUniformLocation = a;
-					assign.mUniformType = type;
-					std::vector<float> dat;
-					unif.value().get_to(dat);
-					assign.mUniformValue.vf4.x = dat[0];
-					assign.mUniformValue.vf4.y = dat[1];
-					assign.mUniformValue.vf4.z = dat[2];
-					assign.mUniformValue.vf4.w = dat[3];
-
-					if (bAppend)
-						substitute(assign, &out->mVecs);
-					else
-						out->mVecs.push_back(assign);
-				}
-					break;
-				case GL_BOOL:
-				{
-					ShaderVecUniformAssignment assign;
-					assign.mUniformLocation = a;
-					assign.mUniformType = type;
-					bool dat;
-					unif.value().get_to(dat);
-					assign.mUniformValue.b = dat;
-
-					if (bAppend)
-						substitute(assign, &out->mVecs);
-					else
-						out->mVecs.push_back(assign);
-				}
-					break;
-				case GL_INT:
-				{
-					ShaderVecUniformAssignment assign;
-					assign.mUniformLocation = a;
-					assign.mUniformType = type;
-					int dat;
-					unif.value().get_to(dat);
-					assign.mUniformValue.i = dat;
-
-					if (bAppend)
-						substitute(assign, &out->mVecs);
-					else
-						out->mVecs.push_back(assign);
-				}
-					break;
-				default:
-					cout << "Warning: uniform_default bindings don't support type " << a << endl;
-					break;
-				}
+				out->mBindings.push_back(assign);
+				names.push_back(name);
 			}
 			else
 				cout << "Warning: could not find uniform " << unif.key().c_str() << endl;
 		}
+
+		// Allocate memory block
+		out->mTotalSize = out->computeSize();
+		out->mData = new uint8_t[out->mTotalSize];
+
+		for (uint32_t i = 0; i < names.size(); ++i) {
+			auto& name = names[i];
+			auto& binding = out->mBindings[i];
+
+			// Read actual data from json
+			GLTypeMetadata::fromJson(j[name], binding.mUniformType,
+				&out->mData[binding.mOffset]);
+		}
 	}
 
-	void readRenderUniforms(const nlohmann::json& j, const Shader* shad, ShaderRenderView* out) {
+	void readRenderUniforms(const nlohmann::json& j, const Shader* shad, RendererShaderView* out) {
 		out->init();
 
 		for (auto& unif : j.items()) {
@@ -368,12 +364,49 @@ namespace Morpheus {
 		}
 		return id;
 	}
-	void ShaderRenderView::init()
+	void RendererShaderView::init()
 	{
 		mWorld.mLoc = -1;
 		mView.mLoc = -1;
 		mProjection.mLoc = -1;
 		mWorldInverseTranspose.mLoc = -1;
 		mEyePosition.mLoc = -1;
+	}
+	uint32_t Morpheus::ShaderUniformAssignments::computeSize() const
+	{
+		uint32_t size = 0u;
+		for (auto& binding : mBindings) {
+			size += static_cast<uint32_t>(GLTypeMetadata::sizeOf(binding.mUniformType));
+		}
+		return size;
+	}
+	void ShaderUniformAssignments::assign()
+	{
+	}
+	ShaderUniformAssignments ShaderUniformAssignments::overwrite(const ShaderUniformAssignments& toOverwrite)
+	{
+		ShaderUniformAssignments result;
+		for (auto& binding : mBindings) {
+			result.mBindings.push_back(binding);
+		}
+
+		uint32_t offset = result.computeSize();
+		for (auto& copy_binding : toOverwrite.mBindings) {
+			ShaderUniformAssignment binding = copy_binding;
+			binding.mOffset += offset;
+			bool bAdd = true;
+			for (uint32_t i = 0; i < mBindings.size(); ++i) {
+				auto& cmp_binding = mBindings[i];
+				if (cmp_binding.mUniformLocation == binding.mUniformLocation)
+					bAdd = false;
+			}
+			result.mBindings.push_back(binding);
+		}
+
+		result.mTotalSize = result.computeSize();
+		result.mData = new uint8_t[result.mTotalSize];
+		std::memcpy(result.mData, mData, offset);
+		std::memcpy(&result.mData[offset], toOverwrite.mData, result.mTotalSize - offset);
+		return result;
 	}
 }

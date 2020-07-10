@@ -10,18 +10,22 @@ using namespace std;
 
 namespace Morpheus {
 
-	bool NodeMetadata::sceneChild[(uint32_t)NodeType::END];
+	bool NodeMetadata::renderable[(uint32_t)NodeType::END];
 	bool NodeMetadata::disposable[(uint32_t)NodeType::END];
 	bool NodeMetadata::pooled[(uint32_t)NodeType::END];
-	NodeType NodeMetadata::instanceToPrototype[(uint32_t)NodeType::END];
-	NodeType NodeMetadata::prototypeToInstance[(uint32_t)NodeType::END];
+	bool NodeMetadata::content[(uint32_t)NodeType::END];
+	bool NodeMetadata::updatable[(uint32_t)NodeType::END];
+	NodeType NodeMetadata::proxyToPrototype[(uint32_t)NodeType::END];
+	NodeType NodeMetadata::prototypeToProxy[(uint32_t)NodeType::END];
 
 	template <NodeType iType> void NodeMetadata::init_() {
 		pooled[(uint32_t)iType] = IS_POOLED_<iType>::RESULT;
-		sceneChild[(uint32_t)iType] = IS_SCENE_CHILD_<iType>::RESULT;
+		renderable[(uint32_t)iType] = IS_RENDERABLE_<iType>::RESULT;
+		updatable[(uint32_t)iType] = IS_UPDATABLE_<iType>::RESULT;
+		content[(uint32_t)iType] = IS_CONTENT_<iType>::RESULT;
 		disposable[(uint32_t)iType] = IS_DISPOSABLE_<iType>::RESULT;
-		prototypeToInstance[(uint32_t)iType] = PROTOTYPE_TO_BASE_<iType>::RESULT;
-		instanceToPrototype[(uint32_t)iType] = INSTANCE_TO_PROTOTYPE_<iType>::RESULT;
+		prototypeToProxy[(uint32_t)iType] = PROTOTYPE_TO_PROXY_<iType>::RESULT;
+		proxyToPrototype[(uint32_t)iType] = PROXY_TO_PROTOTYPE_<iType>::RESULT;
 			
 		init_<(NodeType)((uint32_t)iType + 1)>();
 	}
@@ -50,8 +54,8 @@ namespace Morpheus {
 			T_CASE(BOUNDING_BOX);
 			T_CASE(STATIC_OBJECT_MANAGER);
 			T_CASE(DYNAMIC_OBJECT_MANAGER);
-			T_CASE(MATERIAL_INSTANCE);
-			T_CASE(GEOMETRY_INSTANCE);
+			T_CASE(MATERIAL_PROXY);
+			T_CASE(GEOMETRY_PROXY);
 			T_CASE(NANOGUI_SCREEN);
 			T_CASE(SCENE_END);
 			T_CASE(CONTENT_BEGIN);

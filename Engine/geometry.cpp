@@ -59,21 +59,48 @@ namespace Morpheus {
 			-std::numeric_limits<float>::infinity(),
 			-std::numeric_limits<float>::infinity());
 
+		bool bHasUVs = mesh->HasTextureCoords(0);
+		bool bHasTangents = mesh->HasTangentsAndBitangents();
+
 		for (uint32_t i = 0, bufindx = 0; i < nVerts; ++i, bufindx += stride) {
 			vert_buffer[bufindx] = mesh->mVertices[i].x;
 			vert_buffer[bufindx + 1] = mesh->mVertices[i].y;
 			vert_buffer[bufindx + 2] = mesh->mVertices[i].z;
-			vert_buffer[bufindx + 3] = mesh->mTextureCoords[0][i].x;
-			vert_buffer[bufindx + 4] = mesh->mTextureCoords[0][i].y;
+
 			vert_buffer[bufindx + 5] = mesh->mNormals[i].x;
 			vert_buffer[bufindx + 6] = mesh->mNormals[i].y;
 			vert_buffer[bufindx + 7] = mesh->mNormals[i].z;
-			vert_buffer[bufindx + 8] = mesh->mTangents[i].x;
-			vert_buffer[bufindx + 9] = mesh->mTangents[i].y;
-			vert_buffer[bufindx + 10] = mesh->mTangents[i].z;
 
 			aabb.mLower = glm::min(aabb.mLower, glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z));
 			aabb.mUpper = glm::max(aabb.mUpper, glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z));
+		}
+
+		if (bHasTangents) {
+			for (uint32_t i = 0, bufindx = 0; i < nVerts; ++i, bufindx += stride) {
+				vert_buffer[bufindx + 8] = mesh->mTangents[i].x;
+				vert_buffer[bufindx + 9] = mesh->mTangents[i].y;
+				vert_buffer[bufindx + 10] = mesh->mTangents[i].z;
+			}
+		}
+		else {
+			for (uint32_t i = 0, bufindx = 0; i < nVerts; ++i, bufindx += stride) {
+				vert_buffer[bufindx + 8] = 0.0;
+				vert_buffer[bufindx + 9] = 0.0;
+				vert_buffer[bufindx + 10] = 0.0;
+			}
+		}
+
+		if (bHasUVs) {
+			for (uint32_t i = 0, bufindx = 0; i < nVerts; ++i, bufindx += stride) {
+				vert_buffer[bufindx + 3] = mesh->mTextureCoords[0][i].x;
+				vert_buffer[bufindx + 4] = mesh->mTextureCoords[0][i].y;
+			}
+		}
+		else {
+			for (uint32_t i = 0, bufindx = 0; i < nVerts; ++i, bufindx += stride) {
+				vert_buffer[bufindx + 3] = 0.0;
+				vert_buffer[bufindx + 4] = 0.0;
+			}
 		}
 
 		for (uint32_t i_face = 0, i = 0; i_face < mesh->mNumFaces; ++i_face) {

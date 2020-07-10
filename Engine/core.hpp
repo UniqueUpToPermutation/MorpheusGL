@@ -23,14 +23,17 @@
 #define SET_POOLED(Type, bPooled) template <> struct IS_POOLED_<NodeType::Type>	\
 	{ static const bool RESULT = bPooled; }
 
-#define SET_CONTENT(Type, bIsContent) template <> struct IS_CONTENT_<NodeType::Type>	\
+#define SET_CONTENT(Type, bIsContent) template <> struct IS_CONTENT_<NodeType::Type> \
 	{ static const bool RESULT = bIsContent; }
 
-#define SET_SCENE_CHILD(Type, bIsChild) template <> struct IS_SCENE_CHILD_<NodeType::Type>	\
+#define SET_RENDERABLE(Type, bIsChild) template <> struct IS_RENDERABLE_<NodeType::Type>	\
 	{ static const bool RESULT = bIsChild; }
 
 #define SET_DISPOSABLE(Type, bIsDisposable) template <> struct IS_DISPOSABLE_<NodeType::Type>	\
 	{ static const bool RESULT = bIsDisposable; }
+
+#define SET_UPDATABLE(Type, bIsUpdateable) template <> struct IS_UPDATABLE_<NodeType::Type>	\
+	{ static const bool RESULT = bIsUpdateable; }
 
 #define SET_NODE_TYPE(OwnerType, Type) template<> struct NODE_TYPE_<OwnerType> \
 	{ static const NodeType RESULT = NodeType::Type; }; \
@@ -42,9 +45,9 @@
 
 #define NODE_TYPE(OwnerType) NODE_TYPE_<typename BASE_TYPE_<OwnerType>::RESULT>::RESULT
 
-#define DEF_INSTANCE(InstanceType, NodeType_) template<> struct INSTANCE_TO_PROTOTYPE_<NodeType::InstanceType> \
+#define DEF_PROXY(InstanceType, NodeType_) template<> struct PROXY_TO_PROTOTYPE_<NodeType::InstanceType> \
 	{ static const NodeType RESULT = NodeType::NodeType_; }; \
-	template<> struct PROTOTYPE_TO_BASE_<NodeType::NodeType_> \
+	template<> struct PROTOTYPE_TO_PROXY_<NodeType::NodeType_> \
 	{ static const NodeType RESULT = NodeType::InstanceType; } ;
 
 struct GLFWwindow;
@@ -64,7 +67,7 @@ namespace Morpheus {
 		virtual void dispose() = 0;
 	};
 
-	class IUpdateable {
+	class IUpdatable {
 	public:
 		virtual bool isEnabled() const = 0;
 		virtual void setEnabled(const bool value) = 0;
@@ -101,8 +104,8 @@ namespace Morpheus {
 		BOUNDING_BOX,
 		STATIC_OBJECT_MANAGER,
 		DYNAMIC_OBJECT_MANAGER,
-		MATERIAL_INSTANCE,
-		GEOMETRY_INSTANCE,
+		MATERIAL_PROXY,
+		GEOMETRY_PROXY,
 		NANOGUI_SCREEN,
 		SCENE_END,
 
@@ -139,19 +142,27 @@ namespace Morpheus {
 		static const bool RESULT = false;
 	};
 	template <NodeType>
-	struct IS_SCENE_CHILD_ {
-		static const bool RESULT = true;
+	struct IS_RENDERABLE_ {
+		static const bool RESULT = false;
+	};
+	template <NodeType>
+	struct IS_UPDATABLE_ {
+		static const bool RESULT = false;
 	};
 	template <NodeType>
 	struct IS_DISPOSABLE_ {
-		static const bool RESULT = true;
+		static const bool RESULT = false;
+	};
+	template <NodeType>
+	struct IS_CONTENT_ {
+		static const bool RESULT = false;
 	};
 	template <NodeType t>
-	struct INSTANCE_TO_PROTOTYPE_ {
+	struct PROXY_TO_PROTOTYPE_ {
 		static const NodeType RESULT = t;
 	};
 	template <NodeType t>
-	struct PROTOTYPE_TO_BASE_ {
+	struct PROTOTYPE_TO_PROXY_ {
 		static const NodeType RESULT = t;
 	};
 
@@ -168,9 +179,9 @@ namespace Morpheus {
 	SET_POOLED(STATIC_OBJECT_MANAGER, false);
 	SET_POOLED(DYNAMIC_OBJECT_MANAGER, false);
 	SET_POOLED(CAMERA, false);
-	SET_POOLED(MATERIAL_INSTANCE, false);
+	SET_POOLED(MATERIAL_PROXY, false);
 	SET_POOLED(NANOGUI_SCREEN, false);
-	SET_POOLED(GEOMETRY_INSTANCE, false);
+	SET_POOLED(GEOMETRY_PROXY, false);
 
 	SET_POOLED(CONTENT_MANAGER, false);
 	SET_POOLED(GEOMETRY, false);
@@ -184,30 +195,32 @@ namespace Morpheus {
 	SET_POOLED(STATIC_MESH, false);
 
 	// IS_SCENE_CHILD Flag
-	SET_SCENE_CHILD(ENGINE, false);
-	SET_SCENE_CHILD(RENDERER, false);
-	SET_SCENE_CHILD(UPDATER, false);
-	SET_SCENE_CHILD(EMPTY, true);
-	SET_SCENE_CHILD(LOGIC, true);
-	SET_SCENE_CHILD(STATIC_TRANSFORM, true);
-	SET_SCENE_CHILD(DYNAMIC_TRANSFORM, true);
-	SET_SCENE_CHILD(REGION, true);
-	SET_SCENE_CHILD(BOUNDING_BOX, true);
-	SET_SCENE_CHILD(STATIC_OBJECT_MANAGER, true);
-	SET_SCENE_CHILD(DYNAMIC_OBJECT_MANAGER, true);
-	SET_SCENE_CHILD(CAMERA, true);
-	SET_SCENE_CHILD(NANOGUI_SCREEN, true);
+	SET_RENDERABLE(ENGINE, false);
+	SET_RENDERABLE(RENDERER, false);
+	SET_RENDERABLE(UPDATER, false);
+	SET_RENDERABLE(EMPTY, true);
+	SET_RENDERABLE(LOGIC, true);
+	SET_RENDERABLE(STATIC_TRANSFORM, true);
+	SET_RENDERABLE(DYNAMIC_TRANSFORM, true);
+	SET_RENDERABLE(REGION, true);
+	SET_RENDERABLE(BOUNDING_BOX, true);
+	SET_RENDERABLE(STATIC_OBJECT_MANAGER, true);
+	SET_RENDERABLE(DYNAMIC_OBJECT_MANAGER, true);
+	SET_RENDERABLE(CAMERA, true);
+	SET_RENDERABLE(NANOGUI_SCREEN, true);
 
-	SET_SCENE_CHILD(CONTENT_MANAGER, false);
-	SET_SCENE_CHILD(GEOMETRY, false);
-	SET_SCENE_CHILD(MATERIAL, false);
-	SET_SCENE_CHILD(SHADER, false);
-	SET_SCENE_CHILD(TEXTURE_1D, false);
-	SET_SCENE_CHILD(TEXTURE_2D, false);
-	SET_SCENE_CHILD(TEXTURE_3D, false);
-	SET_SCENE_CHILD(CUBE_MAP, false);
-	SET_SCENE_CHILD(TEXTURE_2D_ARRAY, false);
-	SET_SCENE_CHILD(STATIC_MESH, false);
+	SET_RENDERABLE(CONTENT_MANAGER, false);
+	SET_RENDERABLE(GEOMETRY, false);
+	SET_RENDERABLE(MATERIAL, false);
+	SET_RENDERABLE(SHADER, false);
+	SET_RENDERABLE(TEXTURE_1D, false);
+	SET_RENDERABLE(TEXTURE_2D, false);
+	SET_RENDERABLE(TEXTURE_3D, false);
+	SET_RENDERABLE(CUBE_MAP, false);
+	SET_RENDERABLE(TEXTURE_2D_ARRAY, false);
+	SET_RENDERABLE(STATIC_MESH, true);
+	SET_RENDERABLE(GEOMETRY_PROXY, true);
+	SET_RENDERABLE(MATERIAL_PROXY, true);
 
 	// IS_DISPOSABLE Flag
 	SET_DISPOSABLE(ENGINE, false);
@@ -235,6 +248,23 @@ namespace Morpheus {
 	SET_DISPOSABLE(TEXTURE_2D_ARRAY, false);
 	SET_DISPOSABLE(STATIC_MESH, false);
 
+	// The updatable flag
+	SET_UPDATABLE(LOGIC, true);
+
+	// The content flag
+	SET_CONTENT(CONTENT_MANAGER, true);
+	SET_CONTENT(GEOMETRY, true);
+	SET_CONTENT(MATERIAL, true);
+	SET_CONTENT(SHADER, true);
+	SET_CONTENT(TEXTURE_1D, true);
+	SET_CONTENT(TEXTURE_2D, true);
+	SET_CONTENT(TEXTURE_3D, true);
+	SET_CONTENT(CUBE_MAP, true);
+	SET_CONTENT(TEXTURE_2D_ARRAY, true);
+	SET_CONTENT(STATIC_MESH, true);
+	SET_CONTENT(GEOMETRY_PROXY, true);
+	SET_CONTENT(MATERIAL_PROXY, true);
+
 	template <typename T>
 	struct ref;
 
@@ -247,10 +277,12 @@ namespace Morpheus {
 
 	private:
 		static bool pooled[(uint32_t)NodeType::END];
-		static bool sceneChild[(uint32_t)NodeType::END];
+		static bool renderable[(uint32_t)NodeType::END];
 		static bool disposable[(uint32_t)NodeType::END];
-		static NodeType instanceToPrototype[(uint32_t)NodeType::END];
-		static NodeType prototypeToInstance[(uint32_t)NodeType::END];
+		static bool updatable[(uint32_t)NodeType::END];
+		static bool content[(uint32_t)NodeType::END];
+		static NodeType proxyToPrototype[(uint32_t)NodeType::END];
+		static NodeType prototypeToProxy[(uint32_t)NodeType::END];
 
 		template <NodeType iType> 
 		static void init_();
@@ -279,8 +311,8 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="t">The type to query.</param>
 		/// <returns>Whether or not t is a scene child type.</returns>
-		static inline bool isSceneChild(NodeType t) { 
-			return sceneChild[(uint32_t)t]; 
+		static inline bool isRenderable(NodeType t) { 
+			return renderable[(uint32_t)t]; 
 		}
 		
 		/// <summary>
@@ -295,28 +327,46 @@ namespace Morpheus {
 		}
 
 		/// <summary>
-		/// Gets the instance type of a prototype type. Some types have instance versions, i.e., MATERIAL
-		/// and MATERIAL_INSTANCE, that may have different properties. For example, MATERIAL_INSTANCE is
+		/// Returns whether or not this node type is owned by the ContentManager.
+		/// </summary>
+		/// <param name="t">The type to query.</param>
+		/// <returns>Whether or not t is a content type.</returns>
+		static inline bool isContent(NodeType t) {
+			return content[(uint32_t)t];
+		}
+
+		/// <summary>
+		/// Returns whether or not this node type implements the IUpdatable interface.
+		/// </summary>
+		/// <param name="t">The type to query.</param>
+		/// <returns>Whether or not t is an updatable type.</returns>
+		static inline bool isUpdatable(NodeType t) {
+			return updatable[(uint32_t)t];
+		}
+
+		/// <summary>
+		/// Gets the proxy type of a prototype type. Some types have instance versions, i.e., MATERIAL
+		/// and MATERIAL_PROXY, that may have different properties. For example, MATERIAL_INSTANCE is
 		/// a scene child, but MATERIAL is not. This means that the renderer will ignore a MATERIAL node,
-		/// but not a MATERIAL_INSTANCE node, a distinction which is used for garbage collection by the
-		/// ContentManager. You must register instance types with the DEF_INSTANCE macro. if an instance
+		/// but not a MATERIAL_PROXY node, a distinction which is used for garbage collection by the
+		/// ContentManager. You must register proxy types with the DEF_PROXY macro. if an instance
 		/// type is not registered, the function will return t.
 		/// </summary>
 		/// <param name="t">The type to query.</param>
 		/// <returns>The instance type of t.</returns>
-		static inline NodeType getInstanceType(NodeType t) { 
-			return prototypeToInstance[(uint32_t)t]; 
+		static inline NodeType getProxyType(NodeType t) { 
+			return prototypeToProxy[(uint32_t)t]; 
 		}
 
 		/// <summary>
-		/// The opposite of getInstanceType. Given an instance type, i.e., MATERIAL_INSTANCE, this returns
-		/// the prototype type, i.e., MATERIAL. You must register instance types with the DEF_INSTANCE macro. 
+		/// The opposite of getInstanceType. Given a proxy type, i.e., MATERIAL_PROXY, this returns
+		/// the prototype type, i.e., MATERIAL. You must register instance types with the DEF_PROXY macro. 
 		/// if an instance type is not registered, the function will return t.
 		/// </summary>
 		/// <param name="t">The type to query.</param>
 		/// <returns>The prototype type of t.</returns>
 		static inline NodeType getPrototypeType(NodeType t) { 
-			return instanceToPrototype[(uint32_t)t]; 
+			return proxyToPrototype[(uint32_t)t]; 
 		}
 
 		friend class Engine;
@@ -597,31 +647,30 @@ namespace Morpheus {
 		}
 
 		/// <summary>
-		/// Make an instance of the node type. To automatically add the prototype 
+		/// Make an proxy of the node type. To automatically add the prototype 
 		/// as a child of the instance, use makeContentInstance instead.
 		/// </summary>
-		/// <param name="base">The prototype of the instance.</param>
-		/// <returns>An instance node of the prototype.</returns>
-		Node makeInstance(const Node& base) {
+		/// <param name="base">The prototype of the proxy.</param>
+		/// <returns>A proxy node of the prototype.</returns>
+		Node makeProxy(const Node& base) {
 			auto& desc = mDescs[base];
-			NodeType instanceType = NodeMetadata::getInstanceType(desc.type);
+			NodeType instanceType = NodeMetadata::getProxyType(desc.type);
 			assert(instanceType != desc.type);
 			return addNode(desc.owner, instanceType);
 		}
 
 		/// <summary>
-		/// Same as makeInstance, except that the prototype is added as a child to the
-		/// instance node. This is useful for content types, so that the prototype isn't
+		/// Same as makeProxy, except that the prototype is added as a child to the
+		/// proxy node. This is useful for content types, so that the prototype isn't
 		/// collected by the ContentManager garbage collector while it is in use through
 		/// an instance node.
 		/// </summary>
-		/// <param name="base">The prototype of the instance.</param>
-		/// <returns>An instance node of the prototype.</returns>
-		Node makeContentInstance(Node& base) {
-			auto& desc = mDescs[base];
-			NodeType instanceType = NodeMetadata::getInstanceType(desc.type);
-			assert(instanceType != desc.type);
-			return addNode(desc.owner, instanceType, base);
+		/// <param name="base">The prototype of the proxy.</param>
+		/// <returns>A proxy node of the prototype.</returns>
+		Node makeContentProxy(Node& base) {
+			Node v = makeProxy(base);
+			createEdge(v, base);
+			return v;
 		}
 
 		inline Node addNode(Engine* owner) {
@@ -730,6 +779,6 @@ namespace Morpheus {
 	SET_NODE_TYPE(DynamicTransform, DYNAMIC_TRANSFORM);
 	SET_NODE_TYPE(IRenderer, RENDERER);
 
-	DEF_INSTANCE(GEOMETRY_INSTANCE, GEOMETRY);
-	DEF_INSTANCE(MATERIAL_INSTANCE, MATERIAL);
+	DEF_PROXY(GEOMETRY_PROXY, GEOMETRY);
+	DEF_PROXY(MATERIAL_PROXY, MATERIAL);
 }

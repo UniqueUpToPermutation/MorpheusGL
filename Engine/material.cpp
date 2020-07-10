@@ -52,13 +52,17 @@ namespace Morpheus {
 
         Material* mat = new Material();
         mat->mShader = shaderRef;
-        // Carry over default assignments
-        mat->mUniformAssigments = shaderRef->defaultAssignments();
 
         // Perform an override of shader parameters
-        if (j.contains("uniform_override"))
-            readUniformDefaults(j["uniform_override"], shaderRef.get(), 
-                &mat->mUniformAssigments, true);
+        if (j.contains("uniform_override")) {
+            readUniformDefaults(j["uniform_override"], shaderRef.get(),
+                &mat->mUniformAssigments);
+            // Overwrite necessary things
+            mat->mUniformAssigments = mat->mUniformAssigments.overwrite(shaderRef->defaultAssignments());
+        }
+        else
+            // Carry over default assignments
+            mat->mUniformAssigments = shaderRef->defaultAssignments();
 
         // Add this shader as a child of this material
         graph()->createEdge(loadInto, shaderNode);

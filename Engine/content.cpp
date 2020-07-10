@@ -2,6 +2,7 @@
 #include "shader.hpp"
 #include "material.hpp"
 #include "geometry.hpp"
+#include "staticmesh.hpp"
 
 namespace Morpheus {
 	ContentManager::ContentManager() {
@@ -11,6 +12,8 @@ namespace Morpheus {
 		addFactory<Geometry>();
 		// Make material factory
 		addFactory<Material>();
+		// Make the static mesh factory
+		addFactory<StaticMesh>();
 
 		mSources = graph()->createVertexLookup<std::string>("__content__");
 	}

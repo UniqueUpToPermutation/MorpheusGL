@@ -29,7 +29,7 @@ namespace Morpheus {
 		auto& desc = mNodeDataView[current];
 
 		// Ignore anything that is not a scene child.
-		if (!NodeMetadata::isSceneChild(desc.type))
+		if (!NodeMetadata::isRenderable(desc.type))
 			return;
 
 		// Visiting a node on the way down
@@ -48,12 +48,12 @@ namespace Morpheus {
 			params.mTransformStack->push(trans->apply(top));
 			break;
 		}
-		case NodeType::MATERIAL_INSTANCE:
+		case NodeType::MATERIAL_PROXY:
 		{
 			// Found a material
 			break;
 		}
-		case NodeType::GEOMETRY_INSTANCE:
+		case NodeType::GEOMETRY_PROXY:
 		{
 			// Found some geometry
 			break;

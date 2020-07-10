@@ -172,6 +172,7 @@
     <ClInclude Include="scene.hpp" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="staticmanager.hpp" />
+    <ClInclude Include="staticmesh.hpp" />
     <ClInclude Include="updater.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -189,6 +190,7 @@
     <ClCompile Include="meshlap.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="staticmesh.cpp" />
     <ClCompile Include="updater.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -210,6 +212,15 @@
     <None Include="shaders\cooktorrance.frag" />
     <None Include="shaders\cooktorrance.json" />
     <None Include="shaders\cooktorrance.vert" />
+    <None Include="staticmesh.json">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="bunny.obj">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
