@@ -11,11 +11,17 @@ using namespace std;
 #define SIZE_CASE(type) case type: \
 	return sizeof(GL_TYPE_<type>::C_TYPE_)
 #define JSON_CASE(type, j, ptr) case type: \
-	{ \
+{ \
 	GL_TYPE_<type>::C_TYPE_* ptr_cast = static_cast<GL_TYPE_<type>::C_TYPE_*>(ptr); \
 	GL_TYPE_<type>::readJson(j, ptr_cast); \
 	break; \
-	}
+}
+#define ASSIGN_CASE(type, loc, ptr) case type: \
+{ \
+	GL_TYPE_<type>::C_TYPE_* ptr_cast = static_cast<GL_TYPE_<type>::C_TYPE_*>(ptr); \
+	GL_TYPE_<type>::setUniform(loc, *ptr_cast); \
+	break; \
+}
 
 namespace Morpheus {
 
@@ -345,6 +351,9 @@ namespace Morpheus {
 		case ShaderType::FRAGMENT:
 			shader_type = GL_FRAGMENT_SHADER;
 			break;
+		default:
+			shader_type = GL_VERTEX_SHADER;
+			break;
 		}
 
 		id = glCreateShader(shader_type);
@@ -382,6 +391,48 @@ namespace Morpheus {
 	}
 	void ShaderUniformAssignments::assign()
 	{
+		for (auto& binding : mBindings) {
+			void* ptr = &mData[binding.mOffset];
+			switch (binding.mUniformType) {
+				ASSIGN_CASE(GL_INT, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_UNSIGNED_INT, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_SHORT, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_UNSIGNED_SHORT, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_BYTE, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_UNSIGNED_BYTE, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_BOOL, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_VEC2, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_VEC3, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_VEC4, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_MAT2, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_MAT3, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_MAT4, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_MAT2x3, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_MAT3x2, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_MAT2x4, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_MAT4x2, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_MAT3x4, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT_MAT4x3, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_VEC2, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_VEC3, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_VEC4, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_MAT2, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_MAT3, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_MAT4, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_MAT2x3, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_MAT3x2, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_MAT2x4, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_MAT4x2, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_MAT3x4, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE_MAT4x3, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_INT_VEC2, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_INT_VEC3, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_INT_VEC4, binding.mUniformLocation, ptr);
+			default:
+				assert(0);
+				break;
+			}
+		}
 	}
 	ShaderUniformAssignments ShaderUniformAssignments::overwrite(const ShaderUniformAssignments& toOverwrite)
 	{
