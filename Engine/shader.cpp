@@ -389,7 +389,7 @@ namespace Morpheus {
 		}
 		return size;
 	}
-	void ShaderUniformAssignments::assign()
+	void ShaderUniformAssignments::assign() const
 	{
 		for (auto& binding : mBindings) {
 			void* ptr = &mData[binding.mOffset];

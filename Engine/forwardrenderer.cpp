@@ -1,6 +1,8 @@
 #include "forwardrenderer.hpp"
 #include "engine.hpp"
 #include "gui.hpp"
+#include "camera.hpp"
+#include "scene.hpp"
 
 #include <stack>
 #include <iostream>
@@ -34,6 +36,15 @@ namespace Morpheus {
 
 		// Visiting a node on the way down
 		switch (desc.type) {
+		case NodeType::SCENE_ROOT:
+		{
+			auto scene = desc.owner.getAs<Scene>();
+
+			// Set the active camera
+			if (!params.mRenderCamera)
+				params.mRenderCamera = scene->getActiveCamera();
+			break;
+		}
 		case NodeType::TRANSFORM:
 		{
 			ref<Transform> newTransform = desc.owner.as<Transform>();
@@ -47,6 +58,7 @@ namespace Morpheus {
 					newTransform->cache(params.mTransformStack->top()->mCache);
 			// Set the current transform to the one we just found.
 			params.mTransformStack->push(newTransform);
+			break;
 		}
 		case NodeType::MATERIAL_PROXY:
 		{
@@ -78,10 +90,17 @@ namespace Morpheus {
 			params.mQueues->mGuis.push(desc.owner.getAs<GuiBase>());
 			break;
 		}
+		case NodeType::CAMERA:
+		{
+			// Found a camera
+			if (!params.mRenderCamera)
+				params.mRenderCamera = desc.owner.getAs<ICamera>();
+			break;
+		}
 		}
 
 		// If the node is a child of a scene, recursively continue the collection
-		for (auto childIt = current.getOutgoingNeighbors(); childIt.valid(); childIt.next()) {
+		for (auto childIt = current.getChildren(); childIt.valid(); childIt.next()) {
 			auto child = childIt();
 			collectRecursive(child, params);
 		}
@@ -108,6 +127,7 @@ namespace Morpheus {
 		params.mTransformStack = &mTransformStack;
 		params.mMaterialStack = &mMaterialStack;
 		params.mIsStaticStack = &mIsStaticStack;
+		params.mRenderCamera = nullptr;
 		collectRecursive(start, params);
 
 		assert(mTransformStack.empty());
@@ -132,10 +152,21 @@ namespace Morpheus {
 			auto shader = material->shader();
 			auto& shaderRenderView = shader->renderView();
 
+			// Set renderer related things
 			glUseProgram(shader->id());
 			shaderRenderView.mWorld.set(transform.get()->mCache);
-		
+			shaderRenderView.mView.set(identity<mat4>());
+			shaderRenderView.mProjection.set(identity<mat4>());
+			shaderRenderView.mWorldInverseTranspose.set(identity<mat4>());
+			shaderRenderView.mEyePosition.set(zero<vec3>());
 
+			// Set individual material parameters
+			material->uniformAssignments().assign();
+
+			// Bind the geometry's vertex arary and draw the geometry
+			glBindVertexArray(geo->vertexArray());
+			glDrawElements(geo->elementType(), geo->elementCount(),
+				geo->elementType(), nullptr);
 		}
 
 		// Just draw GUIs last for now
@@ -144,8 +175,6 @@ namespace Morpheus {
 			screen->drawContents();
 			screen->drawWidgets();
 		}
-
-
 	}
 
 	void ForwardRenderer::draw(Node& scene) {

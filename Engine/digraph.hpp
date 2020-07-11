@@ -94,12 +94,12 @@ namespace Morpheus {
 		/// Get an iterator over all children of this vertex.
 		/// </summary>
 		/// <returns>An iterator over all children.</returns>
-		inline DigraphVertexIteratorF getOutgoingNeighbors();
+		inline DigraphVertexIteratorF getChildren();
 		/// <summary>
 		/// Get an iterator over all parents of this vertex.
 		/// </summary>
 		/// <returns>An iterator over all parents.</returns>
-		inline DigraphVertexIteratorB getIngoingNeighbors();
+		inline DigraphVertexIteratorB getParents();
 		/// <summary>
 		/// Get the id of this vertex.
 		/// </summary>
@@ -1006,7 +1006,7 @@ namespace Morpheus {
 		inline DigraphVertex next() {
 			DigraphVertex v(digraph, mVertexStack.top());
 			mVertexStack.pop();
-			for (auto it = v.getOutgoingNeighbors(); it.valid(); it.next()) {
+			for (auto it = v.getChildren(); it.valid(); it.next()) {
 				auto neighbor = it();
 				if (!mVisited[neighbor])
 					mVertexStack.push(neighbor.id());
@@ -1037,7 +1037,7 @@ namespace Morpheus {
 		inline DigraphVertex next() {
 			DigraphVertex v(digraph, mVertexQueue.front());
 			mVertexQueue.pop();
-			for (auto it = v.getOutgoingNeighbors(); it.valid(); it.next()) {
+			for (auto it = v.getChildren(); it.valid(); it.next()) {
 				auto neighbor = it();
 				if (!mVisited[neighbor])
 					mVertexQueue.push(neighbor.id());
@@ -1061,10 +1061,10 @@ namespace Morpheus {
 	inline DigraphEdgeIteratorB DigraphVertex::getIngoingEdges() {
 		return DigraphEdgeIteratorB(mPtr, mPtr->mVertices[mId].mInEdge);
 	}
-	inline DigraphVertexIteratorB DigraphVertex::getIngoingNeighbors() {
+	inline DigraphVertexIteratorB DigraphVertex::getParents() {
 		return DigraphVertexIteratorB(mPtr, mPtr->mVertices[mId].mInEdge);
 	}
-	inline DigraphVertexIteratorF DigraphVertex::getOutgoingNeighbors() {
+	inline DigraphVertexIteratorF DigraphVertex::getChildren() {
 		return DigraphVertexIteratorF(mPtr, mPtr->mVertices[mId].mOutEdge);
 	}
 	inline DigraphEdgeIteratorAll Digraph::edges() {

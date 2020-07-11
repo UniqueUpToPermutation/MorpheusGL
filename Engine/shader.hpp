@@ -498,7 +498,7 @@ namespace Morpheus {
 			delete[] mData;
 		}
 
-		void assign();
+		void assign() const;
 		ShaderUniformAssignments overwrite(const ShaderUniformAssignments& toOverwrite);
 		
 	};

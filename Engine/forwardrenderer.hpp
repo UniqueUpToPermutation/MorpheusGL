@@ -13,6 +13,8 @@
 
 namespace Morpheus {
 	
+	class ICamera;
+
 	struct StaticMeshRenderInstance {
 		ref<Geometry> mGeometry;
 		ref<Transform> mTransform;
@@ -34,6 +36,7 @@ namespace Morpheus {
 		std::stack<ref<Transform>>* mTransformStack;
 		std::stack<ref<Material>>* mMaterialStack;
 		RenderInstanceType mCurrentRenderType;
+		ICamera* mRenderCamera;
 	};
 
 	struct ForwardRenderDrawParams {

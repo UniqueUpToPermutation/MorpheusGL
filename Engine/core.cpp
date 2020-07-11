@@ -84,7 +84,7 @@ namespace Morpheus {
 		cout << "+ " << nodeTypeString(descs[start].type) << endl;
 
 		stack<DigraphVertexIteratorF> iters;
-		iters.push(start.getOutgoingNeighbors());
+		iters.push(start.getChildren());
 
 		while (!iters.empty()) {
 			auto& it = iters.top();
@@ -103,7 +103,7 @@ namespace Morpheus {
 				cout << "+ ";
 				cout << nodeTypeString(descs[n].type) << endl;
 
-				iters.push(n.getOutgoingNeighbors());
+				iters.push(n.getChildren());
 				it.next();
 			}
 			else 

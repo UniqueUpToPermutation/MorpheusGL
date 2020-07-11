@@ -28,7 +28,7 @@ namespace Morpheus {
 	}
 
 	void ContentManager::unloadAll() {
-		for (auto it = (*graph())[mHandle].getOutgoingNeighbors(); it.valid();) {
+		for (auto it = (*graph())[mHandle].getChildren(); it.valid();) {
 			Node v = it();
 			it.next();
 			unload(v);
@@ -47,7 +47,7 @@ namespace Morpheus {
 		std::stack<Node> toCollect;
 
 		// Iterate through children and calculate degrees
-		for (auto it = node().getOutgoingNeighbors(); it.valid(); it.next()) {
+		for (auto it = node().getChildren(); it.valid(); it.next()) {
 			auto degree = it().inDegree();
 			degrees.set(it(), degree);
 
@@ -62,7 +62,7 @@ namespace Morpheus {
 			toCollect.pop();
 
 			// Check if children of this node need to be collected too
-			for (auto it = top.getOutgoingNeighbors(); it.valid(); it.next()) {
+			for (auto it = top.getChildren(); it.valid(); it.next()) {
 				auto newDegree = degrees.get(it()) - 1;
 				degrees.set(it(), newDegree);
 				if (newDegree == 1)
