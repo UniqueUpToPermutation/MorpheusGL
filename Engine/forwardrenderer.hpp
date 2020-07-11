@@ -8,6 +8,7 @@
 #include "geometry.hpp"
 #include "renderqueue.hpp"
 #include "engine.hpp"
+#include "material.hpp"
 #include "gui.hpp"
 
 namespace Morpheus {
@@ -15,18 +16,24 @@ namespace Morpheus {
 	struct StaticMeshRenderInstance {
 		ref<Geometry> mGeometry;
 		ref<Transform> mTransform;
+		ref<Material> mMaterial;
 	};
 
 	struct ForwardRenderQueue {
-		RenderQueue<StaticMeshRenderInstance> mStaticMesh;
+		RenderQueue<StaticMeshRenderInstance> mStaticMeshes;
 		RenderQueue<ref<GuiBase>> mGuis;
+	};
+
+	enum class RenderInstanceType {
+		STATIC_MESH,
 	};
 
 	struct ForwardRenderCollectParams {
 		ForwardRenderQueue* mQueues;
 		std::stack<bool>* mIsStaticStack;
-		std::stack<glm::mat4>* mTransformStack;
-		StaticTransform* mCurrentStaticTransform;
+		std::stack<ref<Transform>>* mTransformStack;
+		std::stack<ref<Material>>* mMaterialStack;
+		RenderInstanceType mCurrentRenderType;
 	};
 
 	struct ForwardRenderDrawParams {
@@ -39,7 +46,8 @@ namespace Morpheus {
 		NodeDataView mNodeDataView;
 		ForwardRenderQueue mQueues;
 		std::stack<bool> mIsStaticStack;
-		std::stack<glm::mat4> mTransformStack;
+		std::stack<ref<Transform>> mTransformStack;
+		std::stack<ref<Material>> mMaterialStack;
 
 		void collectRecursive(Node& current, ForwardRenderCollectParams& params);
 		void collect(Node& start, ForwardRenderCollectParams& params);

@@ -98,8 +98,7 @@ namespace Morpheus {
 		EMPTY,
 		SCENE_ROOT,
 		LOGIC,
-		STATIC_TRANSFORM,
-		DYNAMIC_TRANSFORM,
+		TRANSFORM,
 		REGION,
 		BOUNDING_BOX,
 		STATIC_OBJECT_MANAGER,
@@ -172,8 +171,7 @@ namespace Morpheus {
 	SET_POOLED(UPDATER, false);
 	SET_POOLED(EMPTY, false);
 	SET_POOLED(LOGIC, false);
-	SET_POOLED(STATIC_TRANSFORM, true);
-	SET_POOLED(DYNAMIC_TRANSFORM, true);
+	SET_POOLED(TRANSFORM, true);
 	SET_POOLED(REGION, false);
 	SET_POOLED(BOUNDING_BOX, true);
 	SET_POOLED(STATIC_OBJECT_MANAGER, false);
@@ -200,8 +198,7 @@ namespace Morpheus {
 	SET_RENDERABLE(UPDATER, false);
 	SET_RENDERABLE(EMPTY, true);
 	SET_RENDERABLE(LOGIC, true);
-	SET_RENDERABLE(STATIC_TRANSFORM, true);
-	SET_RENDERABLE(DYNAMIC_TRANSFORM, true);
+	SET_RENDERABLE(TRANSFORM, true);
 	SET_RENDERABLE(REGION, true);
 	SET_RENDERABLE(BOUNDING_BOX, true);
 	SET_RENDERABLE(STATIC_OBJECT_MANAGER, true);
@@ -228,8 +225,7 @@ namespace Morpheus {
 	SET_DISPOSABLE(UPDATER, false);
 	SET_DISPOSABLE(EMPTY, false);
 	SET_DISPOSABLE(LOGIC, true);
-	SET_DISPOSABLE(STATIC_TRANSFORM, false);
-	SET_DISPOSABLE(DYNAMIC_TRANSFORM, false);
+	SET_DISPOSABLE(TRANSFORM, false);
 	SET_DISPOSABLE(REGION, true);
 	SET_DISPOSABLE(BOUNDING_BOX, false);
 	SET_DISPOSABLE(STATIC_OBJECT_MANAGER, true);
@@ -724,27 +720,20 @@ namespace Morpheus {
 	std::string nodeTypeString(NodeType t);
 	void print(Node node);
 
-	struct DynamicTransform {
+	struct Transform {
 		glm::vec3 mTranslation;
 		glm::vec3 mScale;
 		glm::quat mRotation;
+		glm::fmat4 mCache;
 
-		inline glm::mat4 apply(const glm::mat4& mat) const {
+		inline glm::fmat4 apply(const glm::fmat4& mat) const {
 			auto ret = glm::scale(mat, mScale);
 			ret = glm::translate(ret, mTranslation);
 			return ret * glm::mat4_cast(mRotation);
 		}
 
-		inline glm::mat4 mat() const {
-			return apply(glm::identity<glm::mat4>());
-		}
-	};
-
-	struct StaticTransform {
-		glm::mat4 mCache;
-
-		inline void from(const DynamicTransform& transform) {
-			mCache = transform.mat();
+		inline void cache(const glm::fmat4& parent) {
+			mCache = apply(parent);
 		}
 	};
 
@@ -775,8 +764,7 @@ namespace Morpheus {
 	SET_NODE_TYPE(ContentManager, CONTENT_MANAGER);
 	SET_NODE_TYPE(BoundingBox, BOUNDING_BOX);
 	SET_NODE_TYPE(char, EMPTY);
-	SET_NODE_TYPE(StaticTransform, STATIC_TRANSFORM);
-	SET_NODE_TYPE(DynamicTransform, DYNAMIC_TRANSFORM);
+	SET_NODE_TYPE(Transform, TRANSFORM);
 	SET_NODE_TYPE(IRenderer, RENDERER);
 
 	DEF_PROXY(GEOMETRY_PROXY, GEOMETRY);

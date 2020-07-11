@@ -443,7 +443,7 @@ namespace Morpheus {
 	struct ShaderUniform {
 		static const GLenum UNIF_TYPE = C_TO_GL_TYPE_<T>::RESULT;
 		GLint mLoc;
-		inline void set(const T& v) {
+		inline void set(const T& v) const {
 			GL_TYPE_<UNIF_TYPE>::setUniform(mLoc, v);
 		}
 	};

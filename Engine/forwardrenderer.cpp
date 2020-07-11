@@ -34,28 +34,42 @@ namespace Morpheus {
 
 		// Visiting a node on the way down
 		switch (desc.type) {
-		case NodeType::STATIC_TRANSFORM:
+		case NodeType::TRANSFORM:
 		{
-			// For static nodes, transforms have been pre-computed
-			params.mCurrentStaticTransform = desc.owner.getAs<StaticTransform>();
-			break;
-		}
-		case NodeType::DYNAMIC_TRANSFORM:
-		{
-			// Apply the transform on the right
-			DynamicTransform* trans = desc.owner.getAs<DynamicTransform>();
-			glm::mat4& top = mTransformStack.top();
-			params.mTransformStack->push(trans->apply(top));
-			break;
+			ref<Transform> newTransform = desc.owner.as<Transform>();
+			// Is this transform is static, then it has already been cached
+			// Otherwise, cache (evaluate and save) this transform using the
+			// last transform on the stack
+			if (!params.mIsStaticStack->top())
+				if (params.mTransformStack->empty())
+					newTransform->cache(identity<mat4>());
+				else
+					newTransform->cache(params.mTransformStack->top()->mCache);
+			// Set the current transform to the one we just found.
+			params.mTransformStack->push(newTransform);
 		}
 		case NodeType::MATERIAL_PROXY:
 		{
 			// Found a material
+			params.mMaterialStack->push(desc.owner.as<Material>());
 			break;
 		}
 		case NodeType::GEOMETRY_PROXY:
 		{
 			// Found some geometry
+			ref<Geometry> geo = desc.owner.as<Geometry>();
+			switch (params.mCurrentRenderType) {
+			case RenderInstanceType::STATIC_MESH:
+				{
+					// Push this static mesh onto the queue
+					StaticMeshRenderInstance inst;
+					inst.mGeometry = geo;
+					inst.mMaterial = params.mMaterialStack->top();
+					inst.mTransform = params.mTransformStack->top();
+					params.mQueues->mStaticMeshes.push(inst);
+					break;
+				}
+			}
 			break;
 		}
 		case NodeType::NANOGUI_SCREEN:
@@ -74,24 +88,27 @@ namespace Morpheus {
 
 		// Visiting a node on the way up
 		switch (desc.type) {
-		case NodeType::DYNAMIC_TRANSFORM:
+		case NodeType::TRANSFORM:
 			// Pop the transformation from the stack
 			params.mTransformStack->pop();
+			break;
+		case NodeType::MATERIAL:
+			// Pop the material from the stack
+			params.mMaterialStack->pop();
 			break;
 		}
 	}
 
 	void ForwardRenderer::collect(Node& start, ForwardRenderCollectParams& params) {
 		mQueues.mGuis.clear();
-		mQueues.mStaticMesh.clear();
-
+		mQueues.mStaticMeshes.clear();
 		mNodeDataView = graph()->descs();
 
-		mTransformStack.push(identity<mat4>());
-		mIsStaticStack.push(false);
+		params.mQueues = &mQueues;
+		params.mTransformStack = &mTransformStack;
+		params.mMaterialStack = &mMaterialStack;
+		params.mIsStaticStack = &mIsStaticStack;
 		collectRecursive(start, params);
-		mTransformStack.pop();
-		mIsStaticStack.pop();
 
 		assert(mTransformStack.empty());
 		assert(mIsStaticStack.empty());
@@ -106,12 +123,29 @@ namespace Morpheus {
 		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		// Just draw GUIs for now
+		// Draw static meshes
+		for (auto meshPtr = queue->mStaticMeshes.begin(); meshPtr != queue->mStaticMeshes.end(); ++meshPtr) {
+			auto& material = meshPtr->mMaterial;
+			auto& transform = meshPtr->mTransform;
+			auto& geo = meshPtr->mGeometry;
+
+			auto shader = material->shader();
+			auto& shaderRenderView = shader->renderView();
+
+			glUseProgram(shader->id());
+			shaderRenderView.mWorld.set(transform.get()->mCache);
+		
+
+		}
+
+		// Just draw GUIs last for now
 		for (auto guiPtr = queue->mGuis.begin(); guiPtr != queue->mGuis.end(); ++guiPtr) {
 			auto screen = (*guiPtr)->screen();
 			screen->drawContents();
 			screen->drawWidgets();
 		}
+
+
 	}
 
 	void ForwardRenderer::draw(Node& scene) {
