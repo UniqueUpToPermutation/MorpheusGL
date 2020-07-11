@@ -19,12 +19,17 @@ namespace Morpheus {
 			return mUniformAssigments;
 		}
 
-		friend ref<Material> copy(const ref<Material>& a);
+		friend ref<Material> duplicateRef<Material>(const ref<Material>& a);
 		friend class ContentFactory<Material>;
 	};
 	SET_NODE_TYPE(Material, MATERIAL);
 
-	ref<Material> copy(const ref<Material>& a);
+	template <>
+	ref<Material> duplicateRef<Material>(const ref<Material>& a);
+	template <>
+	Node duplicateToNode<Material>(const ref<Material>& a);
+	template <>
+	Node duplicate<Material>(const Node& a);
 
 	template <>
 	class ContentFactory<Material> : public IContentFactory {

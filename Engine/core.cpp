@@ -84,15 +84,26 @@ namespace Morpheus {
 		cout << "+ " << nodeTypeString(descs[start].type) << endl;
 
 		stack<DigraphVertexIteratorF> iters;
+		vector<bool> isLast;
 		iters.push(start.getChildren());
+
+		if (start.outDegree() > 1)
+			isLast.push_back(false);
+		else
+			isLast.push_back(true);
 
 		while (!iters.empty()) {
 			auto& it = iters.top();
 			if (it.valid()) {
 				Node n = it();
 
-				for (uint32_t i = 0; i < iters.size() - 1; ++i) {
-					cout << "|";
+				for (int i = 0; i < isLast.size() - 1; ++i) {
+					bool b = isLast[i];
+					if (b)
+						cout << " ";
+					else
+						cout << "|";
+
 					for (uint32_t j = 0; j < depth_mul; ++j)
 						cout << " ";
 				}
@@ -105,9 +116,17 @@ namespace Morpheus {
 
 				iters.push(n.getChildren());
 				it.next();
+				if (!it.valid())
+					isLast[isLast.size() - 1] = true;
+				if (n.outDegree() > 1)
+					isLast.push_back(false);
+				else
+					isLast.push_back(true);
 			}
-			else 
+			else {
 				iters.pop();
+				isLast.pop_back();
+			}
 		}
 	}
 }

@@ -16,5 +16,8 @@ namespace Morpheus {
 		ref<void> load(const std::string& source, Node& loadInto) override;
 		void unload(ref<void>& ref) override;
 		void dispose() override;
-	};;
+
+		Node makeStaticMesh(const Node& material, const Node& geometry,
+			ref<StaticMesh>* refOut = nullptr);
+	};
 }

@@ -188,6 +188,7 @@
     <ClCompile Include="halfedgeloader.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="meshlap.cpp" />
+    <ClCompile Include="scene.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="staticmesh.cpp" />

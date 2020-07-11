@@ -19,6 +19,10 @@ namespace Morpheus {
 			delete data.second;
 		for (auto& data : mEdgeDatas)
 			delete data.second;
+		for (auto& lookup : mVertexLookups)
+			delete lookup.second;
+		for (auto& lookup : mEdgeLookups)
+			delete lookup.second;
 	}
 
 	Digraph::Digraph(uint32_t reserveVertices, uint32_t reserveEdges) :

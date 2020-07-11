@@ -180,6 +180,7 @@ namespace Morpheus {
 	SET_POOLED(MATERIAL_PROXY, false);
 	SET_POOLED(NANOGUI_SCREEN, false);
 	SET_POOLED(GEOMETRY_PROXY, false);
+	SET_POOLED(SCENE_ROOT, false);
 
 	SET_POOLED(CONTENT_MANAGER, false);
 	SET_POOLED(GEOMETRY, false);
@@ -205,6 +206,7 @@ namespace Morpheus {
 	SET_RENDERABLE(DYNAMIC_OBJECT_MANAGER, true);
 	SET_RENDERABLE(CAMERA, true);
 	SET_RENDERABLE(NANOGUI_SCREEN, true);
+	SET_RENDERABLE(SCENE_ROOT, true);
 
 	SET_RENDERABLE(CONTENT_MANAGER, false);
 	SET_RENDERABLE(GEOMETRY, false);
@@ -232,6 +234,7 @@ namespace Morpheus {
 	SET_DISPOSABLE(DYNAMIC_OBJECT_MANAGER, true);
 	SET_DISPOSABLE(CAMERA, true);
 	SET_DISPOSABLE(NANOGUI_SCREEN, true);
+	SET_DISPOSABLE(SCENE_ROOT, true);
 
 	SET_DISPOSABLE(CONTENT_MANAGER, true);
 	SET_DISPOSABLE(GEOMETRY, false);
@@ -402,13 +405,13 @@ namespace Morpheus {
 		inline void from(T* ptr) {
 			assert(true);
 		}
-		inline void from(PoolHandle<T>& newH) {
+		inline void from(const PoolHandle<T>& newH) {
 			mHandle = newH;
 		}
-		inline void from(ref<void>& r) {
+		inline void from(const ref<void>& r) {
 			mHandle = PoolHandle<T>(r.p.mHandle);
 		}
-		inline void to(ref<void>& r) {
+		inline void to(ref<void>& r) const {
 			r.p.mHandle = PoolHandle<void>(mHandle);
 		}
 		inline T* getPtr() const {
@@ -434,13 +437,13 @@ namespace Morpheus {
 		inline void from(T* newPtr) {
 			mPtr = newPtr;
 		}
-		inline void from(PoolHandle<T>& h) {
+		inline void from(const PoolHandle<T>& h) {
 			assert(true);
 		}
-		inline void from(ref<void>& r) {
+		inline void from(const ref<void>& r) {
 			mPtr = (T*)r.p.mPtr;
 		}
-		inline void to(ref<void>& r) {
+		inline void to(ref<void>& r) const {
 			r.p.mPtr = mPtr;
 		}
 		inline T* getPtr() const {
@@ -479,7 +482,7 @@ namespace Morpheus {
 			return mPoolGate.getPoolHandle();
 		}
 
-		inline ref<void> asvoid() {
+		inline ref<void> asvoid() const {
 			ref<void> r;
 			mPoolGate.to(r);
 			return r;
@@ -491,7 +494,7 @@ namespace Morpheus {
 			mPoolGate.from(ptr);
 		}
 
-		inline ref(PoolHandle<T>& h) {
+		inline ref(const PoolHandle<T>& h) {
 			mPoolGate.from(h);
 		}
 
@@ -663,15 +666,32 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="base">The prototype of the proxy.</param>
 		/// <returns>A proxy node of the prototype.</returns>
-		Node makeContentProxy(Node& base) {
+		Node makeContentProxy(const Node& base) {
 			Node v = makeProxy(base);
 			createEdge(v, base);
 			return v;
 		}
 
-		inline Node addNode(Engine* owner) {
-			return addNode(owner, NodeType::ENGINE);
+		/// <summary>
+		/// Add a node to the graph with the specified owner.
+		/// </summary>
+		/// <typeparam name="T">The type of the owner.</typeparam>
+		/// <param name="owner">The owner of the new node.</param>
+		/// <returns>A new node in the graph.</returns>
+		template <typename T> Node addNode(T* owner) {
+			return addNode(ref<void>(owner), NODE_TYPE(T));
 		}
+
+		/// <summary>
+		/// Add a node to the graph with the specified owner.
+		/// </summary>
+		/// <typeparam name="T">The type of the owner.</typeparam>
+		/// <param name="owner">The owner of the new node.</param>
+		/// <returns>A new node in the graph.</returns>
+		template <typename T> Node addNode(const ref<T>& owner) {
+			return addNode(owner.asvoid(), NODE_TYPE(T));
+		}
+
 		/// <summary>
 		/// Issues a handle for the specified node. The location of the node may be moved
 		/// in memory during runtime, so a handle assures consistent access to the node
@@ -769,4 +789,11 @@ namespace Morpheus {
 
 	DEF_PROXY(GEOMETRY_PROXY, GEOMETRY);
 	DEF_PROXY(MATERIAL_PROXY, MATERIAL);
+
+	template <typename T>
+	ref<T> duplicateRef(const ref<T>& a);
+	template <typename T>
+	Node duplicateToNode(const ref<T>& a);
+	template <typename T>
+	Node duplicate(const Node& a);
 }

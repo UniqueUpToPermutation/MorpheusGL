@@ -49,7 +49,7 @@ namespace Morpheus {
 		uint32_t stride = 3 + 2 + 3 + 3;
 
 		float* vert_buffer = new float[nVerts * stride];
-		unsigned int* indx_buffer = new unsigned int[nIndices];
+		uint32_t* indx_buffer = new uint32_t[nIndices];
 
 		BoundingBox aabb;
 		aabb.mLower = glm::vec3(std::numeric_limits<float>::infinity(),
@@ -138,6 +138,9 @@ namespace Morpheus {
 		geo->mVbo = bufs[0];
 		geo->mIbo = bufs[1];
 		geo->mVao = vao;
+		geo->mElementCount = nIndices;
+		geo->mElementType = GL_TRIANGLES;
+		geo->mIndexType = GL_UNSIGNED_INT;
 
 		delete[] vert_buffer;
 		delete[] indx_buffer;
@@ -154,5 +157,37 @@ namespace Morpheus {
 	}
 	void ContentFactory<Geometry>::dispose() {
 		delete mImporter;
+	}
+
+	Node ContentFactory<Geometry>::makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
+		GLenum elementType, GLsizei elementCount, GLenum indexType,
+		BoundingBox aabb, const std::string& source, ref<Geometry>* refOut) const
+	{
+		Geometry* geo = new Geometry(vao, vbo, ibo, elementType, elementCount,
+			indexType, aabb);
+
+		if (refOut)
+			*refOut = ref<Geometry>(geo);
+
+		// Add geometry to content
+		auto node = graph()->addNode(geo);
+		content()->addContentNode(node, source);
+		return node;
+	}
+
+	Node ContentFactory<Geometry>::makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
+		GLenum elementType, GLsizei elementCount, GLenum indexType,
+		BoundingBox aabb, ref<Geometry>* refOut) const
+	{
+		Geometry* geo = new Geometry(vao, vbo, ibo, elementType, elementCount,
+			indexType, aabb);
+
+		if (refOut)
+			*refOut = ref<Geometry>(geo);
+
+		// Add geometry to content
+		auto node = graph()->addNode(geo);
+		content()->addContentNode(node);
+		return node;
 	}
 }

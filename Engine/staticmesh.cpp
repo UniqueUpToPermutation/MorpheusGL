@@ -43,4 +43,27 @@ namespace Morpheus {
 	}
 	void ContentFactory<StaticMesh>::dispose() {
 	}
+	Node ContentFactory<StaticMesh>::makeStaticMesh(const Node& material, 
+		const Node& geometry, ref<StaticMesh>* refOut)
+	{
+		assert(graph()->desc(geometry)->type == NodeType::GEOMETRY);
+		assert(graph()->desc(material)->type == NodeType::MATERIAL);
+
+		StaticMesh* mesh = new StaticMesh();
+
+		if (refOut)
+			*refOut = ref<StaticMesh>(mesh);
+
+		Node staticMeshNode = graph()->addNode(mesh);
+
+		// Create proxies for geometry and material
+		Node materialProxy = graph()->makeContentProxy(material);
+		Node geometryProxy = graph()->makeContentProxy(geometry);
+
+		// Add those proxies as children to the static mesh
+		graph()->createEdge(staticMeshNode, materialProxy);
+		graph()->createEdge(materialProxy, geometryProxy);
+
+		return staticMeshNode;
+	}
 }

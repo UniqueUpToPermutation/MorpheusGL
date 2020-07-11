@@ -60,6 +60,11 @@ namespace Morpheus {
 			params.mTransformStack->push(newTransform);
 			break;
 		}
+		case NodeType::STATIC_MESH:
+		{
+			params.mCurrentRenderType = RenderInstanceType::STATIC_MESH;
+			break;
+		}
 		case NodeType::MATERIAL_PROXY:
 		{
 			// Found a material
@@ -128,7 +133,10 @@ namespace Morpheus {
 		params.mMaterialStack = &mMaterialStack;
 		params.mIsStaticStack = &mIsStaticStack;
 		params.mRenderCamera = nullptr;
+
+		params.mIsStaticStack->push(false);
 		collectRecursive(start, params);
+		params.mIsStaticStack->pop();
 
 		assert(mTransformStack.empty());
 		assert(mIsStaticStack.empty());
@@ -154,7 +162,7 @@ namespace Morpheus {
 
 			// Set renderer related things
 			glUseProgram(shader->id());
-			shaderRenderView.mWorld.set(transform.get()->mCache);
+			shaderRenderView.mWorld.set(transform->mCache);
 			shaderRenderView.mView.set(identity<mat4>());
 			shaderRenderView.mProjection.set(identity<mat4>());
 			shaderRenderView.mWorldInverseTranspose.set(identity<mat4>());
@@ -218,6 +226,7 @@ namespace Morpheus {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_STENCIL_TEST);
 		glEnable(GL_TEXTURE);
+		glEnable(GL_CULL_FACE);
 	}
 	void ForwardRenderer::dispose() {
 

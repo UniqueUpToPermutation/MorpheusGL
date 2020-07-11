@@ -125,7 +125,16 @@ namespace Morpheus {
 		/// </summary>
 		/// <returns>The graph this vertex belongs to.</returns>
 		inline Digraph* graph() { return mPtr; }
-
+		/// <summary>
+		/// Adds an edge going from this vertex to v.
+		/// </summary>
+		/// <param name="v">The head of the new edge.</param>
+		inline void addChild(const DigraphVertex& v);
+		/// <summary>
+		/// Adds an edge going from v to this vertex.
+		/// </summary>
+		/// <param name="v">The tail of the new edge.</param>
+		inline void addParent(const DigraphVertex& v);
 		/// <summary>
 		/// Query data associated with this vertex by name.
 		/// </summary>
@@ -1176,6 +1185,14 @@ namespace Morpheus {
 		for (auto it = getIngoingEdges(); it.valid(); it.next())
 			++result;
 		return result;
+	}
+
+	inline void DigraphVertex::addChild(const DigraphVertex& v) {
+		mPtr->createEdge(*this, v);
+	}
+
+	inline void DigraphVertex::addParent(const DigraphVertex& v) {
+		mPtr->createEdge(v, *this);
 	}
 
 	template <typename T>

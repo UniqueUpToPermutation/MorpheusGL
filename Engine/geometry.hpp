@@ -32,6 +32,14 @@ namespace Morpheus {
 		GLenum mIndexType;
 		BoundingBox mAabb;
 
+		inline Geometry() { }
+		inline Geometry(GLuint vao, GLuint vbo, GLuint ibo,
+			GLenum elementType, GLsizei elementCount, GLenum indexType,
+			BoundingBox aabb) :
+			mVao(vao), mVbo(vbo), mIbo(ibo), mElementType(elementType),
+			mElementCount(elementCount), mIndexType(indexType),
+			mAabb(aabb) { }
+
 	public:
 		inline GLuint vertexArray() const { return mVao; }
 		inline GLuint vertexBuffer() const { return mVbo; }
@@ -61,5 +69,12 @@ namespace Morpheus {
 		ref<void> load(const std::string& source, Node& loadInto) override;
 		void unload(ref<void>& ref) override;
 		void dispose() override;
+
+		Node makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
+			GLenum elementType, GLsizei elementCount, GLenum indexType,
+			BoundingBox aabb, const std::string& source, ref<Geometry>* refOut = nullptr) const;
+		Node makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
+			GLenum elementType, GLsizei elementCount, GLenum indexType,
+			BoundingBox aabb, ref<Geometry>* refOut = nullptr) const;
 	};
 }

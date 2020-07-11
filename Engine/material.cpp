@@ -8,7 +8,8 @@ using namespace nlohmann;
 using namespace std;
 
 namespace Morpheus {
-    ref<Material> copy(const ref<Material>& a)
+    template <>
+    ref<Material> duplicateRef<Material>(const ref<Material>& a)
     {
         if (IS_POOLED_<NODE_TYPE(Material)>::RESULT) {
             Material* mat = new Material();
@@ -25,6 +26,22 @@ namespace Morpheus {
             mat->mUniformAssigments = a->mUniformAssigments;
             return ref<Material>(mat);
         }
+    }
+
+    template <>
+    Node duplicateToNode<Material>(const ref<Material>& a) {
+        auto dup = duplicateRef(a);
+        auto node = graph()->addNode(dup);
+        content()->addContentNode(node);
+        return node;
+    }
+
+    template <>
+    Node duplicate<Material>(const Node& a) {
+        auto desc = graph()->desc(a);
+        assert(desc->type == NodeType::MATERIAL);
+        auto node = duplicateToNode(desc->owner.as<Material>());
+        return node;
     }
 
     ref<void> ContentFactory<Material>::load(const std::string& source, Node& loadInto) {

@@ -4,6 +4,7 @@
 #include "gui.hpp"
 #include "material.hpp"
 #include "staticmesh.hpp"
+#include "scene.hpp"
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
@@ -13,32 +14,6 @@ using namespace Morpheus;
 using namespace glm;
 
 nanogui::Color clr(1.0f, 1.0f, 1.0f, 1.0f);
-
-class CookTorranceView : public ShaderView {
-public:
-	ShaderUniform<vec3> mSpecularColor;
-	ShaderUniform<float> mF0;
-	ShaderUniform<float> mRoughness;
-	ShaderUniform<float> mK;
-	ShaderUniform<vec3> mLightColor;
-	ShaderUniform<float> mAmbientStrength;
-	ShaderUniform<float> mLightIntensity;
-	ShaderUniform<vec3> mEyePosition;
-	ShaderUniform<vec3> mLightPosition;
-
-	inline CookTorranceView(ref<Shader>& shader_) : ShaderView(shader_) 
-	{ 
-		link(mSpecularColor, "specularColor");
-		link(mF0, "F0");
-		link(mRoughness, "roughness");
-		link(mK, "k");
-		link(mLightColor, "lightColor");
-		link(mAmbientStrength, "ambientStrength");
-		link(mLightIntensity, "lightIntensity");
-		link(mEyePosition, "eyePosition");
-		link(mLightPosition, "lightPosition");
-	}
-};
 
 class GuiTest : public GuiBase {
 protected:
@@ -69,14 +44,56 @@ int main() {
 	Engine en;
 
 	if (en.startup("config.json").isSuccess()) {
+
+		Scene* scene = new Scene();
+		Node sceneNode = graph()->addNode(scene, engine()->handle());
+
 		GuiTest* gui = new GuiTest();
 		gui->init();
 
-		Node guiNode = graph()->addNode(gui, engine()->handle());
-
-		print(engine()->node());
-
+		Node guiNode = graph()->addNode(gui, sceneNode);
+		Node materialNode = content()->load<Material>("material.json");
 		Node staticMesh = content()->load<StaticMesh>("staticmesh.json");
+
+		// Make a triangle
+		float geo_verts[] = {
+			-1.0f, -1.0f, 0.0f,
+			1.0f, -1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f
+		};
+
+		uint32_t idx[] = {
+			0, 1, 2
+		};
+
+		GLuint vbo;
+		GLuint ibo;
+		GLuint vao;
+		
+		glGenBuffers(1, &vbo);
+		glGenBuffers(1, &ibo);
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(geo_verts), geo_verts, GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+		auto geoFactory = content()->getFactory<Geometry>();
+		auto geoNode = geoFactory->makeGeometry(vao, vbo, ibo, GL_TRIANGLES, 3, GL_UNSIGNED_INT,
+			BoundingBox{ zero<vec3>(), zero<vec3>() });
+		auto meshFactory = content()->getFactory<StaticMesh>();
+		auto meshNode = meshFactory->makeStaticMesh(materialNode, geoNode);
+		auto transformNode = scene->makeIdentityTransform();
+
+		// Add the mesh to the scene
+		sceneNode.addChild(transformNode);
+		// Every mesh must be the child of a transform
+		transformNode.addChild(meshNode);
 
 		print(engine()->node());
 
@@ -85,7 +102,7 @@ int main() {
 			en.update();
 
 			glClearColor(clr.r(), clr.g(), clr.b(), 1.0f);
-			en.renderer()->draw(guiNode);
+			en.renderer()->draw(sceneNode);
 
 			glfwSwapBuffers(en.window());
 		}

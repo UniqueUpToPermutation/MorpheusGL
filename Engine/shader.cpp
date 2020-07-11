@@ -34,6 +34,8 @@ namespace Morpheus {
 			SIZE_CASE(GL_BYTE);
 			SIZE_CASE(GL_UNSIGNED_BYTE);
 			SIZE_CASE(GL_BOOL);
+			SIZE_CASE(GL_FLOAT);
+			SIZE_CASE(GL_DOUBLE);
 			SIZE_CASE(GL_FLOAT_VEC2);
 			SIZE_CASE(GL_FLOAT_VEC3);
 			SIZE_CASE(GL_FLOAT_VEC4);
@@ -76,6 +78,8 @@ namespace Morpheus {
 			JSON_CASE(GL_BYTE, j, out_ptr);
 			JSON_CASE(GL_UNSIGNED_BYTE, j, out_ptr);
 			JSON_CASE(GL_BOOL, j, out_ptr);
+			JSON_CASE(GL_FLOAT, j, out_ptr);
+			JSON_CASE(GL_DOUBLE, j, out_ptr);
 			JSON_CASE(GL_FLOAT_VEC2, j, out_ptr);
 			JSON_CASE(GL_FLOAT_VEC3, j, out_ptr);
 			JSON_CASE(GL_FLOAT_VEC4, j, out_ptr);
@@ -401,6 +405,8 @@ namespace Morpheus {
 				ASSIGN_CASE(GL_BYTE, binding.mUniformLocation, ptr);
 				ASSIGN_CASE(GL_UNSIGNED_BYTE, binding.mUniformLocation, ptr);
 				ASSIGN_CASE(GL_BOOL, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_FLOAT, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_DOUBLE, binding.mUniformLocation, ptr);
 				ASSIGN_CASE(GL_FLOAT_VEC2, binding.mUniformLocation, ptr);
 				ASSIGN_CASE(GL_FLOAT_VEC3, binding.mUniformLocation, ptr);
 				ASSIGN_CASE(GL_FLOAT_VEC4, binding.mUniformLocation, ptr);
@@ -441,8 +447,11 @@ namespace Morpheus {
 			result.mBindings.push_back(binding);
 		}
 
+		vector<uint32_t> carryOverIndices;
+		size_t initial_bindings = mBindings.size();
 		uint32_t offset = result.computeSize();
-		for (auto& copy_binding : toOverwrite.mBindings) {
+		for (uint32_t i = 0; i < toOverwrite.mBindings.size(); ++i) {
+			auto& copy_binding = toOverwrite.mBindings[i];
 			ShaderUniformAssignment binding = copy_binding;
 			binding.mOffset += offset;
 			bool bAdd = true;
@@ -451,13 +460,22 @@ namespace Morpheus {
 				if (cmp_binding.mUniformLocation == binding.mUniformLocation)
 					bAdd = false;
 			}
-			result.mBindings.push_back(binding);
+			if (bAdd) {
+				result.mBindings.push_back(binding);
+				carryOverIndices.push_back(i);
+			}
 		}
 
 		result.mTotalSize = result.computeSize();
 		result.mData = new uint8_t[result.mTotalSize];
 		std::memcpy(result.mData, mData, offset);
-		std::memcpy(&result.mData[offset], toOverwrite.mData, result.mTotalSize - offset);
+
+		for (size_t i = mBindings.size(); i < result.mBindings.size(); ++i) {
+			auto& binding = result.mBindings[i];
+			auto& original_binding = toOverwrite.mBindings[carryOverIndices[i - mBindings.size()]];
+			std::memcpy(&result.mData[offset], &toOverwrite.mData[original_binding.mOffset], 
+				GLTypeMetadata::sizeOf(original_binding.mUniformType));
+		}
 		return result;
 	}
 }

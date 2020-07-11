@@ -106,7 +106,17 @@ namespace Morpheus {
 			auto self = node();
 			graph()->createEdge(self, content);
 		}
-		
+
+		/// <summary>
+		/// Get a content factory by content type.
+		/// </summary>
+		/// <typeparam name="ContentType">The type of content to get a factory for</typeparam>
+		/// <returns>The content factory.</returns>
+		template <typename ContentType> 
+		ContentFactory<ContentType>* getFactory() {
+			auto factory = mTypeToFactory[NODE_TYPE(ContentType)];
+			return static_cast<ContentFactory<ContentType>*>(factory);
+		}
 
 		/// <summary>
 		/// Transfer ownership of an already existing node to the content manager.
@@ -115,7 +125,7 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="content">The node for which to transfer ownership.</param>
 		/// <param name="sourceName">The name of the content so it can be looked up with ContentManager::load.</param>
-		void addContentNode(Node& content, std::string& sourceName) {
+		void addContentNode(Node& content, const std::string& sourceName) {
 			auto self = node();
 			graph()->createEdge(self, content);
 			mSources.set(content, sourceName);
@@ -138,7 +148,11 @@ namespace Morpheus {
 			Node v;
 			if (mSources.tryFind(source_mod, &v)) {
 				assert(graph_->desc(v)->type == NODE_TYPE(ContentType));
-				*refOut = graph_->desc(v)->owner.as<ContentType>();
+
+				// Return the ref for convienience.
+				if (refOut)
+					*refOut = graph_->desc(v)->owner.as<ContentType>();
+
 				return v;
 			}
 			else {
