@@ -201,7 +201,7 @@ namespace Morpheus {
 
 		// Allocate memory block
 		out->mTotalSize = out->computeSize();
-		out->mData = new uint8_t[out->mTotalSize];
+		out->mData.reset(new uint8_t[out->mTotalSize]);
 
 		for (uint32_t i = 0; i < names.size(); ++i) {
 			auto& name = names[i];
@@ -473,8 +473,8 @@ namespace Morpheus {
 		}
 
 		result.mTotalSize = result.computeSize();
-		result.mData = new uint8_t[result.mTotalSize];
-		std::memcpy(result.mData, mData, offset);
+		result.mData.reset(new uint8_t[result.mTotalSize]);
+		std::memcpy(&result.mData[0], &mData[0], offset);
 
 		for (size_t i = mBindings.size(); i < result.mBindings.size(); ++i) {
 			auto& binding = result.mBindings[i];

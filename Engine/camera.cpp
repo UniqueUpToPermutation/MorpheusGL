@@ -12,7 +12,7 @@ namespace Morpheus {
 		mUp(vec3(0.0f, 1.0f, 0.0f)),
 		mFarPlane(100.0f),
 		mNearPlane(0.1f),
-		mFieldOfView(half_pi<float>())
+		mFieldOfView(pi<float>() / 4.0f)
 	{
 		auto displayParams = engine()->displayParams();
 		mDisplayWidth = displayParams.mFramebufferWidth;

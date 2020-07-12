@@ -94,19 +94,21 @@ int main() {
 		auto* scene = new Scene();
 		Node sceneNode = graph()->addNode(scene, engine()->handle());
 
-		//auto* gui = new GuiTest();
-		//gui->init();
+		auto* gui = new GuiTest();
+		gui->init();
 
-		//Node guiNode = graph()->addNode(gui, sceneNode);
+		Node guiNode = graph()->addNode(gui, sceneNode);
 		Node meshNode = content()->load<StaticMesh>("staticmesh.json");
-		Node transform = scene->makeIdentityTransform();
+		ref<Transform> transform;
+		Node transformNode = scene->makeIdentityTransform(&transform);
+		transform->mTranslation = vec3(0.0f, -0.5f, 0.0f);
 
-		sceneNode.addChild(transform);
-		transform.addChild(meshNode);
+		sceneNode.addChild(transformNode);
+		transformNode.addChild(meshNode);
 
 		auto geometry = StaticMesh::getGeometry(meshNode);
 		auto aabb = geometry->boundingBox();
-		float len = length(aabb.mUpper - aabb.mLower);
+		float len = length(aabb.mUpper - aabb.mLower) * 1.1f;
 		auto camera = new PerspectiveLookAtCamera();
 		
 		graph()->addNode(camera, sceneNode);
@@ -116,13 +118,13 @@ int main() {
 		size_t k = 0;
 		// Make a thing
 		while (en.valid()) {
+			double theta = (double)k / 100.0;
+			camera->mPosition = len * vec3(cos(theta), 0.0f, sin(theta));
+
 			en.update();
 
 			glClearColor(clr.r(), clr.g(), clr.b(), 1.0f);
 			en.renderer()->draw(sceneNode);
-
-			double theta = (double)k / 100.0;
-			camera->mPosition = len * vec3(cos(theta), 0.0f, sin(theta));
 
 			glfwSwapBuffers(en.window());
 			++k;

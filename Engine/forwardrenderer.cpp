@@ -161,6 +161,12 @@ namespace Morpheus {
 			eye = params.mRenderCamera->eye();
 		}
 
+		// Setup GL parameters
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_STENCIL_TEST);
+		glEnable(GL_CULL_FACE);
+		glDisable(GL_BLEND);
+
 		// Draw static meshes
 		for (auto meshPtr = queue->mStaticMeshes.begin(); meshPtr != queue->mStaticMeshes.end(); ++meshPtr) {
 			auto& material = meshPtr->mMaterial;
@@ -195,6 +201,8 @@ namespace Morpheus {
 		}
 
 		// Just draw GUIs last for now
+		glBindVertexArray(0);
+		glUseProgram(0);
 		for (auto guiPtr = queue->mGuis.begin(); guiPtr != queue->mGuis.end(); ++guiPtr) {
 			auto screen = (*guiPtr)->screen();
 			screen->drawContents();
@@ -241,14 +249,6 @@ namespace Morpheus {
 	{
 		// Set VSync on
 		glfwSwapInterval(1); 
-
-		GL_ASSERT;
-		glEnable(GL_DEPTH_TEST);
-		GL_ASSERT;
-		glEnable(GL_STENCIL_TEST);
-		GL_ASSERT;
-		glEnable(GL_CULL_FACE);
-		GL_ASSERT;
 	}
 	void ForwardRenderer::dispose() {
 
