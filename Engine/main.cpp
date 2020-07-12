@@ -13,7 +13,7 @@
 using namespace Morpheus;
 using namespace glm;
 
-nanogui::Color clr(1.0f, 1.0f, 1.0f, 1.0f);
+nanogui::Color clr(0.5f, 0.5f, 1.0f, 1.0f);
 
 class GuiTest : public GuiBase {
 protected:
@@ -45,15 +45,18 @@ int main() {
 
 	if (en.startup("config.json").isSuccess()) {
 
+		GL_ASSERT;
 		Scene* scene = new Scene();
 		Node sceneNode = graph()->addNode(scene, engine()->handle());
 
 		GuiTest* gui = new GuiTest();
 		gui->init();
 
+		GL_ASSERT;
 		Node guiNode = graph()->addNode(gui, sceneNode);
-		Node materialNode = content()->load<Material>("material.json");
+		Node materialNode = content()->load<Material>("basicmat.json");
 		Node staticMesh = content()->load<StaticMesh>("staticmesh.json");
+		GL_ASSERT;
 
 		// Make a triangle
 		float geo_verts[] = {
@@ -70,18 +73,32 @@ int main() {
 		GLuint ibo;
 		GLuint vao;
 		
+		GL_ASSERT;
 		glGenBuffers(1, &vbo);
+		GL_ASSERT;
 		glGenBuffers(1, &ibo);
+		GL_ASSERT;
 		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
+		GL_ASSERT;
 		
+		glBindVertexArray(vao);
+		GL_ASSERT;
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		GL_ASSERT;
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+		GL_ASSERT;
 		glBufferData(GL_ARRAY_BUFFER, sizeof(geo_verts), geo_verts, GL_STATIC_DRAW);
+		GL_ASSERT;
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
-
+		GL_ASSERT;
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		GL_ASSERT;
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+		GL_ASSERT;
 		glEnableVertexAttribArray(0);
+		GL_ASSERT;
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+		GL_ASSERT;
 
 		auto geoFactory = content()->getFactory<Geometry>();
 		auto geoNode = geoFactory->makeGeometry(vao, vbo, ibo, GL_TRIANGLES, 3, GL_UNSIGNED_INT,

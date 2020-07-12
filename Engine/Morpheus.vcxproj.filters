@@ -200,6 +200,9 @@
     <None Include="bunny.obj">
       <Filter>Content</Filter>
     </None>
+    <None Include="basicmat.json">
+      <Filter>Content</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\nanogui\out\build\x64-Debug\nanogui.dll">

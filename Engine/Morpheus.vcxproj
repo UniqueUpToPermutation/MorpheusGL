@@ -124,7 +124,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;NANOGUI_USE_OPENGL;NANOGUI_GLAD;NANOGUI_SHARED;GLAD_GLAPI_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;NANOGUI_USE_OPENGL;NANOGUI_GLAD;NANOGUI_SHARED;GLAD_GLAPI_EXPORT;GRAPHICS_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
@@ -205,6 +205,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
     </CopyFileToFolders>
+    <None Include="basicmat.json" />
     <None Include="material.json" />
     <None Include="packages.config" />
     <None Include="shaders\basic.frag" />

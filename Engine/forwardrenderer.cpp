@@ -157,6 +157,8 @@ namespace Morpheus {
 			auto& transform = meshPtr->mTransform;
 			auto& geo = meshPtr->mGeometry;
 
+			GL_ASSERT;
+
 			auto shader = material->shader();
 			auto& shaderRenderView = shader->renderView();
 
@@ -167,14 +169,16 @@ namespace Morpheus {
 			shaderRenderView.mProjection.set(identity<mat4>());
 			shaderRenderView.mWorldInverseTranspose.set(identity<mat4>());
 			shaderRenderView.mEyePosition.set(zero<vec3>());
-
+			GL_ASSERT;
 			// Set individual material parameters
 			material->uniformAssignments().assign();
-
+			GL_ASSERT;
 			// Bind the geometry's vertex arary and draw the geometry
 			glBindVertexArray(geo->vertexArray());
+			GL_ASSERT;
 			glDrawElements(geo->elementType(), geo->elementCount(),
-				geo->elementType(), nullptr);
+				geo->indexType(), nullptr);
+			GL_ASSERT;
 		}
 
 		// Just draw GUIs last for now
@@ -223,10 +227,13 @@ namespace Morpheus {
 		// Set VSync on
 		glfwSwapInterval(1); 
 
+		GL_ASSERT;
 		glEnable(GL_DEPTH_TEST);
+		GL_ASSERT;
 		glEnable(GL_STENCIL_TEST);
-		glEnable(GL_TEXTURE);
+		GL_ASSERT;
 		glEnable(GL_CULL_FACE);
+		GL_ASSERT;
 	}
 	void ForwardRenderer::dispose() {
 

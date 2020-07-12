@@ -490,12 +490,14 @@ namespace Morpheus {
 
 		inline ShaderUniformAssignments(const ShaderUniformAssignments& other) :
 			mBindings(other.mBindings), mTotalSize(other.mTotalSize) {
-			mData = new uint8_t[mTotalSize];
+			if (mTotalSize > 0)
+				mData = new uint8_t[mTotalSize];
 			std::memcpy(mData, other.mData, mTotalSize);
 		}
 
 		inline ~ShaderUniformAssignments() {
-			delete[] mData;
+			if (mTotalSize > 0)
+				delete[] mData;
 		}
 
 		void assign() const;

@@ -214,8 +214,6 @@ namespace Morpheus {
 	}
 
 	void readRenderUniforms(const nlohmann::json& j, const Shader* shad, RendererShaderView* out) {
-		out->init();
-
 		for (auto& unif : j.items()) {
 			std::string name = unif.key();
 			std::string unifName = unif.value();
@@ -253,13 +251,21 @@ namespace Morpheus {
 	}
 
 	void ContentFactory<Shader>::readJsonMetadata(const nlohmann::json& j, Shader* shad) {
-		auto jsonEdUnif = j["editor_uniforms"];
-		auto jsonUnifDefaults = j["uniform_defaults"];
-		auto jsonRendererUnif = j["renderer_uniforms"];
+		
+		shad->mRenderView.init();
 
-		readEditorUniforms(jsonEdUnif, shad, &shad->mEditorView);
-		readUniformDefaults(jsonUnifDefaults, shad, &shad->mDefaultAssignments);
-		readRenderUniforms(jsonRendererUnif, shad, &shad->mRenderView);
+		if (j.contains("editor_uniforms")) {
+			auto jsonEdUnif = j["editor_uniforms"];
+			readEditorUniforms(jsonEdUnif, shad, &shad->mEditorView);
+		}
+		if (j.contains("uniform_defaults")) {
+			auto jsonUnifDefaults = j["uniform_defaults"];
+			readUniformDefaults(jsonUnifDefaults, shad, &shad->mDefaultAssignments);
+		}
+		if (j.contains("renderer_uniforms")) {
+			auto jsonRendererUnif = j["renderer_uniforms"];
+			readRenderUniforms(jsonRendererUnif, shad, &shad->mRenderView);
+		}
 	}
 
 	ref<void> ContentFactory<Shader>::load(const std::string& source, Node& loadInto) {

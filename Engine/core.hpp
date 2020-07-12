@@ -796,4 +796,12 @@ namespace Morpheus {
 	Node duplicateToNode(const ref<T>& a);
 	template <typename T>
 	Node duplicate(const Node& a);
+
+	#ifdef GRAPHICS_DEBUG
+	#define GL_ASSERT printError(glGetError())
+	#else
+	#define GL_ASSERT
+	#endif
+
+	void printError(unsigned int err);
 }

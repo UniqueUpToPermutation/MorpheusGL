@@ -1,5 +1,4 @@
 {
-  "shader_class": "cooktorrance",
   "vertex_shader": "cooktorrance.vert",
   "fragment_shader": "cooktorrance.frag",
 

@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#include <glad/glad.h>
+
 #define T_CASE(type) case NodeType::type: \
 	return #type
 
@@ -129,4 +131,34 @@ namespace Morpheus {
 			}
 		}
 	}
+
+	void printError(unsigned int err) {
+		switch (err) {
+		case GL_NO_ERROR:
+			break;
+		case GL_INVALID_ENUM:
+			cout << "GL_INVALID_ENUM!" << endl;
+			break;
+		case GL_INVALID_VALUE:
+			cout << "GL_INVALID_VALUE!" << endl;
+			break;
+		case GL_INVALID_OPERATION:
+			cout << "GL_INVALID_OPERATION!" << endl;
+			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			cout << "GL_INVALID_FRAMEBUFFER_OPERATOR!" << endl;
+			break;
+		case GL_OUT_OF_MEMORY:
+			cout << "GL_OUT_OF_MEMORY!" << endl;
+			break;
+		case GL_STACK_UNDERFLOW:
+			cout << "GL_STACK_UNDERFLOW!" << endl;
+			break;
+		case GL_STACK_OVERFLOW:
+			cout << "GL_STACK_OVERFLOW!" << endl;
+			break;
+		}
+		assert(err == GL_NO_ERROR);
+	}
+
 }
