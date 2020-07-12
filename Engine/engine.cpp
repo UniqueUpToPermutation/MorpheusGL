@@ -103,6 +103,13 @@ namespace Morpheus {
 		NodeMetadata::init();
 	}
 
+	DisplayParameters Engine::displayParams() const {
+		DisplayParameters params;
+		glfwGetFramebufferSize(mWindow, &params.mFramebufferWidth,
+			&params.mFramebufferHeight);
+		return params;
+	}
+
 	Error Engine::startup(const std::string& configPath) {
 
 		if (!glfwInit())

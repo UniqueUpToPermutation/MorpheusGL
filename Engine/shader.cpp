@@ -175,11 +175,11 @@ namespace Morpheus {
 		vector<string> names;
 
 		out->mBindings.clear();
-
+		
+		uint32_t offset = 0u;
 		for (auto& unif : j.items()) {
 			std::string name = unif.key();
 			GLint a = glGetUniformLocation(shad->id(), name.c_str());
-			uint32_t offset = 0u;
 			if (a >= 0) {
 				GLint size;
 				GLenum type;

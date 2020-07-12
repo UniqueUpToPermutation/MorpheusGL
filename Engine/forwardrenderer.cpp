@@ -151,6 +151,16 @@ namespace Morpheus {
 		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+		mat4 view = identity<mat4>();
+		mat4 projection = identity<mat4>();
+		vec3 eye = zero<vec3>();
+
+		if (params.mRenderCamera) {
+			view = params.mRenderCamera->view();
+			projection = params.mRenderCamera->projection();
+			eye = params.mRenderCamera->eye();
+		}
+
 		// Draw static meshes
 		for (auto meshPtr = queue->mStaticMeshes.begin(); meshPtr != queue->mStaticMeshes.end(); ++meshPtr) {
 			auto& material = meshPtr->mMaterial;
@@ -162,13 +172,16 @@ namespace Morpheus {
 			auto shader = material->shader();
 			auto& shaderRenderView = shader->renderView();
 
+			mat4 world = transform->mCache;
+			mat4 worldInvTranspose = glm::transpose(glm::inverse(world));
+
 			// Set renderer related things
 			glUseProgram(shader->id());
-			shaderRenderView.mWorld.set(transform->mCache);
-			shaderRenderView.mView.set(identity<mat4>());
-			shaderRenderView.mProjection.set(identity<mat4>());
-			shaderRenderView.mWorldInverseTranspose.set(identity<mat4>());
-			shaderRenderView.mEyePosition.set(zero<vec3>());
+			shaderRenderView.mWorld.set(world);
+			shaderRenderView.mView.set(view);
+			shaderRenderView.mProjection.set(projection);
+			shaderRenderView.mWorldInverseTranspose.set(worldInvTranspose);
+			shaderRenderView.mEyePosition.set(eye);
 			GL_ASSERT;
 			// Set individual material parameters
 			material->uniformAssignments().assign();
@@ -198,6 +211,8 @@ namespace Morpheus {
 		ForwardRenderDrawParams drawParams;
 
 		collect(scene, collectParams);
+
+		drawParams.mRenderCamera = collectParams.mRenderCamera;
 		draw(&mQueues, drawParams);
 	}
 	void ForwardRenderer::postGlfwRequests() {

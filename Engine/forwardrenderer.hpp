@@ -40,7 +40,7 @@ namespace Morpheus {
 	};
 
 	struct ForwardRenderDrawParams {
-
+		ICamera* mRenderCamera;
 	};
 
 	class ForwardRenderer : public IRenderer {

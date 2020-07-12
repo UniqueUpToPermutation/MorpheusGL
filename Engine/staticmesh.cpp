@@ -8,6 +8,60 @@ using namespace std;
 using namespace nlohmann;
 
 namespace Morpheus {
+	ref<Geometry> StaticMesh::getGeometry(Node& meshNode) {
+		Node material = StaticMesh::getMaterialNode(meshNode);
+		auto& graph_ = *graph();
+		auto it = material.getChildren();
+		NodeData* desc = nullptr;
+		for (; it.valid(); it.next()) {
+			desc = graph_.desc(it());
+			if (graph_.desc(it())->type == NodeType::GEOMETRY_PROXY)
+				break;
+		}
+		if (it.valid())
+			return desc->owner.as<Geometry>();
+		else
+			return ref<Geometry>(nullptr);
+	}
+	Node StaticMesh::getGeometryNode(Node& meshNode) {
+		Node material = StaticMesh::getMaterialNode(meshNode);
+		auto& graph_ = *graph();
+		auto it = material.getChildren();
+		for (; it.valid(); it.next())
+			if (graph_.desc(it())->type == NodeType::GEOMETRY_PROXY)
+				break;
+		if (it.valid())
+			return it();
+		else
+			return Node::invalid();
+	}
+	ref<Material> StaticMesh::getMaterial(Node& meshNode) {
+		auto& graph_ = *graph();
+		auto it = meshNode.getChildren();
+		NodeData* desc = nullptr;
+		for (; it.valid(); it.next()) {
+			desc = graph_.desc(it());
+			if (desc->type == NodeType::MATERIAL_PROXY)
+				break;
+		}
+
+		if (it.valid())
+			return desc->owner.as<Material>();
+		else
+			return ref<Material>(nullptr);
+	}
+	Node StaticMesh::getMaterialNode(Node& meshNode) {
+		auto& graph_ = *graph();
+		auto it = meshNode.getChildren();
+		for (; it.valid(); it.next())
+			if (graph_.desc(it())->type == NodeType::MATERIAL_PROXY)
+				break;
+		if (it.valid())
+			return it();
+		else
+			return Node::invalid();
+	}
+
 	ref<void> ContentFactory<StaticMesh>::load(const std::string& source, Node& loadInto) {
 		ifstream f(source);
 

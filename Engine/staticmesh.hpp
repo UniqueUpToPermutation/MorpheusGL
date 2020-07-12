@@ -7,6 +7,10 @@
 namespace Morpheus {
 	class StaticMesh {
 	public:
+		static ref<Geometry> getGeometry(Node& meshNode);
+		static Node getGeometryNode(Node& meshNode);
+		static ref<Material> getMaterial(Node& meshNode);
+		static Node getMaterialNode(Node& meshNode);
 	};
 	SET_NODE_TYPE(StaticMesh, STATIC_MESH);
 

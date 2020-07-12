@@ -9,10 +9,14 @@ namespace Morpheus {
 	public:
 		virtual glm::mat4 view() const = 0;
 		virtual glm::mat4 projection() const = 0;
+		virtual glm::vec3 eye() const = 0;
 	};
 	SET_NODE_TYPE(ICamera, CAMERA);
 
 	class PerspectiveLookAtCamera : public ICamera {
+	private:
+		f_framebuffer_size_t mResizeHandler;
+
 	public:
 		glm::vec3 mPosition;
 		glm::vec3 mLookAt;
@@ -23,8 +27,11 @@ namespace Morpheus {
 		float mNearPlane;
 		float mFieldOfView;
 
+		PerspectiveLookAtCamera();
+
 		glm::mat4 view() const override;
 		glm::mat4 projection() const override;
+		glm::vec3 eye() const override;
 		void dispose() override;
 	};
 	SET_BASE_TYPE(PerspectiveLookAtCamera, ICamera);
