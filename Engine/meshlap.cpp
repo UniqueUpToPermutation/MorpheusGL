@@ -10,9 +10,9 @@ namespace Morpheus {
         Eigen::VectorXd vec = Eigen::VectorXd::Zero(geo.vertexCount());
 
         // Each vertex has mass equal to a third of the area of its adjacent faces
-        for (auto v = geo.constGetVertex(0); v.isValid(); v = v.nextById()) {
+        for (auto v = geo.constGetVertex(0); v.valid(); v = v.nextById()) {
             double mass = 0.0;
-            for (auto f = v.faces(); f.isValid(); f.next())
+            for (auto f = v.faces(); f.valid(); f.next())
                 mass += f().area();
             mass /= 3.0;
             vec(v.id()) = mass;
@@ -38,11 +38,11 @@ namespace Morpheus {
         output->reserve(geo.edgeCount() + geo.vertexCount());
 
         // For every vertex
-        for (Vertex v = geo.constGetVertex(0); v.isValid(); v = v.nextById()) {
+        for (Vertex v = geo.constGetVertex(0); v.valid(); v = v.nextById()) {
 
             double totalWeight = 0.0;
             // Get all outgoing edges of the vertex
-            for (auto e_it = v.outgoing(); e_it.isValid(); e_it.next()) {
+            for (auto e_it = v.outgoing(); e_it.valid(); e_it.next()) {
                 Edge e = e_it();
 
                 // Calculate cotangent of alpha

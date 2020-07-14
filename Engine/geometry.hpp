@@ -19,6 +19,8 @@ namespace Assimp {
 
 namespace Morpheus {
 
+	class HalfEdgeGeometry;
+
 	/// <summary>
 	/// A piece of OpenGL geometry data in the engine.
 	/// </summary>
@@ -54,6 +56,17 @@ namespace Morpheus {
 	SET_NODE_TYPE(Geometry, GEOMETRY);
 
 	/// <summary>
+	/// Used for converting HalfEdgeGeometry into renderable Geometry
+	/// </summary>
+	struct HalfEdgeAttributes {
+		GLint mPositionAttribute;
+		GLint mUVAttribute;
+		GLint mNormalAttribute;
+		GLint mTangentAttribute;
+		GLint mColorAttribute;
+	};
+
+	/// <summary>
 	/// A factory for loading Geometry using the open asset
 	/// import library.
 	/// </summary>
@@ -76,5 +89,12 @@ namespace Morpheus {
 		Node makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
 			GLenum elementType, GLsizei elementCount, GLenum indexType,
 			BoundingBox aabb, ref<Geometry>* refOut = nullptr) const;
+		Node makeGeometry(const HalfEdgeGeometry* geo, 
+			const HalfEdgeAttributes& attrib,
+			const std::string& source,
+			ref<Geometry>* refOut = nullptr) const;
+		Node makeGeometry(const HalfEdgeGeometry* geo,
+			const HalfEdgeAttributes& attrib,
+			ref<Geometry>* refOut = nullptr) const;
 	};
 }

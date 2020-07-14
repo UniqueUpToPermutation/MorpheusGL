@@ -60,10 +60,12 @@ namespace Morpheus {
 		inline vec2type* ptrUV();
 		inline vec3type* ptrNormal();
 		inline vec3type* ptrTangent();
+		inline vec3type* ptrColor();
 		inline vec3type position() const;
 		inline vec2type uv() const;
 		inline vec3type normal() const;
 		inline vec3type tangent() const;
+		inline vec3type color() const;
 		inline void setPosition(const stype x, const stype y, const stype z);
 		inline void setPosition(const vec3type& p);
 		inline void setUV(const stype x, const stype y);
@@ -72,15 +74,19 @@ namespace Morpheus {
 		inline void setNormal(const vec3type& normal);
 		inline void setTangent(const stype x, const stype y, const stype z);
 		inline void setTangent(const vec3type& tangent);
+		inline void setColor(const stype r, const stype g, const stype b);
+		inline void setColor(const vec3type& color);
 		inline RawVertex* raw();
 		inline void setEdge(const Edge& e);
 		inline Edge edge() const;
 		inline EdgeIterator outgoing() const;
 		inline EdgeIterator incoming() const;
 		inline VertexIterator neighbors() const;
+		inline uint32_t neighborCount() const;
 		inline FaceIterator faces() const;
 		inline Vertex nextById() const;
-		inline bool isValid() const;
+		inline bool valid() const;
+		inline bool isBoundary() const;
 
 		friend class Edge;
 		friend class Face;
@@ -113,7 +119,7 @@ namespace Morpheus {
 		inline Face face() const;
 		inline Edge next() const;
 		inline Edge nextById() const;
-		inline bool isValid() const;
+		inline bool valid() const;
 		inline vec3type direction() const;
 		inline EdgeIterator edgesOnFace() const;
 
@@ -144,8 +150,10 @@ namespace Morpheus {
 		inline FaceIterator adjacent() const;
 		inline VertexIterator vertices() const;
 		inline Face nextById() const;
-		inline bool isValid() const;
+		inline bool valid() const;
 		inline stype area() const;
+		inline uint32_t edgeCount() const;
+		inline uint32_t vertexCount() const;
 
 		friend class Vertex;
 		friend class Edge;
@@ -182,7 +190,7 @@ namespace Morpheus {
 		inline void next() { (this->*nextIt)(); }
 
 		inline bool done() const { return currentEdge.id_ < 0; }
-		inline bool isValid() const { return !done(); }
+		inline bool valid() const { return !done(); }
 		inline Vertex operator()() { return currentEdge.head(); }
 
 		friend class Vertex;
@@ -222,7 +230,7 @@ namespace Morpheus {
 
 		inline Edge operator()() { return currentEdge; }
 		inline bool done() const { return currentEdge.id_ < 0; }
-		inline bool isValid() const { return !done(); }
+		inline bool valid() const { return !done(); }
 
 		friend class Vertex;
 		friend class Edge;
@@ -254,7 +262,7 @@ namespace Morpheus {
 		inline void next() { (this->*nextIt)(); }
 
 		inline bool done() const { return currentEdge.id_ < 0; }
-		inline bool isValid() const { return !done(); }
+		inline bool valid() const { return !done(); }
 		inline Face operator()() { return currentEdge.opposite().face(); }
 
 		friend class Vertex;
@@ -271,6 +279,7 @@ namespace Morpheus {
 		std::vector<vec2type> vertexUVs;
 		std::vector<vec3type> vertexNormals;
 		std::vector<vec3type> vertexTangents;
+		std::vector<vec3type> vertexColors;
 		std::vector<RawVertex> vertices;
 		std::vector<RawEdge> edges;
 		std::vector<RawFace> faces;
@@ -284,6 +293,21 @@ namespace Morpheus {
 		inline BoundingBox getBoundingBox() const {
 			return aabb;
 		}
+		inline void createPositions() {
+			vertexPositions.resize(vertices.size());
+		}
+		inline void createUVs() {
+			vertexUVs.resize(vertices.size());
+		}
+		inline void createNormals() {
+			vertexNormals.resize(vertices.size());
+		}
+		inline void createTangents() {
+			vertexTangents.resize(vertices.size());
+		}
+		inline void createColors() {
+			vertexColors.resize(vertices.size());
+		}
 		inline bool hasPositions() const {
 			return !vertexPositions.empty();
 		}
@@ -295,6 +319,9 @@ namespace Morpheus {
 		}
 		inline bool hasTangents() const {
 			return !vertexTangents.empty();
+		}
+		inline bool hasColors() const {
+			return !vertexColors.empty();
 		}
 		inline Vertex getVertex(const int id) {
 			return Vertex(this, this, id);
@@ -355,6 +382,9 @@ namespace Morpheus {
 	inline vec3type* Vertex::ptrTangent() {
 		return &geo_->vertexTangents[id_];
 	}
+	inline vec3type* Vertex::ptrColor() {
+		return &geo_->vertexColors[id_];
+	}
 	inline vec3type Vertex::position() const {
 		return cgeo_->vertexPositions[id_];
 	}
@@ -366,6 +396,9 @@ namespace Morpheus {
 	}
 	inline vec3type Vertex::tangent() const {
 		return cgeo_->vertexTangents[id_];
+	}
+	inline vec3type Vertex::color() const {
+		return cgeo_->vertexColors[id_];
 	}
 	inline void Vertex::setPosition(const stype x, 
 		const stype y, 
@@ -405,6 +438,16 @@ namespace Morpheus {
 	inline void Vertex::setTangent(const vec3type& tangent) {
 		*(ptrTangent()) = tangent;
 	}
+	inline void Vertex::setColor(const stype r, 
+		const stype g, 
+		const stype b) {
+		ptrColor()->x = r;
+		ptrColor()->y = g;
+		ptrColor()->z = b;
+	}
+	inline void Vertex::setColor(const vec3type& color) {
+		(*ptrColor()) = color;
+	}
 	inline RawVertex* Vertex::raw() {
 		return &geo_->vertices[id_];
 	}
@@ -426,14 +469,26 @@ namespace Morpheus {
 	inline VertexIterator Vertex::neighbors() const {
 		return VertexIterator(edge(), &VertexIterator::nextAdjacent);
 	}
+	inline uint32_t Vertex::neighborCount() const {
+		uint32_t count = 0;
+		for (auto it = neighbors(); it.valid(); it.next(), ++count);
+		return count;
+	}
 	inline FaceIterator Vertex::faces() const {
 		return FaceIterator(edge(), &FaceIterator::vertexNextAdjacentFace);
 	}
 	inline Vertex Vertex::nextById() const {
 		return Vertex(geo_, cgeo_, id_ + 1);
 	}
-	inline bool Vertex::isValid() const {
+	inline bool Vertex::valid() const {
 		return id_ >= 0 && id_ < (int)cgeo_->vertices.size();
+	}
+	inline bool Vertex::isBoundary() const {
+		for (auto it = faces(); it.valid(); it.next()) {
+			if (!it().valid())
+				return true;
+		}
+		return false;
 	}
 
 	inline RawEdge* Edge::raw() {
@@ -469,7 +524,7 @@ namespace Morpheus {
 	inline Edge Edge::nextById() const {
 		return Edge(geo_, cgeo_, id_ + 1);
 	}
-	inline bool Edge::isValid() const {
+	inline bool Edge::valid() const {
 		return id_ >= 0 && id_ < (int)cgeo_->edges.size();
 	}
 	inline vec3type Edge::direction() const {
@@ -497,11 +552,19 @@ namespace Morpheus {
 	inline Face Face::nextById() const {
 		return Face(geo_, cgeo_, id_ + 1);
 	}
-	inline bool Face::isValid() const {
+	inline bool Face::valid() const {
 		return id_ >= 0 && id_ < (int)geo_->faces.size();
 	}
 	inline stype Face::area() const {
 		// Assumes the face is a triangle
 		return glm::cross(edge().direction(), edge().next().direction()).length() / 2.0f;
+	}
+	inline uint32_t Face::edgeCount() const {
+		uint32_t count = 0;
+		for (auto it = edges(); it.valid(); it.next(), ++count);
+		return count;
+	}
+	inline uint32_t Face::vertexCount() const {
+		return edgeCount();
 	}
 }

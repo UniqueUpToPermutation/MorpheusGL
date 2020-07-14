@@ -31,10 +31,9 @@ namespace Morpheus {
 			return node;
 		}
 
-		Node makeIdentityTransform(ref<Transform>* out = nullptr) {
+		inline Node makeIdentityTransform(ref<Transform>* out = nullptr) {
 			ref<Transform> trans(mTransformPool.alloc());
 			auto node = graph()->addNode(trans);
-			trans->mCache = glm::identity<glm::fmat4>();
 			trans->mRotation = glm::identity<glm::quat>();
 			trans->mScale = glm::one<glm::vec3>();
 			trans->mTranslation = glm::zero<glm::vec3>();
@@ -42,6 +41,40 @@ namespace Morpheus {
 				*out = trans;
 			return node;
 		}
+
+		inline Node makeTranslation(const glm::vec3& translate, ref<Transform>* out = nullptr) {
+			ref<Transform> trans(mTransformPool.alloc());
+			auto node = graph()->addNode(trans);
+			trans->mRotation = glm::identity<glm::quat>();
+			trans->mScale = glm::one<glm::vec3>();
+			trans->mTranslation = translate;
+			if (out)
+				*out = trans;
+			return node;
+		}
+
+		inline Node makeRotation(const glm::quat& rotate, ref<Transform>* out = nullptr) {
+			ref<Transform> trans(mTransformPool.alloc());
+			auto node = graph()->addNode(trans);
+			trans->mRotation = rotate;
+			trans->mScale = glm::one<glm::vec3>();
+			trans->mTranslation = glm::zero<glm::vec3>();
+			if (out)
+				*out = trans;
+			return node;
+		}
+
+		inline Node makeScale(const glm::vec3& scale, ref<Transform>* out = nullptr) {
+			ref<Transform> trans(mTransformPool.alloc());
+			auto node = graph()->addNode(trans);
+			trans->mRotation = glm::identity<glm::quat>();
+			trans->mScale = scale;
+			trans->mTranslation = glm::zero<glm::vec3>();
+			if (out)
+				*out = trans;
+			return node;
+		}
+
 	};
 	SET_NODE_TYPE(Scene, SCENE_ROOT);
 }

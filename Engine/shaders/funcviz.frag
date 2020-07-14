@@ -1,4 +1,4 @@
-﻿#version 330 core
+#version 330 core
 
 #include "cooktorrance.glsl"
 
@@ -6,6 +6,7 @@ in vec2 vTexcoords;
 in vec3 vNormal;
 in vec3 vTanget;
 in vec3 vPosition;
+in vec3 vColor;
 
 uniform vec3 specularColor = vec3(1, 1, 1);
 uniform float F0 = 0.8;
@@ -38,4 +39,5 @@ void main()
 
 	outColor = outColor * lightIntensity + diffuseColor * ambientStrength;
 	outColor = clamp(outColor, 0.0, 1.0);
+	outColor = vColor * outColor;
 }

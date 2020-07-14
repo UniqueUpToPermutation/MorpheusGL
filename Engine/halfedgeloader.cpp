@@ -189,7 +189,8 @@ namespace Morpheus {
 			auto& traverseEdge = geo->edges[traverseEdgeId];
 
 			while (traverseEdge.face != -1) {
-				traverseEdgeId = edge.opposite;
+				traverseEdgeId = traverseEdge.opposite;
+				traverseEdgeId = geo->edges[traverseEdgeId].next;
 				traverseEdge = geo->edges[traverseEdgeId];
 			}
 

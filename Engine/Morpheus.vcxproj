@@ -206,14 +206,19 @@
       <FileType>Document</FileType>
     </CopyFileToFolders>
     <None Include="basicmat.json" />
+    <None Include="funcvizmaterial.json" />
     <None Include="material.json" />
     <None Include="packages.config" />
     <None Include="shaders\basic.frag" />
     <None Include="shaders\basic.json" />
     <None Include="shaders\basic.vert" />
     <None Include="shaders\cooktorrance.frag" />
+    <None Include="shaders\cooktorrance.glsl" />
     <None Include="shaders\cooktorrance.json" />
     <None Include="shaders\cooktorrance.vert" />
+    <None Include="shaders\funcviz.frag" />
+    <None Include="shaders\funcviz.json" />
+    <None Include="shaders\funcviz.vert" />
     <None Include="staticmesh.json">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>

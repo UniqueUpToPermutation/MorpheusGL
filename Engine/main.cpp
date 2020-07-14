@@ -5,6 +5,8 @@
 #include "material.hpp"
 #include "staticmesh.hpp"
 #include "scene.hpp"
+#include "halfedge.hpp"
+#include "halfedgeloader.hpp"
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
@@ -99,15 +101,36 @@ int main() {
 
 		Node guiNode = graph()->addNode(gui, sceneNode);
 		Node meshNode = content()->load<StaticMesh>("staticmesh.json");
-		ref<Transform> transform;
-		Node transformNode = scene->makeIdentityTransform(&transform);
-		transform->mTranslation = vec3(0.0f, -0.5f, 0.0f);
 
+		HalfEdgeLoader loader;
+		HalfEdgeGeometry* geo = loader.load("bunny.obj");
+
+		if (!geo->hasColors())
+			geo->createColors();
+		for (auto v = geo->getVertex(0); v.valid(); v = v.nextById())
+			v.setColor(1.0f, 1.0f, 1.0f);
+
+		auto geoFactory = content()->getFactory<Geometry>();
+		HalfEdgeAttributes attrib;
+		attrib.mPositionAttribute = 0;
+		attrib.mUVAttribute = 1;
+		attrib.mNormalAttribute = 2;
+		attrib.mTangentAttribute = 3;
+		attrib.mColorAttribute = 4;
+		ref<Geometry> hfeGeo;
+		Node hfeGeoNode = geoFactory->makeGeometry(geo, attrib, &hfeGeo);
+
+		// Material for function visualization
+		Node hfeMatNode = content()->load<Material>("funcvizmaterial.json");
+
+		auto meshFactory = content()->getFactory<StaticMesh>();
+		Node hfeMesh = meshFactory->makeStaticMesh(hfeMatNode, hfeGeoNode);
+
+		Node transformNode = scene->makeTranslation(vec3(0.0f, -0.5f, 0.0f));
 		sceneNode.addChild(transformNode);
-		transformNode.addChild(meshNode);
+		transformNode.addChild(hfeMesh);
 
-		auto geometry = StaticMesh::getGeometry(meshNode);
-		auto aabb = geometry->boundingBox();
+		auto aabb = hfeGeo->boundingBox();
 		float len = length(aabb.mUpper - aabb.mLower) * 1.1f;
 		auto camera = new PerspectiveLookAtCamera();
 		
