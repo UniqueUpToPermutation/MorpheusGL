@@ -6,6 +6,7 @@
 using namespace glm;
 
 namespace Morpheus {
+
 	PerspectiveLookAtCamera::PerspectiveLookAtCamera() :
 		mPosition(vec3(0.0f, 0.0f, -1.0f)),
 		mLookAt(zero<vec3>()),

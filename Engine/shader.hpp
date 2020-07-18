@@ -508,7 +508,7 @@ namespace Morpheus {
 		friend class ContentFactory<Shader>;
 		friend class ShaderView;
 	};
-	SET_NODE_TYPE(Shader, SHADER);
+	SET_NODE_ENUM(Shader, SHADER);
 
 	class ShaderView {
 	private:

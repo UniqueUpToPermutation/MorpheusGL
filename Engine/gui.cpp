@@ -4,7 +4,9 @@
 #include <nanogui/nanogui.h>
 
 namespace Morpheus {
-	void GuiBase::init() {
+
+	void GuiBase::init(Node& node)
+	{
 		auto en = engine();
 
 		mScreen = new nanogui::Screen();

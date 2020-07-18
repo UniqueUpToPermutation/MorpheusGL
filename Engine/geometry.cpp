@@ -149,12 +149,12 @@ namespace Morpheus {
 		return ref<void>(geo);
 	}
 	void ContentFactory<Geometry>::unload(ref<void>& ref) {
-		auto r = ref.as<Geometry>();
+		auto r = ref.reinterpretGet<Geometry>();
 		GLuint bufs[2] = { r->mVbo, r->mIbo };
 		GLuint vao = r->mVao;
 		glDeleteBuffers(2, bufs);
 		glDeleteVertexArrays(1, &vao);
-		delete r.get();
+		delete r;
 	}
 	void ContentFactory<Geometry>::dispose() {
 		delete mImporter;
@@ -195,6 +195,17 @@ namespace Morpheus {
 	Node ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
 		const HalfEdgeAttributes& attrib,
 		ref<Geometry>* refOut) const {
+		return makeGeometry(geo, attrib, "", refOut);
+	}
+
+	Node ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
+		ref<Geometry>* refOut) const {
+		HalfEdgeAttributes attrib;
+		attrib.mPositionAttribute = 0;
+		attrib.mUVAttribute = 1;
+		attrib.mNormalAttribute = 2;
+		attrib.mTangentAttribute = 3;
+		attrib.mColorAttribute = 4;
 		return makeGeometry(geo, attrib, "", refOut);
 	}
 
@@ -327,7 +338,7 @@ namespace Morpheus {
 			int start_i;
 			int last_i;
 
-			auto vertIt = face.edges();
+			auto vertIt = face.vertices();
 
 			start_i = vertIt().id();
 			vertIt.next();

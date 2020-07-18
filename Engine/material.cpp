@@ -11,7 +11,7 @@ namespace Morpheus {
     template <>
     ref<Material> duplicateRef<Material>(const ref<Material>& a)
     {
-        if (IS_POOLED_<NODE_TYPE(Material)>::RESULT) {
+        if (IS_POOLED_<NODE_ENUM(Material)>::RESULT) {
             Material* mat = new Material();
             mat->mShader = a->mShader;
             mat->mUniformAssigments = a->mUniformAssigments;
@@ -40,7 +40,7 @@ namespace Morpheus {
     Node duplicate<Material>(const Node& a) {
         auto desc = graph()->desc(a);
         assert(desc->type == NodeType::MATERIAL);
-        auto node = duplicateToNode(desc->owner.as<Material>());
+        auto node = duplicateToNode(desc->owner.reinterpret<Material>());
         return node;
     }
 
@@ -88,7 +88,7 @@ namespace Morpheus {
         return ref<void>(mat);
     }
     void ContentFactory<Material>::unload(ref<void>& ref) {
-
+        delete ref.reinterpretGet<Material>();
     }
     void ContentFactory<Material>::dispose() {
 

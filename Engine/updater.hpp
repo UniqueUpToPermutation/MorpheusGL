@@ -3,7 +3,7 @@
 #include "core.hpp"
 
 namespace Morpheus {
-	class Updater {
+	class Updater : public IInitializable {
 	private:
 		double mLastTick;
 		NodeHandle mHandle;
@@ -11,6 +11,8 @@ namespace Morpheus {
 
 	public:
 		Updater();
+
+		void init(Node& node) override;
 
 		void restartClock();
 		void updateChildren();
@@ -21,5 +23,5 @@ namespace Morpheus {
 
 		friend class Engine;
 	};
-	SET_NODE_TYPE(Updater, UPDATER);
+	SET_NODE_ENUM(Updater, UPDATER);
 }

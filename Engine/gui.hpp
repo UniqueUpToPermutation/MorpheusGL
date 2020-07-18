@@ -8,7 +8,7 @@ namespace nanogui {
 }
 
 namespace Morpheus {
-	class GuiBase : public IDisposable {
+	class GuiBase : public IInitializable, public IDisposable {
 	protected:
 		nanogui::Screen* mScreen;
 		f_cursor_pos_t mCursorPosHandler;
@@ -24,8 +24,8 @@ namespace Morpheus {
 	public:
 		inline nanogui::Screen* screen() { return mScreen; }
 
-		void init();
+		void init(Node& node) override;
 		void dispose() override;
 	};
-	SET_NODE_TYPE(GuiBase, NANOGUI_SCREEN);
+	SET_NODE_ENUM(GuiBase, NANOGUI_SCREEN);
 }

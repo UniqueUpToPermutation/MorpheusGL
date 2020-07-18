@@ -53,7 +53,7 @@ namespace Morpheus {
 
 		friend class ContentFactory<Geometry>;
 	};
-	SET_NODE_TYPE(Geometry, GEOMETRY);
+	SET_NODE_ENUM(Geometry, GEOMETRY);
 
 	/// <summary>
 	/// Used for converting HalfEdgeGeometry into renderable Geometry
@@ -95,6 +95,8 @@ namespace Morpheus {
 			ref<Geometry>* refOut = nullptr) const;
 		Node makeGeometry(const HalfEdgeGeometry* geo,
 			const HalfEdgeAttributes& attrib,
+			ref<Geometry>* refOut = nullptr) const;
+		Node makeGeometry(const HalfEdgeGeometry* geo,
 			ref<Geometry>* refOut = nullptr) const;
 	};
 }

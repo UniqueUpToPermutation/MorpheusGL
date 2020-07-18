@@ -23,7 +23,7 @@ namespace Morpheus {
 	/// <summary>
 	/// The Morpheus graphics engine.
 	/// </summary>
-	class Engine {
+	class Engine  {
 	private:
 		// The window the engine is rendering to
 		GLFWwindow* mWindow;
@@ -52,7 +52,6 @@ namespace Morpheus {
 		std::set<const f_framebuffer_size_t*> mFramebufferSizeCallbacks;
 
 	public:
-
 		// Events that can be bound to
 		void bindCursorPosEvent(const f_cursor_pos_t* f);
 		void bindMouseButtonEvent(const f_mouse_button_t* f);
@@ -199,9 +198,8 @@ namespace Morpheus {
 		return &engine()->updater();
 	}
 
-	class IRenderer : public IDisposable {
+	class IRenderer : public IDisposable, public IInitializable {
 	public:
-		virtual void init() = 0;
 		virtual void postGlfwRequests() = 0;
 		virtual void draw(Node& scene) = 0;
 		virtual NodeHandle handle() const = 0;

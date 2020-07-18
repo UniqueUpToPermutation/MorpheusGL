@@ -59,7 +59,7 @@ namespace Morpheus {
 	public:
 		NodeHandle handle() const override;
 		RendererType getType() const override;
-		void init() override;
+		void init(Node& node) override;
 		void postGlfwRequests() override;
 		void draw(Node& scene) override;
 		void dispose() override;

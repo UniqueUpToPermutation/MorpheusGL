@@ -50,7 +50,7 @@ namespace Morpheus {
                 if (e.face().id() != -1) {
                     auto v1 = e.next().direction();
                     auto v2 = -e.next().next().direction();
-                    cotAlpha = glm::dot(v1, v2) / glm::cross(v1, v2).length();
+                    cotAlpha = glm::dot(v1, v2) / glm::length(glm::cross(v1, v2));
                 }
 
                 // Calculate cotangent of beta
@@ -58,7 +58,7 @@ namespace Morpheus {
                 if (e.opposite().face().id() != -1) {
                     auto v1 = e.opposite().next().direction();
                     auto v2 = -e.opposite().next().next().direction();
-                    cotBeta = glm::dot(v1, v2) / glm::cross(v1, v2).length();
+                    cotBeta = glm::dot(v1, v2) / glm::length(glm::cross(v1, v2));
                 }
 
                 double weight = (cotAlpha + cotBeta) / 2.0;

@@ -5,7 +5,8 @@
 #include "staticmesh.hpp"
 
 namespace Morpheus {
-	ContentManager::ContentManager() {
+
+	void ContentManager::init(Node& node) {
 		// Make shader factory
 		addFactory<Shader>();
 		// Make geometry factory
@@ -16,6 +17,10 @@ namespace Morpheus {
 		addFactory<StaticMesh>();
 
 		mSources = graph()->createVertexLookup<std::string>("__content__");
+		mHandle = graph()->issueHandle(node);
+	}
+
+	ContentManager::ContentManager() : mHandle(HANDLE_INVALID) {
 	}
 
 	void ContentManager::unload(Node& node) {
@@ -39,6 +44,7 @@ namespace Morpheus {
 		unloadAll();
 
 		graph()->destroyLookup(mSources);
+		graph()->recallHandle(mHandle);
 	}
 
 	void ContentManager::collectGarbage() {

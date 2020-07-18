@@ -74,7 +74,6 @@ namespace Morpheus {
 				*out = trans;
 			return node;
 		}
-
 	};
-	SET_NODE_TYPE(Scene, SCENE_ROOT);
+	SET_NODE_ENUM(Scene, SCENE_ROOT);
 }

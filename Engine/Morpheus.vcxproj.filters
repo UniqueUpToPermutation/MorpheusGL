@@ -117,6 +117,9 @@
     <ClInclude Include="staticmesh.hpp">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
+    <ClInclude Include="cameracontroller.hpp">
+      <Filter>Header Files\renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="digraph.cpp">
@@ -216,6 +219,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="funcvizmaterial.json">
+      <Filter>Content</Filter>
+    </None>
+    <None Include="cube.obj">
       <Filter>Content</Filter>
     </None>
   </ItemGroup>

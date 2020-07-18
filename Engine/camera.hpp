@@ -11,7 +11,7 @@ namespace Morpheus {
 		virtual glm::mat4 projection() const = 0;
 		virtual glm::vec3 eye() const = 0;
 	};
-	SET_NODE_TYPE(ICamera, CAMERA);
+	SET_NODE_ENUM(ICamera, CAMERA);
 
 	class PerspectiveLookAtCamera : public ICamera {
 	private:

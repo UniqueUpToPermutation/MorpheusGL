@@ -1,10 +1,19 @@
 #include "updater.hpp"
 #include "engine.hpp"
 
+
+#include "cameracontroller.hpp"
+
 #include <GLFW/glfw3.h>
 
 namespace Morpheus {
 	Updater::Updater() : mLastTick(0.0), bFirstTick(true) {
+	}
+
+	void Updater::init(Node& node)
+	{
+		mHandle = graph()->issueHandle(node);
+		restartClock();
 	}
 
 	void Updater::restartClock() {
@@ -26,7 +35,9 @@ namespace Morpheus {
 		auto v = (*graph_)[mHandle];
 		for (auto it = v.getChildren(); it.valid(); it.next()) {
 			auto desc = graph_->desc(it());
-			desc->owner.getAs<IUpdatable>()->update(dt);
+			auto updatableInterface = getInterface<IUpdatable>(*desc);
+			if (updatableInterface->isEnabled())
+				updatableInterface->update(dt);
 		}
 	}
 }

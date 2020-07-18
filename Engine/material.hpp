@@ -22,7 +22,7 @@ namespace Morpheus {
 		friend ref<Material> duplicateRef<Material>(const ref<Material>& a);
 		friend class ContentFactory<Material>;
 	};
-	SET_NODE_TYPE(Material, MATERIAL);
+	SET_NODE_ENUM(Material, MATERIAL);
 
 	template <>
 	ref<Material> duplicateRef<Material>(const ref<Material>& a);

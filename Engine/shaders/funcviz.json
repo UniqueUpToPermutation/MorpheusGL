@@ -13,8 +13,9 @@
     "F0": 0.8,
     "roughness": 0.1,
     "lightColor": [ 1.0, 1.0, 1.0 ],
-    "ambientStrength": 0.0,
-    "lightIntensity": 1.0
+    "ambientStrength": 0.2,
+    "lightIntensity": 0.8,
+    "lightDirection": [ -1.0, -1.0, -1.0 ]
   },
 
   "renderer_uniforms": {

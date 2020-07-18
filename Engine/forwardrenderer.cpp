@@ -38,7 +38,7 @@ namespace Morpheus {
 		switch (desc.type) {
 		case NodeType::SCENE_ROOT:
 		{
-			auto scene = desc.owner.getAs<Scene>();
+			auto scene = getOwner<Scene>(desc);
 
 			// Set the active camera
 			if (!params.mRenderCamera)
@@ -47,7 +47,7 @@ namespace Morpheus {
 		}
 		case NodeType::TRANSFORM:
 		{
-			ref<Transform> newTransform = desc.owner.as<Transform>();
+			auto newTransform = getOwner<Transform>(desc);
 			// Is this transform is static, then it has already been cached
 			// Otherwise, cache (evaluate and save) this transform using the
 			// last transform on the stack
@@ -68,13 +68,13 @@ namespace Morpheus {
 		case NodeType::MATERIAL_PROXY:
 		{
 			// Found a material
-			params.mMaterialStack->push(desc.owner.as<Material>());
+			params.mMaterialStack->push(getOwner<Material>(desc));
 			break;
 		}
 		case NodeType::GEOMETRY_PROXY:
 		{
 			// Found some geometry
-			ref<Geometry> geo = desc.owner.as<Geometry>();
+			auto geo = getOwner<Geometry>(desc);
 			switch (params.mCurrentRenderType) {
 			case RenderInstanceType::STATIC_MESH:
 				{
@@ -92,14 +92,14 @@ namespace Morpheus {
 		case NodeType::NANOGUI_SCREEN:
 		{
 			// Found a GUI
-			params.mQueues->mGuis.push(desc.owner.getAs<GuiBase>());
+			params.mQueues->mGuis.push(getOwner<GuiBase>(desc));
 			break;
 		}
 		case NodeType::CAMERA:
 		{
 			// Found a camera
 			if (!params.mRenderCamera)
-				params.mRenderCamera = desc.owner.getAs<ICamera>();
+				params.mRenderCamera = getOwner<ICamera>(desc);
 			break;
 		}
 		}
@@ -245,13 +245,15 @@ namespace Morpheus {
 		glfwWindowHint(GLFW_DEPTH_BITS, 24);
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	}
-	void ForwardRenderer::init()
+	void ForwardRenderer::init(Node& n)
 	{
 		// Set VSync on
 		glfwSwapInterval(1); 
+
+		mHandle = graph()->issueHandle(n);
 	}
 	void ForwardRenderer::dispose() {
-
+		graph()->recallHandle(mHandle);
 	}
 
 }

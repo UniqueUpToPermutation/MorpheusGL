@@ -19,7 +19,7 @@ namespace Morpheus {
 				break;
 		}
 		if (it.valid())
-			return desc->owner.as<Geometry>();
+			return desc->owner.reinterpretGet<Geometry>();
 		else
 			return ref<Geometry>(nullptr);
 	}
@@ -46,7 +46,7 @@ namespace Morpheus {
 		}
 
 		if (it.valid())
-			return desc->owner.as<Material>();
+			return desc->owner.reinterpretGet<Material>();
 		else
 			return ref<Material>(nullptr);
 	}
@@ -93,7 +93,7 @@ namespace Morpheus {
 		return ref<void>(new StaticMesh());
 	}
 	void ContentFactory<StaticMesh>::unload(ref<void>& ref) {
-		delete ref.getAs<StaticMesh>();
+		delete ref.reinterpret<StaticMesh>().get();
 	}
 	void ContentFactory<StaticMesh>::dispose() {
 	}

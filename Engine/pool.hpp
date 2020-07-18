@@ -26,12 +26,12 @@ namespace Morpheus {
 
 	public:
 		inline PoolHandle(Pool<T>* ptr, uint32_t offset);
-		inline PoolHandle(const PoolHandle<void>& handle);
 		inline PoolHandle() { }
 
 		inline T* operator->();
 		inline T* get() const;
 		inline Pool<T>* getPool();
+		inline bool operator==(const PoolHandle& other);
 
 		friend class Pool<T>;
 		friend class PoolHandle<void>;
@@ -47,6 +47,10 @@ namespace Morpheus {
 		template <typename T>
 		inline PoolHandle(const PoolHandle<T>& handle);
 		inline PoolHandle() { }
+		template <typename T>
+		inline PoolHandle<T> reinterpret() const {
+			return PoolHandle<T>((Pool<T>*)mPoolPtr, mOffset);
+		}
 	};
 
 	/// <summary>
@@ -179,12 +183,12 @@ namespace Morpheus {
 		return &mPoolPtr->mData[mOffset];
 	}
 	template<typename T>
-	Pool<T>* PoolHandle<T>::getPool() {
+	inline Pool<T>* PoolHandle<T>::getPool() {
 		return mPoolPtr;
 	}
-
-	template <typename T>
-	PoolHandle<T>::PoolHandle(const PoolHandle<void>& handle) : mPoolPtr((Pool<T>*)handle.mPoolPtr), mOffset(handle.mOffset) {
+	template<typename T>
+	inline bool PoolHandle<T>::operator==(const PoolHandle& other) {
+		return mPoolPtr == other.mPoolPtr && mOffset == other.mOffset;
 	}
 
 	template <typename T>

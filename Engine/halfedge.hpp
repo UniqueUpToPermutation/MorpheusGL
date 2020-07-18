@@ -553,11 +553,11 @@ namespace Morpheus {
 		return Face(geo_, cgeo_, id_ + 1);
 	}
 	inline bool Face::valid() const {
-		return id_ >= 0 && id_ < (int)geo_->faces.size();
+		return id_ >= 0 && id_ < (int)cgeo_->faces.size();
 	}
 	inline stype Face::area() const {
 		// Assumes the face is a triangle
-		return glm::cross(edge().direction(), edge().next().direction()).length() / 2.0f;
+		return glm::length(glm::cross(edge().direction(), edge().next().direction())) / 2.0f;
 	}
 	inline uint32_t Face::edgeCount() const {
 		uint32_t count = 0;

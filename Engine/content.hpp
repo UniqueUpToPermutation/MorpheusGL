@@ -34,10 +34,11 @@ namespace Morpheus {
 	/// An interface that all content factories must inherit from.
 	/// Defines the interface for loading and unloading assets.
 	/// </summary>
-	class IContentFactory : public IDisposable {
+	class IContentFactory {
 	public:
 		virtual ref<void> load(const std::string& source, Node& loadInto) = 0;
 		virtual void unload(ref<void>& ref) = 0;
+		virtual void dispose() = 0;
 
 		friend class ContentManager;
 	};
@@ -53,7 +54,7 @@ namespace Morpheus {
 	/// one parent - if they do, they are unloaded by their respective content manager and removed
 	/// from the scene graph. 
 	/// </summary>
-	class ContentManager : public IDisposable {
+	class ContentManager : public IDisposable, public IInitializable {
 	private:
 		NodeHandle mHandle;
 		std::set<IContentFactory*> mFactories;
@@ -61,6 +62,8 @@ namespace Morpheus {
 		DigraphVertexLookupView<std::string> mSources;
 
 	public:
+		void init(Node& node) override;
+
 		/// <summary>
 		/// The handle of this content manager in the scene graph.
 		/// </summary>
@@ -83,7 +86,7 @@ namespace Morpheus {
 		template <typename ContentType> void addFactory() {
 			IContentFactory* factory = new ContentFactory<ContentType>();
 			mFactories.insert(factory);
-			mTypeToFactory[NODE_TYPE(ContentType)] = factory;
+			mTypeToFactory[NODE_ENUM(ContentType)] = factory;
 		}
 
 		/// <summary>
@@ -91,7 +94,7 @@ namespace Morpheus {
 		/// </summary>
 		/// <typeparam name="ContentType">The content type of the factory to remove.</typeparam>
 		template <typename ContentType> void removeFactory() {
-			auto type = NODE_TYPE(ContentType);
+			auto type = NODE_ENUM(ContentType);
 			auto factory = mTypeToFactory[type];
 			mFactories.erase(factory);
 			mTypeToFactory.erase(type);
@@ -114,7 +117,7 @@ namespace Morpheus {
 		/// <returns>The content factory.</returns>
 		template <typename ContentType> 
 		ContentFactory<ContentType>* getFactory() {
-			auto factory = mTypeToFactory[NODE_TYPE(ContentType)];
+			auto factory = mTypeToFactory[NODE_ENUM(ContentType)];
 			return static_cast<ContentFactory<ContentType>*>(factory);
 		}
 
@@ -141,17 +144,19 @@ namespace Morpheus {
 		/// <returns>A node containing the asset.</returns>
 		template <typename ContentType>
 		Node load(const std::string& source, const Node& parent, ref<ContentType>* refOut = nullptr) {
+			assert(IS_BASE_TYPE_<ContentType>::RESULT);
+
 			std::string source_mod = source;
 			std::replace(source_mod.begin(), source_mod.end(), '\\', '/');
 			
 			auto graph_ = graph();
 			Node v;
 			if (mSources.tryFind(source_mod, &v)) {
-				assert(graph_->desc(v)->type == NODE_TYPE(ContentType));
+				assert(graph_->desc(v)->type == NODE_ENUM(ContentType));
 
 				// Return the ref for convienience.
 				if (refOut)
-					*refOut = graph_->desc(v)->owner.as<ContentType>();
+					*refOut = graph_->desc(v)->owner.reinterpret<ContentType>();
 
 				return v;
 			}
@@ -162,7 +167,7 @@ namespace Morpheus {
 				graph_->createEdge(node(), v);
 				
 				// Load a ref via the correct content factory
-				auto type = NODE_TYPE(ContentType);
+				auto type = NODE_ENUM(ContentType);
 				auto ref = mTypeToFactory[type]->load(source_mod, v);
 
 				// Set the node description of the created node appropriately
@@ -178,7 +183,7 @@ namespace Morpheus {
 
 				// Return the ref for convienience.
 				if (refOut)
-					*refOut = ref.as<ContentType>();
+					*refOut = ref.reinterpret<ContentType>();
 
 				return v;
 			}

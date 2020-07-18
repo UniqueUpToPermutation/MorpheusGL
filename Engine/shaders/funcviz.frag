@@ -22,7 +22,7 @@ out vec3 outColor;
 
 void main()
 {
-	vec3 diffuseColor = vec3(1.0, 1.0, 1.0);
+	vec3 diffuseColor = vColor;
 
 	vec3 vViewDir = normalize(eyePosition - vPosition);
 	vec3 vLightDir = - normalize(lightDirection);
@@ -39,5 +39,4 @@ void main()
 
 	outColor = outColor * lightIntensity + diffuseColor * ambientStrength;
 	outColor = clamp(outColor, 0.0, 1.0);
-	outColor = vColor * outColor;
 }

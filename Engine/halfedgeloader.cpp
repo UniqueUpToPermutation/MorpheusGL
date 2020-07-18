@@ -12,6 +12,9 @@
 #include <iostream>
 
 using namespace std;
+using namespace glm;
+
+#define DEFAULT_RELATIVE_JOIN_EPSILON 0.0001f
 
 struct pair_hash
 {
@@ -38,6 +41,12 @@ namespace Morpheus {
 	}
 
 	HalfEdgeGeometry* HalfEdgeLoader::load(const std::string& source) {
+		HalfEdgeLoadParameters params;
+		params.mRelativeJoinEpsilon = DEFAULT_RELATIVE_JOIN_EPSILON;
+		return load(source, params);
+	}
+
+	HalfEdgeGeometry* HalfEdgeLoader::load(const std::string& source, const HalfEdgeLoadParameters& params) {
 
 		HalfEdgeGeometry* geo;
 
@@ -95,9 +104,14 @@ namespace Morpheus {
 		geo->edges.reserve(nIndicesGuess);
 		geo->faces.reserve(nFaces);
 
-		for (uint32_t i = 0; i < nVerts; ++i)
-			geo->vertexPositions.push_back(conv(mesh->mVertices[i]));
-
+		for (uint32_t i = 0; i < nVerts; ++i) {
+			auto v = conv(mesh->mVertices[i]);
+			geo->vertexPositions.push_back(v);
+			aabb.mLower = glm::min(v, aabb.mLower);
+			aabb.mUpper = glm::max(v, aabb.mUpper);
+		}
+		stype join_eps = params.mRelativeJoinEpsilon * glm::length(aabb.mUpper - aabb.mLower);
+			
 		if (bNormals)
 			for (uint32_t i = 0; i < nVerts; ++i)
 				geo->vertexNormals.push_back(conv(mesh->mNormals[i]));
@@ -110,6 +124,121 @@ namespace Morpheus {
 			for (uint32_t i = 0; i < nVerts; ++i)
 				geo->vertexUVs.push_back(conv(mesh->mTangents[i]));
 
+		vector<vec3*> posPtrs;
+		posPtrs.reserve(geo->vertexPositions.size());
+		for (auto& v : geo->vertexPositions)
+			posPtrs.push_back(&v);
+
+		sort(posPtrs.begin(), posPtrs.end(), [](const vec3* a, const vec3* b) {
+			return a->x < b->x;
+		});
+
+		// Compute join map
+		vector<uint32_t> joinMap;
+		joinMap.reserve(geo->vertexPositions.size());
+		for (uint32_t i = 0; i < geo->vertexPositions.size(); ++i)
+			joinMap.push_back(i);
+		
+		bool bJoinFound = false;
+		for (uint32_t i = 0; i < geo->vertexPositions.size(); ++i) {
+			for (uint32_t j = i + 1; j < geo->vertexPositions.size() &&
+				posPtrs[j]->x - posPtrs[i]->x < join_eps; ++j) {
+				auto dist = glm::length(*(posPtrs[j]) - *(posPtrs[i]));
+				if (dist < join_eps) {
+					joinMap[posPtrs[j] - &geo->vertexPositions[0]] = static_cast<uint32_t>(posPtrs[i] - &geo->vertexPositions[0]);
+					bJoinFound = true;
+				}
+			}
+		}
+
+		vector<uint32_t> srcToCompressedMap;
+		srcToCompressedMap.resize(joinMap.size());
+
+		if (bJoinFound) {
+			// Flatten join map
+			for (uint32_t i = 0; i < joinMap.size(); ++i) {
+				uint32_t j = i;
+				while (joinMap[j] != j) {
+					j = joinMap[j];
+				}
+				joinMap[i] = j;
+			}
+
+			multimap<uint32_t, uint32_t> compressedToSrcMultiMap;
+			vector<uint32_t> compressedToSrcCount;
+			
+			for (uint32_t i = 0; i < joinMap.size(); ++i) {
+				// Save this vertex
+				if (joinMap[i] == i) {
+					auto compressedId = static_cast<uint32_t>(compressedToSrcCount.size());
+					srcToCompressedMap[i] = compressedId;
+					compressedToSrcMultiMap.emplace(compressedId, i);
+					compressedToSrcCount.push_back(1);
+				}
+			}
+			for (uint32_t i = 0; i < joinMap.size(); ++i) {
+				if (joinMap[i] != i) {
+					auto dest = srcToCompressedMap[joinMap[i]];
+					compressedToSrcMultiMap.emplace(dest, i);
+					compressedToSrcCount[dest]++;
+					srcToCompressedMap[i] = dest;
+				}
+			}
+
+			// Compress everything
+			vector<vec3> newPos;
+			vector<vec2> newUv;
+			vector<vec3> newNormal;
+			vector<vec3> newTangent;
+
+			if (geo->vertexPositions.size() > 0) {
+				newPos.reserve(compressedToSrcCount.size());
+				for (uint32_t i = 0; i < compressedToSrcCount.size(); ++i)
+					newPos.push_back(zero<vec3>());
+				for (auto& it : compressedToSrcMultiMap) {
+					vec3 vpos = geo->vertexPositions[it.second];
+					newPos[it.first] += vpos;
+				}
+				for (uint32_t i = 0; i < compressedToSrcCount.size(); ++i)
+					newPos[i] /= static_cast<stype>(compressedToSrcCount[i]);
+				geo->vertexPositions = newPos;
+			}
+			if (geo->vertexUVs.size() > 0) {
+				newUv.reserve(compressedToSrcCount.size());
+				for (uint32_t i = 0; i < compressedToSrcCount.size(); ++i)
+					newUv.push_back(zero<vec3>());
+				for (auto& it : compressedToSrcMultiMap)
+					newUv[it.first] += geo->vertexUVs[it.second];
+				for (uint32_t i = 0; i < compressedToSrcCount.size(); ++i)
+					newUv[i] /= static_cast<stype>(compressedToSrcCount[i]);
+				geo->vertexUVs = newUv;
+			}
+			if (geo->vertexNormals.size() > 0) {
+				newNormal.reserve(compressedToSrcCount.size());
+				for (uint32_t i = 0; i < compressedToSrcCount.size(); ++i)
+					newNormal.push_back(zero<vec3>());
+				for (auto& it : compressedToSrcMultiMap)
+					newNormal[it.first] += geo->vertexNormals[it.second];
+				for (uint32_t i = 0; i < compressedToSrcCount.size(); ++i)
+					newNormal[i] = glm::normalize(newNormal[i]);
+				geo->vertexNormals = newNormal;
+			}
+			if (geo->vertexTangents.size() > 0) {
+				newTangent.reserve(compressedToSrcCount.size());
+				for (uint32_t i = 0; i < compressedToSrcCount.size(); ++i)
+					newTangent.push_back(zero<vec3>());
+				for (auto& it : compressedToSrcMultiMap)
+					newTangent[it.first] += geo->vertexTangents[it.second];
+				for (uint32_t i = 0; i < compressedToSrcCount.size(); ++i)
+					newTangent[i] = glm::normalize(newTangent[i]);
+				geo->vertexTangents = newTangent;
+			}
+		}
+		else {
+			for (uint32_t i = 0; i < srcToCompressedMap.size(); ++i)
+				srcToCompressedMap[i] = i;
+		}
+
 		unordered_map<pair<int, int>, int, pair_hash> vertexToEdgeMap;
 
 		// Make faces and half edges
@@ -120,11 +249,12 @@ namespace Morpheus {
 			int newEdgesIdStart = static_cast<int>(geo->edges.size());
 
 			for (uint32_t vi = 1; vi <= face.mNumIndices; ++vi) {
-				unsigned int headId = vi == face.mNumIndices ? face.mIndices[0] : face.mIndices[vi];
-				unsigned int tailId = face.mIndices[vi - 1];
+				unsigned int headId = srcToCompressedMap[vi == face.mNumIndices ? face.mIndices[0] : face.mIndices[vi]];
+				unsigned int tailId = srcToCompressedMap[face.mIndices[vi - 1]];
 
 				int newEdgeId = static_cast<int>(geo->edges.size());
 
+				f.edge = newEdgeId;
 				vertexToEdgeMap[make_pair(tailId, headId)] = newEdgeId;
 
 				RawEdge e;
@@ -132,6 +262,7 @@ namespace Morpheus {
 				e.head = headId;
 				e.next = vi == face.mNumIndices ? newEdgesIdStart : newEdgeId + 1;
 				e.opposite = -1;
+
 				geo->edges.push_back(e);
 			}
 
@@ -140,8 +271,13 @@ namespace Morpheus {
 
 		vector<int> unlinkedEdges;
 
+		geo->vertices.resize(geo->vertexPositions.size());
+
 		// Link half edges
 		for (auto& item : vertexToEdgeMap) {
+			// Link tail vertex to this edge
+			geo->vertices[item.first.first].edge = item.second;
+
 			if (geo->edges[item.second].opposite == -1) {
 				auto reverse = make_pair(item.first.second, item.first.first);
 
@@ -195,6 +331,9 @@ namespace Morpheus {
 			}
 
 			geo->edges[traverseEdgeId].next = edgeId;
+
+			// Link vertices if they haven't already been
+			geo->vertices[geo->edges[traverseEdgeId].head].edge = edgeId;
 		}
 
 		return geo;

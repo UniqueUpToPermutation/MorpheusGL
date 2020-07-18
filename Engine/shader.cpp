@@ -275,6 +275,7 @@ namespace Morpheus {
 		cout << "Loading Shader " << source << "..." << endl;
 
 		if (!f.is_open()) {
+			cout << "Failed to open " << source << "!" << endl;
 			ref<void> r(nullptr);
 			return r;
 		}
@@ -341,7 +342,7 @@ namespace Morpheus {
 	}
 
 	void ContentFactory<Shader>::unload(ref<void>& ref) {
-		Shader* shad = ref.as<Shader>().get();
+		Shader* shad = ref.reinterpretGet<Shader>();
 		glDeleteProgram(shad->mId);
 		delete shad;
 	}

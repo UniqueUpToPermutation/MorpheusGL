@@ -5,14 +5,14 @@
 #include "geometry.hpp"
 
 namespace Morpheus {
-	class StaticMesh {
+	class StaticMesh  {
 	public:
 		static ref<Geometry> getGeometry(Node& meshNode);
 		static Node getGeometryNode(Node& meshNode);
 		static ref<Material> getMaterial(Node& meshNode);
 		static Node getMaterialNode(Node& meshNode);
 	};
-	SET_NODE_TYPE(StaticMesh, STATIC_MESH);
+	SET_NODE_ENUM(StaticMesh, STATIC_MESH);
 
 	template <>
 	class ContentFactory<StaticMesh> : public IContentFactory {

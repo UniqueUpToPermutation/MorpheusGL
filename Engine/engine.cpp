@@ -11,6 +11,7 @@
 using namespace std;
 
 namespace Morpheus {
+
 	Engine* gEngine = nullptr;
 	Engine* engine() { return gEngine; }
 
@@ -127,12 +128,19 @@ namespace Morpheus {
 
 		// Load config
 		ifstream f(configPath);
+		if (!f.is_open()) {
+			Error err(ErrorCode::FAIL_LOAD_CONFIG);
+			err.mMessage = "Failed to load configuration file!";
+			err.mSource = "Engine::startup";
+			cout << err.str() << endl;
+			return err;
+		}
 		f >> mConfig;
+		f.close();
 
 		// Create renderer
 		auto renderer = new ForwardRenderer();
-		v = mGraph.addNode(renderer, mHandle);
-		renderer->mHandle = mGraph.issueHandle(v);
+		mGraph.addNode(renderer, mHandle);
 		mRenderer = renderer;
 
 		// Renderer may request framebuffer features from GLFW
@@ -158,15 +166,13 @@ namespace Morpheus {
 
 		// Create content manager with handle
 		mContent = new ContentManager();
-		v = mGraph.addNode(mContent, mHandle);
-		mContent->mHandle = mGraph.issueHandle(v);
+		mGraph.addNode(mContent, mHandle);
 		
 		// Add updater to the graph
-		v = mGraph.addNode(&mUpdater, mHandle);
-		mUpdater.mHandle = mGraph.issueHandle(v);
+		mGraph.addNode(&mUpdater, mHandle);
 
-		// Initialize the renderer
-		mRenderer->init(); 
+		// Initialize everything
+		init(node());
 
 		// Set valid
 		bValid = true;
@@ -198,8 +204,9 @@ namespace Morpheus {
 		// Clean up anything disposable
 		for (auto nodeIt = mGraph.vertices(); nodeIt.valid(); nodeIt.next()) {
 			auto desc = mGraph.desc(nodeIt());
-			if (NodeMetadata::isDisposable(desc->type))
-				dispose(desc->owner);
+			auto disposeInterface = getInterface<IDisposable>(*desc);
+			if (disposeInterface)
+				disposeInterface->dispose();
 		}
 
 		glfwDestroyWindow(mWindow);

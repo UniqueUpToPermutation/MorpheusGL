@@ -35,7 +35,10 @@
 #define SET_UPDATABLE(Type, bIsUpdateable) template <> struct IS_UPDATABLE_<NodeType::Type>	\
 	{ static const bool RESULT = bIsUpdateable; }
 
-#define SET_NODE_TYPE(OwnerType, Type) template<> struct NODE_TYPE_<OwnerType> \
+#define SET_INITIALIZABLE(Type, bIsInitializable) template <> struct IS_INITIALIZABLE_<NodeType::Type> \
+	{ static const bool RESULT = bIsInitializable; }
+
+#define SET_NODE_ENUM(OwnerType, Type) template<> struct NODE_TYPE_<OwnerType> \
 	{ static const NodeType RESULT = NodeType::Type; }; \
 	 template <> struct OWNER_TYPE_<NodeType::Type> \
 	{ typedef OwnerType RESULT; }
@@ -43,7 +46,7 @@
 #define SET_BASE_TYPE(SubType, BaseType) template<> struct BASE_TYPE_<SubType> \
 	{ typedef BaseType RESULT; }
 
-#define NODE_TYPE(OwnerType) NODE_TYPE_<typename BASE_TYPE_<OwnerType>::RESULT>::RESULT
+#define NODE_ENUM(OwnerType) NODE_TYPE_<typename BASE_TYPE_<OwnerType>::RESULT>::RESULT
 
 #define DEF_PROXY(InstanceType, NodeType_) template<> struct PROXY_TO_PROTOTYPE_<NodeType::InstanceType> \
 	{ static const NodeType RESULT = NodeType::NodeType_; }; \
@@ -58,22 +61,47 @@ namespace Morpheus {
 	class Engine;
 	struct Transform;
 	class IContentFactory;
+	class Updater;
+	class Scene;
+	class ICamera;
+	class GuiBase;
+	class IRenderer;
+	class Shader;
+	class Material;
+	class StaticMesh;
+	class Geometry;
+	class ILogic;
 
 	typedef DigraphVertex Node;
 	typedef uint32_t NodeHandle;
-	
+
+	/// <summary>
+	/// Any class that should be a child of the updater and updated every frame.
+	/// </summary>
+	class IUpdatable {
+	public:
+		virtual void setEnabled(bool) = 0;
+		virtual bool isEnabled() const = 0;
+		virtual void update(double dt) = 0;
+	};
+
+	/// <summary>
+	/// Any class that must be disposed before it can be dropped from the scene graph.
+	/// </summary>
 	class IDisposable {
 	public:
 		virtual void dispose() = 0;
 	};
 
-	class IUpdatable {
+	/// <summary>
+	/// Any class that should be initialized before a scene becomes active.
+	/// This includes logic nodes, etc.
+	/// </summary>
+	class IInitializable {
 	public:
-		virtual bool isEnabled() const = 0;
-		virtual void setEnabled(const bool value) = 0;
-		virtual void update(const double dt) = 0;
+		virtual void init(Node& node) = 0;
 	};
-
+	
 	enum class RendererType {
 		FORWARD
 	};
@@ -134,7 +162,9 @@ namespace Morpheus {
 		static const NodeType RESULT = NodeType::END;
 	};
 	template <NodeType>
-	struct OWNER_TYPE_;
+	struct OWNER_TYPE_ {
+		typedef void RESULT;
+	};
 
 	template <NodeType>
 	struct IS_POOLED_ {
@@ -156,6 +186,10 @@ namespace Morpheus {
 	struct IS_CONTENT_ {
 		static const bool RESULT = false;
 	};
+	template <NodeType>
+	struct IS_INITIALIZABLE_ {
+		static const bool RESULT = false;
+	};
 	template <NodeType t>
 	struct PROXY_TO_PROTOTYPE_ {
 		static const NodeType RESULT = t;
@@ -163,6 +197,10 @@ namespace Morpheus {
 	template <NodeType t>
 	struct PROTOTYPE_TO_PROXY_ {
 		static const NodeType RESULT = t;
+	};
+	template <typename T>
+	struct IS_BASE_TYPE_ {
+		static const bool RESULT = std::is_same<T, typename BASE_TYPE_<T>::RESULT>::value;
 	};
 
 	// IS_POOLED Flag
@@ -193,7 +231,7 @@ namespace Morpheus {
 	SET_POOLED(TEXTURE_2D_ARRAY, false);
 	SET_POOLED(STATIC_MESH, false);
 
-	// IS_SCENE_CHILD Flag
+	// The IS_RENDERABLE FLAG
 	SET_RENDERABLE(ENGINE, false);
 	SET_RENDERABLE(RENDERER, false);
 	SET_RENDERABLE(UPDATER, false);
@@ -221,35 +259,6 @@ namespace Morpheus {
 	SET_RENDERABLE(GEOMETRY_PROXY, true);
 	SET_RENDERABLE(MATERIAL_PROXY, true);
 
-	// IS_DISPOSABLE Flag
-	SET_DISPOSABLE(ENGINE, false);
-	SET_DISPOSABLE(RENDERER, true);
-	SET_DISPOSABLE(UPDATER, false);
-	SET_DISPOSABLE(EMPTY, false);
-	SET_DISPOSABLE(LOGIC, true);
-	SET_DISPOSABLE(TRANSFORM, false);
-	SET_DISPOSABLE(REGION, true);
-	SET_DISPOSABLE(BOUNDING_BOX, false);
-	SET_DISPOSABLE(STATIC_OBJECT_MANAGER, true);
-	SET_DISPOSABLE(DYNAMIC_OBJECT_MANAGER, true);
-	SET_DISPOSABLE(CAMERA, true);
-	SET_DISPOSABLE(NANOGUI_SCREEN, true);
-	SET_DISPOSABLE(SCENE_ROOT, true);
-
-	SET_DISPOSABLE(CONTENT_MANAGER, true);
-	SET_DISPOSABLE(GEOMETRY, false);
-	SET_DISPOSABLE(MATERIAL, false);
-	SET_DISPOSABLE(SHADER, false);
-	SET_DISPOSABLE(TEXTURE_1D, false);
-	SET_DISPOSABLE(TEXTURE_2D, false);
-	SET_DISPOSABLE(TEXTURE_3D, false);
-	SET_DISPOSABLE(CUBE_MAP, false);
-	SET_DISPOSABLE(TEXTURE_2D_ARRAY, false);
-	SET_DISPOSABLE(STATIC_MESH, false);
-
-	// The updatable flag
-	SET_UPDATABLE(LOGIC, true);
-
 	// The content flag
 	SET_CONTENT(CONTENT_MANAGER, true);
 	SET_CONTENT(GEOMETRY, true);
@@ -264,8 +273,24 @@ namespace Morpheus {
 	SET_CONTENT(GEOMETRY_PROXY, true);
 	SET_CONTENT(MATERIAL_PROXY, true);
 
-	template <typename T>
+	template <typename T, 
+		bool type_check=std::is_same<T, typename BASE_TYPE_<T>::RESULT>::value>
 	struct ref;
+
+	typedef IDisposable* (*DisposableConverter)(ref<void>&);
+	typedef IUpdatable* (*UpdatableConverter)(ref<void>&);
+	typedef IInitializable* (*InitializableConverter)(ref<void>&);
+	
+	struct NodeData;
+	template <class T>
+	T* getInterface(NodeData& d);
+
+	template <>
+	inline IDisposable* getInterface<IDisposable>(NodeData& d);
+	template <>
+	inline IUpdatable* getInterface<IUpdatable>(NodeData& d);
+	template <>
+	inline IInitializable* getInterface<IInitializable>(NodeData& d);
 
 	/// <summary>
 	/// A static class used to obtain template metaprogramming values during runtime.
@@ -277,11 +302,12 @@ namespace Morpheus {
 	private:
 		static bool pooled[(uint32_t)NodeType::END];
 		static bool renderable[(uint32_t)NodeType::END];
-		static bool disposable[(uint32_t)NodeType::END];
-		static bool updatable[(uint32_t)NodeType::END];
 		static bool content[(uint32_t)NodeType::END];
 		static NodeType proxyToPrototype[(uint32_t)NodeType::END];
 		static NodeType prototypeToProxy[(uint32_t)NodeType::END];
+		static DisposableConverter disposableConv[(uint32_t)NodeType::END];
+		static UpdatableConverter updatableConv[(uint32_t)NodeType::END];
+		static InitializableConverter initializableConv[(uint32_t)NodeType::END];
 
 		template <NodeType iType> 
 		static void init_();
@@ -315,32 +341,12 @@ namespace Morpheus {
 		}
 		
 		/// <summary>
-		/// Returns whether or not this node type implements the IDisposable interface. Disposable nodes
-		/// typically contain memory that is not managed by the ContentManager or a Pool and must be
-		/// deallocated separately.
-		/// </summary>
-		/// <param name="t">The type to query.</param>
-		/// <returns>Whether or not t is a disposable type.</returns>
-		static inline bool isDisposable(NodeType t) { 
-			return disposable[(uint32_t)t]; 
-		}
-
-		/// <summary>
 		/// Returns whether or not this node type is owned by the ContentManager.
 		/// </summary>
 		/// <param name="t">The type to query.</param>
 		/// <returns>Whether or not t is a content type.</returns>
 		static inline bool isContent(NodeType t) {
 			return content[(uint32_t)t];
-		}
-
-		/// <summary>
-		/// Returns whether or not this node type implements the IUpdatable interface.
-		/// </summary>
-		/// <param name="t">The type to query.</param>
-		/// <returns>Whether or not t is an updatable type.</returns>
-		static inline bool isUpdatable(NodeType t) {
-			return updatable[(uint32_t)t];
 		}
 
 		/// <summary>
@@ -369,10 +375,13 @@ namespace Morpheus {
 		}
 
 		friend class Engine;
+		friend IDisposable* getInterface<IDisposable>(NodeData& d);
+		friend IUpdatable* getInterface<IUpdatable>(NodeData& d);
+		friend IInitializable* getInterface<IInitializable>(NodeData& d);
 	};
 
 	template <>
-	struct ref<void> {
+	struct ref<void, true> {
 	public:
 		union voidrefunion {
 			PoolHandle<void> mHandle;
@@ -380,8 +389,6 @@ namespace Morpheus {
 			inline voidrefunion() { }
 			inline ~voidrefunion() { }
 		} p;
-
-		template <typename T> ref<T> as();
 
 		inline ref() {
 		}
@@ -392,7 +399,9 @@ namespace Morpheus {
 			p.mHandle = h;
 		}
 		template <typename T>
-		inline T* getAs();
+		inline ref<T> reinterpret();
+		template <typename T>
+		inline T* reinterpretGet();
 	};
 
 	template <typename T, bool pooled>
@@ -421,12 +430,12 @@ namespace Morpheus {
 		inline PoolHandle<T> getPoolHandle() const {
 			return mHandle;
 		}
-		inline static T* getAs(ref<void>& r) {
-			return static_cast<T*>(r.p.mPtr);
-		}
 		inline bool compare(const REF_POOL_GATE_<T, true>& other) {
 			return (mHandle.mPoolPtr == other.mHandle.mPoolPtr &&
 				mHandle.mOffset == other.mHandle.mOffset);
+		}
+		inline static T* get(const ref<void>& obj) {
+			return ((Pool<T>*)obj.p.mHandle.mPoolPtr)->at(obj.p.mHandle.mOffset);
 		}
 	};
 
@@ -453,22 +462,20 @@ namespace Morpheus {
 			assert(true);
 			return PoolHandle<T>();
 		}
-		inline static T* getAs(ref<void>& r) {
-			return static_cast<T*>(r.p.mPtr);
-		}
 		inline bool compare(const REF_POOL_GATE_<T, false>& other) {
 			return (mPtr == other.mPtr);
 		}
+		inline static T* get(const ref<void>& obj) {
+			return (T*)obj.p.mPtr;
+		}
 	};
 
-	template<typename T>
-	inline T* Morpheus::ref<void>::getAs()
-	{
-		return REF_POOL_GATE_<T, IS_POOLED_<NODE_TYPE(T)>::RESULT>::getAs(*this);
-	}
-
+	/// <summary>
+	/// A pointer substitute that allows one to mix pooled and unpooled types. Note: this should only be used with base types!
+	/// </summary>
+	/// <typeparam name="T">The type that this is a reference to.</typeparam>
 	template <typename T>
-	struct ref {
+	struct ref<T, true> {
 	private:
 		REF_POOL_GATE_<T, IS_POOLED_<NODE_TYPE_<typename 
 			BASE_TYPE_<T>::RESULT>::RESULT>::RESULT> mPoolGate;
@@ -482,7 +489,7 @@ namespace Morpheus {
 			return mPoolGate.getPoolHandle();
 		}
 
-		inline ref<void> asvoid() const {
+		inline ref<void> base() const {
 			ref<void> r;
 			mPoolGate.to(r);
 			return r;
@@ -498,27 +505,50 @@ namespace Morpheus {
 			mPoolGate.from(h);
 		}
 
-		inline ref(ref<void>& r) {
-			mPoolGate.from(r);
+		template <typename T2>
+		inline T2* getAs() const {
+			T* ptr = mPoolGate.get();
+			return dynamic_cast<T2*>(ptr);
 		}
 
 		friend struct ref<void>;
 	};
 
-	template<typename T>
-	inline ref<T> ref<void>::as()
-	{
-		return ref<T>(*this);
+	template <typename T>
+	inline ref<T> ref<void, true>::reinterpret() {
+		ref<T> a;
+		a.mPoolGate.from(*this);
+		return a;
 	}
 
-	inline void dispose(ref<void>& r) {
-		static_cast<IDisposable*>(r.p.mPtr)->dispose();
+	template <typename T>
+	inline T* ref<void, true>::reinterpretGet() {
+		return REF_POOL_GATE_<T, IS_POOLED_<NODE_ENUM(T)>::RESULT>::get(*this);
 	}
 
 	struct NodeData {
 		NodeType type;
 		ref<void> owner;
 	};
+
+	template <typename T>
+	inline T* getOwner(NodeData& n) {
+		assert(NODE_ENUM(T) == n.type);
+		return n.owner.reinterpretGet<T>();
+	}
+
+	template <>
+	inline IDisposable* getInterface<IDisposable>(NodeData& d) {
+		return (*NodeMetadata::disposableConv[(uint32_t)d.type])(d.owner);
+	}
+	template <>
+	inline IUpdatable* getInterface<IUpdatable>(NodeData& d) {
+		return (*NodeMetadata::updatableConv[(uint32_t)d.type])(d.owner);
+	}
+	template <>
+	inline IInitializable* getInterface<IInitializable>(NodeData& d) {
+		return (*NodeMetadata::initializableConv[(uint32_t)d.type])(d.owner);
+	}
 
 	typedef DigraphDataView<NodeData> NodeDataView;
 	typedef DigraphVertexLookupView<NodeHandle> NodeHandleLookupView;
@@ -584,20 +614,20 @@ namespace Morpheus {
 		}
 		template <typename OwnerType>
 		inline Node addNode(OwnerType* owner, Node& parent) {
-			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
+			auto v = addNode<OwnerType>(owner, NODE_ENUM(OwnerType));
 			createEdge(parent, v);
 			return v;
 		}
 		template <typename OwnerType>
 		inline Node addNode(OwnerType* owner, NodeHandle parentHandle) {
-			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
+			auto v = addNode<OwnerType>(owner, NODE_ENUM(OwnerType));
 			Node u = mHandles[parentHandle];
 			createEdge(u, v);
 			return v;
 		}
 		template <typename OwnerType>
 		inline Node addNode(OwnerType* owner, const std::string& parentName) {
-			auto v = addNode<OwnerType>(owner, NODE_TYPE(OwnerType));
+			auto v = addNode<OwnerType>(owner, NODE_ENUM(OwnerType));
 			createEdge(mNames[parentName], v);
 			return v;
 		}
@@ -628,19 +658,19 @@ namespace Morpheus {
 		}
 		template <typename OwnerType>
 		inline Node addNode(ref<void> owner, Node& parent) {
-			auto v = addNode(owner, NODE_TYPE(OwnerType));
+			auto v = addNode(owner, NODE_ENUM(OwnerType));
 			createEdge(parent, v);
 			return v;
 		}
 		template <typename OwnerType>
 		inline Node addNode(ref<void> owner, NodeHandle parentHandle) {
-			auto v = addNode(owner, NODE_TYPE(OwnerType));
+			auto v = addNode(owner, NODE_ENUM(OwnerType));
 			createEdge(mHandles[parentHandle], v);
 			return v;
 		}
 		template <typename OwnerType>
 		inline Node addNode(ref<void> owner, const std::string& parentName) {
-			auto v = addNode(owner, NODE_TYPE(OwnerType));
+			auto v = addNode(owner, NODE_ENUM(OwnerType));
 			createEdge(mNames[parentName], v);
 			return v;
 		}
@@ -679,7 +709,7 @@ namespace Morpheus {
 		/// <param name="owner">The owner of the new node.</param>
 		/// <returns>A new node in the graph.</returns>
 		template <typename T> Node addNode(T* owner) {
-			return addNode(ref<void>(owner), NODE_TYPE(T));
+			return addNode(ref<void>(owner), NODE_ENUM(T));
 		}
 
 		/// <summary>
@@ -689,7 +719,7 @@ namespace Morpheus {
 		/// <param name="owner">The owner of the new node.</param>
 		/// <returns>A new node in the graph.</returns>
 		template <typename T> Node addNode(const ref<T>& owner) {
-			return addNode(owner.asvoid(), NODE_TYPE(T));
+			return addNode(owner.base(), NODE_ENUM(T));
 		}
 
 		/// <summary>
@@ -760,7 +790,8 @@ namespace Morpheus {
 	enum class ErrorCode {
 		SUCCESS,
 		FAIL_GLFW_INIT,
-		FAIL_GLFW_WINDOW_INIT
+		FAIL_GLFW_WINDOW_INIT,
+		FAIL_LOAD_CONFIG
 	};
 
 	class Error {
@@ -780,12 +811,12 @@ namespace Morpheus {
 		inline explicit Error(const ErrorCode code) : mCode(code) { }
 	};
 
-	SET_NODE_TYPE(Engine, ENGINE);
-	SET_NODE_TYPE(ContentManager, CONTENT_MANAGER);
-	SET_NODE_TYPE(BoundingBox, BOUNDING_BOX);
-	SET_NODE_TYPE(char, EMPTY);
-	SET_NODE_TYPE(Transform, TRANSFORM);
-	SET_NODE_TYPE(IRenderer, RENDERER);
+	SET_NODE_ENUM(Engine, ENGINE);
+	SET_NODE_ENUM(ContentManager, CONTENT_MANAGER);
+	SET_NODE_ENUM(BoundingBox, BOUNDING_BOX);
+	SET_NODE_ENUM(char, EMPTY);
+	SET_NODE_ENUM(Transform, TRANSFORM);
+	SET_NODE_ENUM(IRenderer, RENDERER);
 
 	DEF_PROXY(GEOMETRY_PROXY, GEOMETRY);
 	DEF_PROXY(MATERIAL_PROXY, MATERIAL);
@@ -812,4 +843,18 @@ namespace Morpheus {
 	typedef std::function<void(GLFWwindow*, int, const char**)> f_drop_t;
 	typedef std::function<void(GLFWwindow*, double, double)> f_scroll_t;
 	typedef std::function<void(GLFWwindow*, int, int)> f_framebuffer_size_t;
+
+	/// <summary>
+	/// Any class that derives from ILogic is meant to be a nonvisible node in
+	/// the game world that controls or modifies other nodes.
+	/// </summary>
+	class ILogic : public IDisposable, public IUpdatable, public IInitializable {
+	};
+	SET_NODE_ENUM(ILogic, LOGIC);
+
+	/// <summary>
+	/// Initializes all descendants of the node that are scene children.
+	/// </summary>
+	/// <param name="node">The ancestor node to start at.</param>
+	void init(Node node);
 }
