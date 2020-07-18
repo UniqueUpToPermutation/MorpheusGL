@@ -260,7 +260,7 @@ namespace Morpheus {
 	SET_RENDERABLE(MATERIAL_PROXY, true);
 
 	// The content flag
-	SET_CONTENT(CONTENT_MANAGER, true);
+	SET_CONTENT(CONTENT_MANAGER, false);
 	SET_CONTENT(GEOMETRY, true);
 	SET_CONTENT(MATERIAL, true);
 	SET_CONTENT(SHADER, true);
@@ -418,7 +418,7 @@ namespace Morpheus {
 			mHandle = newH;
 		}
 		inline void from(const ref<void>& r) {
-			mHandle = PoolHandle<T>(r.p.mHandle);
+			mHandle = r.p.mHandle.reinterpret<T>();
 		}
 		inline void to(ref<void>& r) const {
 			r.p.mHandle = PoolHandle<void>(mHandle);
@@ -533,7 +533,7 @@ namespace Morpheus {
 
 	template <typename T>
 	inline T* getOwner(NodeData& n) {
-		assert(NODE_ENUM(T) == n.type);
+		assert(NODE_ENUM(T) == n.type || PROTOTYPE_TO_PROXY_<NODE_ENUM(T)>::RESULT == n.type);
 		return n.owner.reinterpretGet<T>();
 	}
 

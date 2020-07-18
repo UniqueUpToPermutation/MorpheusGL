@@ -1,5 +1,13 @@
 #include "core.hpp"
 #include "engine.hpp"
+#include "content.hpp"
+#include "camera.hpp"
+#include "shader.hpp"
+#include "material.hpp"
+#include "geometry.hpp"
+#include "cameracontroller.hpp"
+#include "gui.hpp"
+#include "staticmesh.hpp"
 
 #include <iostream>
 
@@ -78,6 +86,12 @@ namespace Morpheus {
 		proxyToPrototype[(uint32_t)iType] = PROXY_TO_PROTOTYPE_<iType>::RESULT;
 
 		typedef typename OWNER_TYPE_<iType>::RESULT owner_t;
+
+		NodeType g = iType;
+		owner_t* a;
+		bool a1 = std::is_convertible<owner_t*, IDisposable*>::value;
+		bool a2 = std::is_convertible<owner_t*, IUpdatable*>::value;
+		bool a3 = std::is_convertible<owner_t*, IInitializable*>::value;
 
 		disposableConv[(uint32_t)iType] = &DisposableInterfaceGate<owner_t, std::is_convertible<owner_t*, IDisposable*>::value>::get;
 		updatableConv[(uint32_t)iType] = &UpdatableInterfaceGate<owner_t, std::is_convertible<owner_t*, IUpdatable*>::value>::get;

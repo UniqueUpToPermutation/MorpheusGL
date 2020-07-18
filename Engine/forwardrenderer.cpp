@@ -47,7 +47,7 @@ namespace Morpheus {
 		}
 		case NodeType::TRANSFORM:
 		{
-			auto newTransform = getOwner<Transform>(desc);
+			auto newTransform = desc.owner.reinterpret<Transform>();
 			// Is this transform is static, then it has already been cached
 			// Otherwise, cache (evaluate and save) this transform using the
 			// last transform on the stack

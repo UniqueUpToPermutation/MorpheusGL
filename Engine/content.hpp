@@ -22,8 +22,6 @@
 */
 
 namespace Morpheus {
-	
-	class ContentManager;
 
 	template <typename SubType> struct ContentSubTypeToBaseType {
 	public:
