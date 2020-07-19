@@ -142,13 +142,13 @@ namespace Morpheus {
 	}
 
 	void Digraph::deleteVertex(DigraphVertex& v) {
-		for (auto inIt = v.getIngoingEdges(); inIt.valid(); ) {
+		for (auto inIt = v.incomming(); inIt.valid(); ) {
 			auto e = inIt();
 			inIt.next();
 			deleteEdge(e);
 		}
 
-		for (auto outIt = v.getOutgoingEdges(); outIt.valid(); ) {
+		for (auto outIt = v.outgoing(); outIt.valid(); ) {
 			auto e = outIt();
 			outIt.next();
 			deleteEdge(e);

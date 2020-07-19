@@ -11,15 +11,15 @@ namespace Morpheus {
 		NodeHandle mHandle;
 		Pool<Transform> mTransformPool;
 		Pool<BoundingBox> mBoundingBoxPool;
-		ICamera* mCamera;
+		Camera* mCamera;
 
 	public:
 		inline NodeHandle handle() const { return mHandle; }
 		inline Node node() { return (*graph())[mHandle]; }
 		inline Pool<Transform>& transformPool() { return mTransformPool; }
 		inline Pool<BoundingBox>& boundingBoxPool() { return mBoundingBoxPool; }
-		inline ICamera* getActiveCamera() { return mCamera; }
-		inline void setActiveCamera(ICamera* camera) { mCamera = camera; }
+		inline Camera* getActiveCamera() { return mCamera; }
+		inline void setActiveCamera(Camera* camera) { mCamera = camera; }
 
 		void dispose() override;
 

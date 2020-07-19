@@ -1,38 +1,39 @@
 #pragma once
 
 #include "core.hpp"
+#include "input.hpp"
 
 #include <glm/glm.hpp>
 
 namespace Morpheus {
-	class ICamera : public IDisposable {
-	public:
-		virtual glm::mat4 view() const = 0;
-		virtual glm::mat4 projection() const = 0;
-		virtual glm::vec3 eye() const = 0;
+	enum class CameraType {
+		PERSPECTIVE_LOOK_AT
 	};
-	SET_NODE_ENUM(ICamera, CAMERA);
 
-	class PerspectiveLookAtCamera : public ICamera {
+	class Camera : public IDisposable {
 	private:
 		f_framebuffer_size_t mResizeHandler;
+		uint32_t mDisplayWidth;
+		uint32_t mDisplayHeight;
 
 	public:
+		Camera();
+
+		CameraType mType;
+
 		glm::vec3 mPosition;
 		glm::vec3 mLookAt;
 		glm::vec3 mUp;
-		uint32_t mDisplayWidth;
-		uint32_t mDisplayHeight;
+
 		float mFarPlane;
 		float mNearPlane;
 		float mFieldOfView;
 
-		PerspectiveLookAtCamera();
+		glm::mat4 view() const;
+		glm::mat4 projection() const;
+		glm::vec3 eye() const;
 
-		glm::mat4 view() const override;
-		glm::mat4 projection() const override;
-		glm::vec3 eye() const override;
 		void dispose() override;
 	};
-	SET_BASE_TYPE(PerspectiveLookAtCamera, ICamera);
+	SET_NODE_ENUM(Camera, CAMERA);
 }

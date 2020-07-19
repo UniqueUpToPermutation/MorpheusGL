@@ -7,60 +7,61 @@ namespace Morpheus {
 
 	void GuiBase::init(Node& node)
 	{
-		auto en = engine();
+		auto input_ = input();
+		auto engine_ = engine();
 
 		mScreen = new nanogui::Screen();
-		mScreen->initialize(en->window(), false);
+		mScreen->initialize(engine_->window(), false);
 
 		mCursorPosHandler = [this](GLFWwindow*, double x, double y) {
-			mScreen->cursorPosCallbackEvent(x, y);
+			return mScreen->cursorPosCallbackEvent(x, y);
 		};
 
 		mMouseButtonHandler = [this](GLFWwindow*, int button, int action, int modifiers) {
-			mScreen->mouseButtonCallbackEvent(button, action, modifiers);
+			return mScreen->mouseButtonCallbackEvent(button, action, modifiers);
 		};
 
 		mKeyHandler = [this](GLFWwindow*, int key, int scancode, int action, int modifiers) {
-			mScreen->keyCallbackEvent(key, scancode, action, modifiers);
+			return mScreen->keyCallbackEvent(key, scancode, action, modifiers);
 		};
 
 		mCharHandler = [this](GLFWwindow*, unsigned int codepoint) {
-			mScreen->charCallbackEvent(codepoint);
+			return mScreen->charCallbackEvent(codepoint);
 		};
 
 		mDropHandler = [this](GLFWwindow*, int count, const char** filenames) {
-			mScreen->dropCallbackEvent(count, filenames);
+			return mScreen->dropCallbackEvent(count, filenames);
 		};
 
 		mScrollHandler = [this](GLFWwindow*, double x, double y) {
-			mScreen->scrollCallbackEvent(x, y);
+			return mScreen->scrollCallbackEvent(x, y);
 		};
 
 		mFramebufferSizeHandler = [this](GLFWwindow*, int width, int height) {
-			mScreen->resizeCallbackEvent(width, height);
+			return mScreen->resizeCallbackEvent(width, height);
 		};
 
-		en->bindCursorPosEvent(&mCursorPosHandler);
-		en->bindMouseButtonEvent(&mMouseButtonHandler);
-		en->bindKeyEvent(&mKeyHandler);
-		en->bindCharEvent(&mCharHandler);
-		en->bindDropEvent(&mDropHandler);
-		en->bindScrollEvent(&mScrollHandler);
-		en->bindFramebufferSizeEvent(&mFramebufferSizeHandler);
+		input_->bindCursorPosCaptureEvent(&mCursorPosHandler);
+		input_->bindMouseButtonCaptureEvent(&mMouseButtonHandler);
+		input_->bindKeyCaptureEvent(&mKeyHandler);
+		input_->bindCharCaptureEvent(&mCharHandler);
+		input_->bindDropCaptureEvent(&mDropHandler);
+		input_->bindScrollCaptureEvent(&mScrollHandler);
+		input_->bindFramebufferSizeCaptureEvent(&mFramebufferSizeHandler);
 
 		initGui();
 	}
 
 	void GuiBase::dispose() {
-		auto en = engine();
+		auto input_ = input();
 
-		en->unbindCursorPosEvent(&mCursorPosHandler);
-		en->unbindMouseButtonEvent(&mMouseButtonHandler);
-		en->unbindKeyEvent(&mKeyHandler);
-		en->unbindCharEvent(&mCharHandler);
-		en->unbindDropEvent(&mDropHandler);
-		en->unbindScrollEvent(&mScrollHandler);
-		en->unbindFramebufferSizeEvent(&mFramebufferSizeHandler);
+		input_->unbindCursorPosCaptureEvent(&mCursorPosHandler);
+		input_->unbindMouseButtonCaptureEvent(&mMouseButtonHandler);
+		input_->unbindKeyCaptureEvent(&mKeyHandler);
+		input_->unbindCharCaptureEvent(&mCharHandler);
+		input_->unbindDropCaptureEvent(&mDropHandler);
+		input_->unbindScrollCaptureEvent(&mScrollHandler);
+		input_->unbindFramebufferSizeCaptureEvent(&mFramebufferSizeHandler);
 
 		delete this;
 	}

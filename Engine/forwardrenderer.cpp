@@ -99,13 +99,13 @@ namespace Morpheus {
 		{
 			// Found a camera
 			if (!params.mRenderCamera)
-				params.mRenderCamera = getOwner<ICamera>(desc);
+				params.mRenderCamera = getOwner<Camera>(desc);
 			break;
 		}
 		}
 
 		// If the node is a child of a scene, recursively continue the collection
-		for (auto childIt = current.getChildren(); childIt.valid(); childIt.next()) {
+		for (auto childIt = current.children(); childIt.valid(); childIt.next()) {
 			auto child = childIt();
 			collectRecursive(child, params);
 		}

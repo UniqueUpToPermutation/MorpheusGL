@@ -11,7 +11,7 @@ namespace Morpheus {
 	ref<Geometry> StaticMesh::getGeometry(Node& meshNode) {
 		Node material = StaticMesh::getMaterialNode(meshNode);
 		auto& graph_ = *graph();
-		auto it = material.getChildren();
+		auto it = material.children();
 		NodeData* desc = nullptr;
 		for (; it.valid(); it.next()) {
 			desc = graph_.desc(it());
@@ -26,7 +26,7 @@ namespace Morpheus {
 	Node StaticMesh::getGeometryNode(Node& meshNode) {
 		Node material = StaticMesh::getMaterialNode(meshNode);
 		auto& graph_ = *graph();
-		auto it = material.getChildren();
+		auto it = material.children();
 		for (; it.valid(); it.next())
 			if (graph_.desc(it())->type == NodeType::GEOMETRY_PROXY)
 				break;
@@ -37,7 +37,7 @@ namespace Morpheus {
 	}
 	ref<Material> StaticMesh::getMaterial(Node& meshNode) {
 		auto& graph_ = *graph();
-		auto it = meshNode.getChildren();
+		auto it = meshNode.children();
 		NodeData* desc = nullptr;
 		for (; it.valid(); it.next()) {
 			desc = graph_.desc(it());
@@ -52,7 +52,7 @@ namespace Morpheus {
 	}
 	Node StaticMesh::getMaterialNode(Node& meshNode) {
 		auto& graph_ = *graph();
-		auto it = meshNode.getChildren();
+		auto it = meshNode.children();
 		for (; it.valid(); it.next())
 			if (graph_.desc(it())->type == NodeType::MATERIAL_PROXY)
 				break;

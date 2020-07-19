@@ -33,7 +33,7 @@ namespace Morpheus {
 		// Go through all children and update them
 		auto graph_ = graph();
 		auto v = (*graph_)[mHandle];
-		for (auto it = v.getChildren(); it.valid(); it.next()) {
+		for (auto it = v.children(); it.valid(); it.next()) {
 			auto desc = graph_->desc(it());
 			auto updatableInterface = getInterface<IUpdatable>(*desc);
 			if (updatableInterface->isEnabled())

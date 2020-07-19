@@ -162,6 +162,7 @@
     <ClInclude Include="gui.hpp" />
     <ClInclude Include="halfedge.hpp" />
     <ClInclude Include="halfedgeloader.hpp" />
+    <ClInclude Include="input.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="mapcpy.hpp" />
     <ClInclude Include="material.hpp" />
@@ -178,6 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="camera.cpp" />
+    <ClCompile Include="cameracontroller.cpp" />
     <ClCompile Include="content.cpp" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="digraph.cpp" />
@@ -187,6 +189,7 @@
     <ClCompile Include="halfedge.cpp" />
     <ClCompile Include="forwardrenderer.cpp" />
     <ClCompile Include="halfedgeloader.cpp" />
+    <ClCompile Include="input.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="meshlap.cpp" />
     <ClCompile Include="scene.cpp" />
@@ -220,9 +223,7 @@
     <None Include="shaders\funcviz.frag" />
     <None Include="shaders\funcviz.json" />
     <None Include="shaders\funcviz.vert" />
-    <None Include="staticmesh.json">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </None>
+    <None Include="staticmesh.json" />
   </ItemGroup>
   <ItemGroup>
     <None Include="bunny.obj">

@@ -11,13 +11,13 @@ namespace Morpheus {
 	class GuiBase : public IInitializable, public IDisposable {
 	protected:
 		nanogui::Screen* mScreen;
-		f_cursor_pos_t mCursorPosHandler;
-		f_mouse_button_t mMouseButtonHandler;
-		f_key_t mKeyHandler;
-		f_char_t mCharHandler;
-		f_drop_t mDropHandler;
-		f_scroll_t mScrollHandler;
-		f_framebuffer_size_t mFramebufferSizeHandler;
+		f_cursor_pos_capture_t mCursorPosHandler;
+		f_mouse_button_capture_t mMouseButtonHandler;
+		f_key_capture_t mKeyHandler;
+		f_char_capture_t mCharHandler;
+		f_drop_capture_t mDropHandler;
+		f_scroll_capture_t mScrollHandler;
+		f_framebuffer_size_capture_t mFramebufferSizeHandler;
 
 		virtual void initGui() = 0;
 

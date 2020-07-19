@@ -87,12 +87,6 @@ namespace Morpheus {
 
 		typedef typename OWNER_TYPE_<iType>::RESULT owner_t;
 
-		NodeType g = iType;
-		owner_t* a;
-		bool a1 = std::is_convertible<owner_t*, IDisposable*>::value;
-		bool a2 = std::is_convertible<owner_t*, IUpdatable*>::value;
-		bool a3 = std::is_convertible<owner_t*, IInitializable*>::value;
-
 		disposableConv[(uint32_t)iType] = &DisposableInterfaceGate<owner_t, std::is_convertible<owner_t*, IDisposable*>::value>::get;
 		updatableConv[(uint32_t)iType] = &UpdatableInterfaceGate<owner_t, std::is_convertible<owner_t*, IUpdatable*>::value>::get;
 		initializableConv[(uint32_t)iType] = &InitializableInterfaceGate<owner_t, std::is_convertible<owner_t*, IInitializable*>::value>::get;
@@ -155,7 +149,7 @@ namespace Morpheus {
 
 		stack<DigraphVertexIteratorF> iters;
 		vector<bool> isLast;
-		iters.push(start.getChildren());
+		iters.push(start.children());
 
 		if (start.outDegree() > 1)
 			isLast.push_back(false);
@@ -184,7 +178,7 @@ namespace Morpheus {
 				cout << "+ ";
 				cout << nodeTypeString(descs[n].type) << endl;
 
-				iters.push(n.getChildren());
+				iters.push(n.children());
 				it.next();
 				if (!it.valid())
 					isLast[isLast.size() - 1] = true;
@@ -237,7 +231,7 @@ namespace Morpheus {
 			return;
 
 		// Initialize all children
-		for (auto it = node.getChildren(); it.valid(); it.next()) {
+		for (auto it = node.children(); it.valid(); it.next()) {
 			auto child = it();
 			init(child);
 		}

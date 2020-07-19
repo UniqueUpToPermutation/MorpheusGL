@@ -6,57 +6,41 @@
 
 #include <GLFW/glfw3.h>
 
+using namespace glm;
+
 namespace Morpheus {
 	class LookAtCameraController : public ILogic {
 	private:
 		bool bEnabled;
-		PerspectiveLookAtCamera* mCamera;
+		Camera* mCamera;
 		f_mouse_button_t mMouseHandler;
+		f_cursor_pos_t mCursorPos;
+
+		double mLastPosX;
+		double mLastPosY;
+
+		double mTheta;
+		double mPhi;
+		double mDistance;
+		vec3 mLookAt;
+		bool bM1Captured;
+		bool bM2Captured;
+		double mThetaSpeed;
+		double mPhiSpeed;
 
 	public:
-		LookAtCameraController() : bEnabled(true) {
-		}
 
-		bool isEnabled() const override {
-			return bEnabled;
-		}
+		double& thetaSpeed() { return mThetaSpeed; }
+		double& phiSpeed() { return mPhiSpeed; }
 
-		void setEnabled(const bool value) override {
-			bEnabled = value;
-		}
+		LookAtCameraController(double distance);
 
-		void update(const double dt) override {
-
-		}
-
-		void init(Node& node) override {
-			mMouseHandler = [this](GLFWwindow* window, int scancode, int action, int modifiers) {
-				switch (scancode) {
-				case GLFW_MOUSE_BUTTON_1:
-
-					if (action == GLFW_PRESS)
-						glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-					else if (action == GLFW_RELEASE)
-						glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
-					break;
-				case GLFW_MOUSE_BUTTON_2:
-
-					if (action == GLFW_PRESS)
-						glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-					else if (action == GLFW_RELEASE)
-						glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
-					break;
-				}
-			};
-			engine()->bindMouseButtonEvent(&mMouseHandler);
-		}
-
-		void dispose() override {
-			engine()->unbindMouseButtonEvent(&mMouseHandler);
-			delete this;
-		}
+		bool isEnabled() const override;
+		void setEnabled(const bool value) override;
+		void update(const double dt) override;
+		void applyTo(Camera* camera);
+		void init(Node& node) override;
+		void dispose() override;
 	};
 	SET_BASE_TYPE(LookAtCameraController, ILogic);
 }

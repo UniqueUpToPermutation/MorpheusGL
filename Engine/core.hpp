@@ -63,7 +63,7 @@ namespace Morpheus {
 	class IContentFactory;
 	class Updater;
 	class Scene;
-	class ICamera;
+	class Camera;
 	class GuiBase;
 	class IRenderer;
 	class Shader;
@@ -835,14 +835,6 @@ namespace Morpheus {
 	#endif
 
 	void printError(unsigned int err);
-
-	typedef std::function<void(GLFWwindow*, double, double)> f_cursor_pos_t;
-	typedef std::function<void(GLFWwindow*, int, int, int)> f_mouse_button_t;
-	typedef std::function<void(GLFWwindow*, int, int, int, int)> f_key_t;
-	typedef std::function<void(GLFWwindow*, unsigned int)> f_char_t;
-	typedef std::function<void(GLFWwindow*, int, const char**)> f_drop_t;
-	typedef std::function<void(GLFWwindow*, double, double)> f_scroll_t;
-	typedef std::function<void(GLFWwindow*, int, int)> f_framebuffer_size_t;
 
 	/// <summary>
 	/// Any class that derives from ILogic is meant to be a nonvisible node in

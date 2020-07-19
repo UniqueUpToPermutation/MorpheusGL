@@ -308,6 +308,11 @@ namespace Morpheus {
 		inline void createColors() {
 			vertexColors.resize(vertices.size());
 		}
+		inline void createColors(const glm::vec3& default_) {
+			vertexColors.resize(vertices.size());
+			for (auto& v : vertexColors)
+				v = default_;
+		}
 		inline bool hasPositions() const {
 			return !vertexPositions.empty();
 		}

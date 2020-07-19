@@ -55,10 +55,10 @@ int main() {
 		HalfEdgeLoader loader;
 		HalfEdgeGeometry* geo = loader.load("bunny.obj");
 
-		geo->createColors();
-		for (auto v = geo->getVertex(0); v.valid(); v = v.nextById())
-			v.setColor(1.0f, 1.0f, 1.0f);
+		// Add color to the bunny
+		geo->createColors(vec3(1.0f, 1.0f, 1.0f));
 
+		// Convert half edge geometry to renderable geometry
 		ref<Geometry> hfeGeo;
 		Node hfeGeoNode = content()->getFactory<Geometry>()->makeGeometry(geo, &hfeGeo);
 
@@ -71,27 +71,25 @@ int main() {
 
 		auto aabb = hfeGeo->boundingBox();
 		float len = length(aabb.mUpper - aabb.mLower) * 1.3f;
-		auto camera = new PerspectiveLookAtCamera();
+		auto camera = new Camera();
 		
 		auto cameraNode = graph()->addNode(camera, sceneNode);
-		graph()->addNode(new LookAtCameraController(), cameraNode);
+		graph()->addNode(new LookAtCameraController(len), cameraNode);
+
+		f_key_t keyHandler = [](GLFWwindow*, int key, int scancode, int action, int modifiers) {
+			engine()->exit();
+		};
+		input()->bindKeyEvent(&keyHandler);
 
 		// Initialize the scene subgraph
 		init(sceneNode);
 
 		// Game loop
-		size_t k = 0;
 		while (en.valid()) {
-			double theta = (double)k / 100.0;
-			camera->mPosition = len * vec3(cos(theta), 0.0f, sin(theta));
-
 			en.update();
-
 			glClearColor(clr.r(), clr.g(), clr.b(), 1.0f);
 			en.renderer()->draw(sceneNode);
-
 			glfwSwapBuffers(en.window());
-			++k;
 		}
 	}
 

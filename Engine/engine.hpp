@@ -10,6 +10,7 @@
 
 #include "core.hpp"
 #include "updater.hpp"
+#include "input.hpp"
 
 #include <set>
 
@@ -40,34 +41,12 @@ namespace Morpheus {
 		// Component responsible for updating logic entities, any child of the
 		// updater will be updated through the IUpdateable interface
 		Updater mUpdater;
+		// Component responsible for handling input
+		Input mInput;
 		// Whether or not the engine is still valid, i.e., not exitting.
 		bool bValid;
 
-		std::set<const f_cursor_pos_t*> mCursorPosCallbacks;
-		std::set<const f_mouse_button_t*> mMouseButtonCallbacks;
-		std::set<const f_key_t*> mKeyCallbacks;
-		std::set<const f_char_t*> mCharCallbacks;
-		std::set<const f_drop_t*> mDropCallbacks;
-		std::set<const f_scroll_t*> mScrollCallbacks;
-		std::set<const f_framebuffer_size_t*> mFramebufferSizeCallbacks;
-
 	public:
-		// Events that can be bound to
-		void bindCursorPosEvent(const f_cursor_pos_t* f);
-		void bindMouseButtonEvent(const f_mouse_button_t* f);
-		void bindKeyEvent(const f_key_t* f);
-		void bindCharEvent(const f_char_t* f);
-		void bindDropEvent(const f_drop_t* f);
-		void bindScrollEvent(const f_scroll_t* f);
-		void bindFramebufferSizeEvent(const f_framebuffer_size_t* f);
-
-		void unbindCursorPosEvent(const f_cursor_pos_t* f);
-		void unbindMouseButtonEvent(const f_mouse_button_t* f);
-		void unbindKeyEvent(const f_key_t* f);
-		void unbindCharEvent(const f_char_t* f);
-		void unbindDropEvent(const f_drop_t* f);
-		void unbindScrollEvent(const f_scroll_t* f);
-		void unbindFramebufferSizeEvent(const f_framebuffer_size_t* f);
 
 		/// <summary>
 		/// The global JSON configuration of the engine.
@@ -78,7 +57,7 @@ namespace Morpheus {
 		/// The scene graph of the engine.
 		/// </summary>
 		/// <returns>A reference to the scene graph.</returns>
-		inline NodeGraph& graph() { return mGraph; }
+		inline NodeGraph* graph() { return &mGraph; }
 		/// <summary>
 		/// The handle of the engine as a node in the scene graph.
 		/// </summary>
@@ -93,7 +72,7 @@ namespace Morpheus {
 		/// The content manager of the engine.
 		/// </summary>
 		/// <returns>A reference to the content manager.</returns>
-		inline ContentManager& content() { return *mContent; }
+		inline ContentManager* content() { return mContent; }
 		/// <summary>
 		/// The engine's current GLFW window.
 		/// </summary>
@@ -108,7 +87,12 @@ namespace Morpheus {
 		/// The engine's updater.
 		/// </summary>
 		/// <returns>A reference to the engine's updater.</returns>
-		inline Updater& updater() { return mUpdater; }
+		inline Updater* updater() { return &mUpdater; }
+		/// <summary>
+		/// The engine's input module.
+		/// </summary>
+		/// <returns>A reference to the engine's input module.</returns>
+		inline Input* input() { return &mInput; }
 		/// <summary>
 		/// Gets the current display parameters.
 		/// </summary>
@@ -140,14 +124,6 @@ namespace Morpheus {
 		/// </summary>
 		/// <returns>A flag determining if the engine is valid.</returns>
 		bool valid() const;
-
-		friend void cursorPosHandler(GLFWwindow* win, double x, double y);
-		friend void mouseButtonHandler(GLFWwindow* win, int button, int action, int modifiers);
-		friend void keyHandler(GLFWwindow* win, int key, int scancode, int action, int mods);
-		friend void charHandler(GLFWwindow* win, unsigned int codepoint);
-		friend void dropHandler(GLFWwindow* win, int count, const char** filenames);
-		friend void scrollHandler(GLFWwindow* win, double x, double y);
-		friend void framebufferSizeHandler(GLFWwindow* win, int width, int height);
 	};
 
 	/// <summary>
@@ -160,14 +136,14 @@ namespace Morpheus {
 	/// </summary>
 	/// <returns>A reference to the scene graph.</returns>
 	inline NodeGraph* graph() {
-		return &engine()->graph();
+		return engine()->graph();
 	}
 	/// <summary>
 	/// The global content manager.
 	/// </summary>
 	/// <returns>A reference to the content manager.</returns>
 	inline ContentManager* content() {
-		return &engine()->content();
+		return engine()->content();
 	}
 	/// <summary>
 	/// The global renderer.
@@ -195,7 +171,24 @@ namespace Morpheus {
 	/// </summary>
 	/// <returns>The global updater.</returns>
 	inline Updater* updater() {
-		return &engine()->updater();
+		return engine()->updater();
+	}
+
+	/// <summary>
+	/// A reference to the global input module.
+	/// </summary>
+	/// <returns>The global input module.</returns>
+	inline Input* input() {
+		return engine()->input();
+	}
+
+	/// <summary>
+	/// Return the description of a node.
+	/// </summary>
+	/// <param name="n">The node.</param>
+	/// <returns>The description.</returns>
+	inline NodeData* desc(const Node& n) {
+		return graph()->desc(n);
 	}
 
 	class IRenderer : public IDisposable, public IInitializable {
