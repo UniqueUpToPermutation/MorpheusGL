@@ -77,11 +77,16 @@ namespace Morpheus {
 
 	public:
 		ContentFactory();
-		~ContentFactory();
 
 		ref<void> load(const std::string& source, Node& loadInto) override;
 		void unload(ref<void>& ref) override;
 		void dispose() override;
+
+		ref<Geometry> makeGeometryUnmanaged(GLuint vao, GLuint vbo, GLuint ibo,
+			GLenum elementType, GLsizei elementCount, GLenum indexType,
+			BoundingBox aabb) const;
+		ref<Geometry> makeGeometryUnmanaged(const HalfEdgeGeometry* geo,
+			const HalfEdgeAttributes& attrib) const;
 
 		Node makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
 			GLenum elementType, GLsizei elementCount, GLenum indexType,
@@ -98,5 +103,8 @@ namespace Morpheus {
 			ref<Geometry>* refOut = nullptr) const;
 		Node makeGeometry(const HalfEdgeGeometry* geo,
 			ref<Geometry>* refOut = nullptr) const;
+		Node makeGeometry(const HalfEdgeGeometry* geo,
+			const std::string& source,
+			ref<Geometry>* refOut) const;
 	};
 }

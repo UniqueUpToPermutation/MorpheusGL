@@ -81,7 +81,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;$(IncludePath)</IncludePath>
+    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;$(IncludePath)</IncludePath>
     <LibraryPath>..\nanogui\out\build\x64-Debug\;..\nanogui\out\build\x64-Debug\ext_build\glfw\src;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

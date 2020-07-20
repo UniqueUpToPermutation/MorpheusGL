@@ -2,6 +2,7 @@
 
 #include <string>
 #include "halfedge.hpp"
+#include "content.hpp"
 
 namespace Assimp {
 	class Importer;
@@ -9,20 +10,25 @@ namespace Assimp {
 
 namespace Morpheus {
 	class HalfEdgeGeometry;
+	SET_NODE_ENUM(HalfEdgeGeometry, HALF_EDGE_GEOMETRY);
 
 	struct HalfEdgeLoadParameters {
 		stype mRelativeJoinEpsilon;
 	};
 
-	class HalfEdgeLoader {
+	template <>
+	class ContentFactory<HalfEdgeGeometry> : public IContentFactory {
 	private:
 		Assimp::Importer* mImporter;
 
 	public:
-		HalfEdgeGeometry* load(const std::string& source, const HalfEdgeLoadParameters& params);
-		HalfEdgeGeometry* load(const std::string& source);
+		HalfEdgeGeometry* loadUnmanaged(const std::string& source, const HalfEdgeLoadParameters& params);
+		HalfEdgeGeometry* loadUnmanaged(const std::string& source);
 
-		HalfEdgeLoader();
-		~HalfEdgeLoader();
+		ref<void> load(const std::string& source, Node& loadInto) override;
+		void unload(ref<void>& ref) override;
+		void dispose() override;
+
+		ContentFactory();
 	};
 }

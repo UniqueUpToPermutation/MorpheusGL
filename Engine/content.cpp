@@ -3,6 +3,8 @@
 #include "material.hpp"
 #include "geometry.hpp"
 #include "staticmesh.hpp"
+#include "halfedge.hpp"
+#include "halfedgeloader.hpp"
 
 namespace Morpheus {
 
@@ -15,8 +17,10 @@ namespace Morpheus {
 		addFactory<Material>();
 		// Make the static mesh factory
 		addFactory<StaticMesh>();
+		// Make the half edge geometry factory
+		addFactory<HalfEdgeGeometry>();
 
-		mSources = graph()->createVertexLookup<std::string>("__content__");
+		mSources = graph()->createTwoWayVertexLookup<std::string>("__content__");
 		mHandle = graph()->issueHandle(node);
 	}
 
@@ -30,6 +34,7 @@ namespace Morpheus {
 		if (factory)
 			factory->unload(desc->owner);
 		graph()->deleteVertex(node);
+		mSources.remove(node);
 	}
 
 	void ContentManager::unloadAll() {
@@ -40,22 +45,30 @@ namespace Morpheus {
 		}
 	}
 
+	void ContentManager::setSource(const Node& node, const std::string& source) {
+		mSources.set(node, source);
+	}
+
 	void ContentManager::dispose() {
 		unloadAll();
 
+		for (auto& factory : mFactories)
+			factory->dispose();
+		mFactories.clear();
+		mTypeToFactory.clear();
+
 		graph()->destroyLookup(mSources);
 		graph()->recallHandle(mHandle);
+
+		delete this;
 	}
 
 	void ContentManager::collectGarbage() {
-		DigraphSparseDataView<uint32_t> degrees = graph()->createSparseVertexData<uint32_t>(0, "__content__manager__degree__data__");
-
 		std::stack<Node> toCollect;
 
 		// Iterate through children and calculate degrees
 		for (auto it = node().children(); it.valid(); it.next()) {
 			auto degree = it().inDegree();
-			degrees.set(it(), degree);
 
 			// The only parent of this object is the content manager, collect it
 			if (degree == 1)
@@ -64,21 +77,23 @@ namespace Morpheus {
 		
 		// Repeatedly collect until there is nothing to collect
 		while (!toCollect.empty()) {
+
 			auto top = toCollect.top();
 			toCollect.pop();
 
+			auto type = desc(top)->type;
+			std::cout << "Collecting " << nodeTypeString(type) << std::endl;
+
 			// Check if children of this node need to be collected too
 			for (auto it = top.children(); it.valid(); it.next()) {
-				auto newDegree = degrees.get(it()) - 1;
-				degrees.set(it(), newDegree);
-				if (newDegree == 1)
+				auto child = it();
+				auto newDegree = child.inDegree() - 1;
+				if (newDegree <= 1)
 					toCollect.push(it());
 			}
 
 			// Collect garbage
 			unload(top);
 		}
-
-		graph()->destroyData(degrees);
 	}
 }

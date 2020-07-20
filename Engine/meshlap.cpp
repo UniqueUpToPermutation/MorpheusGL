@@ -116,4 +116,11 @@ namespace Morpheus {
         output->resize(geo.vertexCount(), geo.vertexCount());
         output->setFromTriplets(nzEntries.begin(), nzEntries.end());
     }
+
+    void laplacianPositiveDefinite(const HalfEdgeGeometry& geo, SparseMatrix<double>* output) {
+        std::vector<Eigen::Triplet<double>> nzEntries;
+        enumLaplacianPositiveDefinite(geo, &nzEntries);
+        output->resize(geo.vertexCount(), geo.vertexCount());
+        output->setFromTriplets(nzEntries.begin(), nzEntries.end());
+    }
 }

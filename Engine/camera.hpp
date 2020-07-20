@@ -12,7 +12,7 @@ namespace Morpheus {
 
 	class Camera : public IDisposable {
 	private:
-		f_framebuffer_size_t mResizeHandler;
+		f_framebuffer_size_capture_t mResizeHandler;
 		uint32_t mDisplayWidth;
 		uint32_t mDisplayHeight;
 

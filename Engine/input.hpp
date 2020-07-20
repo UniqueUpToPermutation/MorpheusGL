@@ -7,14 +7,6 @@ struct GLFWwindow;
 
 namespace Morpheus {
 
-	typedef std::function<void(GLFWwindow*, double, double)> f_cursor_pos_t;
-	typedef std::function<void(GLFWwindow*, int, int, int)> f_mouse_button_t;
-	typedef std::function<void(GLFWwindow*, int, int, int, int)> f_key_t;
-	typedef std::function<void(GLFWwindow*, unsigned int)> f_char_t;
-	typedef std::function<void(GLFWwindow*, int, const char**)> f_drop_t;
-	typedef std::function<void(GLFWwindow*, double, double)> f_scroll_t;
-	typedef std::function<void(GLFWwindow*, int, int)> f_framebuffer_size_t;
-
 	typedef std::function<bool(GLFWwindow*, double, double)> f_cursor_pos_capture_t;
 	typedef std::function<bool(GLFWwindow*, int, int, int)> f_mouse_button_capture_t;
 	typedef std::function<bool(GLFWwindow*, int, int, int, int)> f_key_capture_t;
@@ -23,60 +15,74 @@ namespace Morpheus {
 	typedef std::function<bool(GLFWwindow*, double, double)> f_scroll_capture_t;
 	typedef std::function<bool(GLFWwindow*, int, int)> f_framebuffer_size_capture_t;
 
+	enum class InputPriority {
+		LOW = 0,
+		NORMAL = 1,
+		ELEVATED = 2,
+		GUI = 3,
+		GRABBED = 4,
+		CRITICAL = 5
+	};
+
+	struct InputTarget {
+		void* mOwner;
+		InputPriority mPriority;
+		InputPriority mDefaultPriority;
+		mutable const f_cursor_pos_capture_t* mCursorPosCallback;
+		mutable const f_mouse_button_capture_t* mMouseButtonCallback;
+		mutable const f_key_capture_t* mKeyCallback;
+		mutable const f_char_capture_t* mCharCallback;
+		mutable const f_drop_capture_t* mDropCallback;
+		mutable const f_scroll_capture_t* mScrollCallback;
+		mutable const f_framebuffer_size_capture_t* mFramebufferSizeCallback;
+	};
+
+	struct InputTargetCompare {
+		bool operator() (const InputTarget& lhs, const InputTarget& rhs) const {
+			return lhs.mPriority > rhs.mPriority;
+		}
+	};
+
 	class Input {
 	private:
-		std::set<const f_cursor_pos_t*> mCursorPosCallbacks;
-		std::set<const f_mouse_button_t*> mMouseButtonCallbacks;
-		std::set<const f_key_t*> mKeyCallbacks;
-		std::set<const f_char_t*> mCharCallbacks;
-		std::set<const f_drop_t*> mDropCallbacks;
-		std::set<const f_scroll_t*> mScrollCallbacks;
-		std::set<const f_framebuffer_size_t*> mFramebufferSizeCallbacks;
-
-		std::set<const f_cursor_pos_capture_t*> mCursorPosCaptureCallbacks;
-		std::set<const f_mouse_button_capture_t*> mMouseButtonCaptureCallbacks;
-		std::set<const f_key_capture_t*> mKeyCaptureCallbacks;
-		std::set<const f_char_capture_t*> mCharCaptureCallbacks;
-		std::set<const f_drop_capture_t*> mDropCaptureCallbacks;
-		std::set<const f_scroll_capture_t*> mScrollCaptureCallbacks;
-		std::set<const f_framebuffer_size_capture_t*> mFramebufferSizeCaptureCallbacks;
+		bool bInEvent;
+		std::vector<void*> mNewGrabers;
+		std::vector<void*> mUngrabers;
+		std::unordered_map<void*, std::set<InputTarget, InputTargetCompare>::iterator> mOwnerToTargetMap;
+		std::set<InputTarget, InputTargetCompare> mTargets;
 
 		void glfwRegister();
+		void glfwUnregster();
+
+		void actuallyGrab(void* owner);
+		void actuallyUngrab(void* owner);
+		void resolveGrabs();
 
 	public:
-		// Events that can be bound to
-		void bindCursorPosEvent(const f_cursor_pos_t* f);
-		void bindMouseButtonEvent(const f_mouse_button_t* f);
-		void bindKeyEvent(const f_key_t* f);
-		void bindCharEvent(const f_char_t* f);
-		void bindDropEvent(const f_drop_t* f);
-		void bindScrollEvent(const f_scroll_t* f);
-		void bindFramebufferSizeEvent(const f_framebuffer_size_t* f);
+		Input(); 
 
-		void unbindCursorPosEvent(const f_cursor_pos_t* f);
-		void unbindMouseButtonEvent(const f_mouse_button_t* f);
-		void unbindKeyEvent(const f_key_t* f);
-		void unbindCharEvent(const f_char_t* f);
-		void unbindDropEvent(const f_drop_t* f);
-		void unbindScrollEvent(const f_scroll_t* f);
-		void unbindFramebufferSizeEvent(const f_framebuffer_size_t* f);
+		// Target registration
+		void registerTarget(void* owner, InputPriority priority = InputPriority::NORMAL);
+		void unregisterTarget(void* owner);
+		void grab(void* owner);
+		void ungrab(void* owner);
 
 		// Events that can be bound to
-		void bindCursorPosCaptureEvent(const f_cursor_pos_capture_t* f);
-		void bindMouseButtonCaptureEvent(const f_mouse_button_capture_t* f);
-		void bindKeyCaptureEvent(const f_key_capture_t* f);
-		void bindCharCaptureEvent(const f_char_capture_t* f);
-		void bindDropCaptureEvent(const f_drop_capture_t* f);
-		void bindScrollCaptureEvent(const f_scroll_capture_t* f);
-		void bindFramebufferSizeCaptureEvent(const f_framebuffer_size_capture_t* f);
+		void bindCursorPosEvent(void* owner, const f_cursor_pos_capture_t* f);
+		void bindMouseButtonEvent(void* owner, const f_mouse_button_capture_t* f);
+		void bindKeyEvent(void* owner, const f_key_capture_t* f);
+		void bindCharEvent(void* owner, const f_char_capture_t* f);
+		void bindDropEvent(void* owner, const f_drop_capture_t* f);
+		void bindScrollEvent(void* owner, const f_scroll_capture_t* f);
+		void bindFramebufferSizeEvent(void* owner, const f_framebuffer_size_capture_t* f);
 
-		void unbindCursorPosCaptureEvent(const f_cursor_pos_capture_t* f);
-		void unbindMouseButtonCaptureEvent(const f_mouse_button_capture_t* f);
-		void unbindKeyCaptureEvent(const f_key_capture_t* f);
-		void unbindCharCaptureEvent(const f_char_capture_t* f);
-		void unbindDropCaptureEvent(const f_drop_capture_t* f);
-		void unbindScrollCaptureEvent(const f_scroll_capture_t* f);
-		void unbindFramebufferSizeCaptureEvent(const f_framebuffer_size_capture_t* f);
+		void unbindCursorPosEvent(void* owner);
+		void unbindMouseButtonEvent(void* owner);
+		void unbindKeyEvent(void* owner);
+		void unbindCharEvent(void* owner);
+		void unbindDropEvent(void* owner);
+		void unbindScrollEvent(void* owner);
+		void unbindFramebufferSizeEvent(void* owner);
 
 		friend void cursorPosHandler(GLFWwindow* win, double x, double y);
 		friend void mouseButtonHandler(GLFWwindow* win, int button, int action, int modifiers);
@@ -85,14 +91,6 @@ namespace Morpheus {
 		friend void dropHandler(GLFWwindow* win, int count, const char** filenames);
 		friend void scrollHandler(GLFWwindow* win, double x, double y);
 		friend void framebufferSizeHandler(GLFWwindow* win, int width, int height);
-
-		friend void cursorPosCaptureHandler(GLFWwindow* win, double x, double y);
-		friend void mouseButtonCaptureHandler(GLFWwindow* win, int button, int action, int modifiers);
-		friend void keyCaptureHandler(GLFWwindow* win, int key, int scancode, int action, int mods);
-		friend void charCaptureHandler(GLFWwindow* win, unsigned int codepoint);
-		friend void dropCaptureHandler(GLFWwindow* win, int count, const char** filenames);
-		friend void scrollCaptureHandler(GLFWwindow* win, double x, double y);
-		friend void framebufferSizeCaptureHandler(GLFWwindow* win, int width, int height);
 
 		friend class Engine;
 	};

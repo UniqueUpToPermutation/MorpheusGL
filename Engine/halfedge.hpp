@@ -7,6 +7,9 @@ namespace Assimp {
 }
 
 namespace Morpheus {
+	template <typename T>
+	class ContentFactory;
+
 	typedef glm::vec3 vec3type;
 	typedef glm::vec2 vec2type;
 	typedef float stype;
@@ -290,7 +293,7 @@ namespace Morpheus {
 		explicit HalfEdgeGeometry() {}
 		explicit HalfEdgeGeometry(const HalfEdgeGeometry& geo);
 
-		inline BoundingBox getBoundingBox() const {
+		inline BoundingBox boundingBox() const {
 			return aabb;
 		}
 		inline void createPositions() {
@@ -369,7 +372,8 @@ namespace Morpheus {
 
 		friend HalfEdgeGeometry* loadBinary(const std::string& path);
 		friend HalfEdgeGeometry* loadJson(const std::string& path);
-		friend class HalfEdgeLoader;
+
+		friend class ContentFactory<HalfEdgeGeometry>;
 	};
 
 	HalfEdgeGeometry* loadBinary(const std::string& path);

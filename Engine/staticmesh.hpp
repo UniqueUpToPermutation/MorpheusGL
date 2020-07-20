@@ -23,5 +23,8 @@ namespace Morpheus {
 
 		Node makeStaticMesh(const Node& material, const Node& geometry,
 			ref<StaticMesh>* refOut = nullptr);
+		Node makeStaticMesh(const Node& material, const Node& geometry,
+			const std::string& source,
+			ref<StaticMesh>* refOut = nullptr);
 	};
 }

@@ -3,6 +3,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <GLFW/glfw3.h>
+
 using namespace glm;
 
 namespace Morpheus {
@@ -16,22 +18,17 @@ namespace Morpheus {
 		mFieldOfView(pi<float>() / 4.0f),
 		mType(CameraType::PERSPECTIVE_LOOK_AT)
 	{
-		auto displayParams = engine()->displayParams();
-		mDisplayWidth = displayParams.mFramebufferWidth;
-		mDisplayHeight = displayParams.mFramebufferHeight;
-
-		mResizeHandler = [this](GLFWwindow*, int width, int height) {
-			mDisplayWidth = width;
-			mDisplayHeight = height;
-		};
-		input()->bindFramebufferSizeEvent(&mResizeHandler);
 	}
 
 	glm::mat4 Camera::view() const {
 		return glm::lookAt(mPosition, mLookAt, mUp);
 	}
 	glm::mat4 Camera::projection() const {
-		return glm::perspectiveFov(mFieldOfView, (float)mDisplayWidth, (float)mDisplayHeight, mNearPlane, mFarPlane);
+		int width;
+		int height;
+		glfwGetFramebufferSize(window(), &width, &height);
+
+		return glm::perspectiveFov(mFieldOfView, (float)width, (float)height, mNearPlane, mFarPlane);
 	}
 	glm::vec3 Camera::eye() const {
 		return mPosition;

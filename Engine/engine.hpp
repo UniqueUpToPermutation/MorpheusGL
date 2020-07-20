@@ -191,6 +191,10 @@ namespace Morpheus {
 		return graph()->desc(n);
 	}
 
+	inline NodeData* desc(const std::string& name) {
+		return desc((*graph())[name]);
+	}
+
 	class IRenderer : public IDisposable, public IInitializable {
 	public:
 		virtual void postGlfwRequests() = 0;

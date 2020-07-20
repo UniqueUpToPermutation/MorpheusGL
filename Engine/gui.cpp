@@ -41,27 +41,20 @@ namespace Morpheus {
 			return mScreen->resizeCallbackEvent(width, height);
 		};
 
-		input_->bindCursorPosCaptureEvent(&mCursorPosHandler);
-		input_->bindMouseButtonCaptureEvent(&mMouseButtonHandler);
-		input_->bindKeyCaptureEvent(&mKeyHandler);
-		input_->bindCharCaptureEvent(&mCharHandler);
-		input_->bindDropCaptureEvent(&mDropHandler);
-		input_->bindScrollCaptureEvent(&mScrollHandler);
-		input_->bindFramebufferSizeCaptureEvent(&mFramebufferSizeHandler);
+		input_->registerTarget(this, InputPriority::GUI);
+		input_->bindCursorPosEvent(this, &mCursorPosHandler);
+		input_->bindMouseButtonEvent(this, &mMouseButtonHandler);
+		input_->bindKeyEvent(this, &mKeyHandler);
+		input_->bindCharEvent(this, &mCharHandler);
+		input_->bindDropEvent(this, &mDropHandler);
+		input_->bindScrollEvent(this, &mScrollHandler);
+		input_->bindFramebufferSizeEvent(this, &mFramebufferSizeHandler);
 
 		initGui();
 	}
 
 	void GuiBase::dispose() {
-		auto input_ = input();
-
-		input_->unbindCursorPosCaptureEvent(&mCursorPosHandler);
-		input_->unbindMouseButtonCaptureEvent(&mMouseButtonHandler);
-		input_->unbindKeyCaptureEvent(&mKeyHandler);
-		input_->unbindCharCaptureEvent(&mCharHandler);
-		input_->unbindDropCaptureEvent(&mDropHandler);
-		input_->unbindScrollCaptureEvent(&mScrollHandler);
-		input_->unbindFramebufferSizeCaptureEvent(&mFramebufferSizeHandler);
+		input()->unregisterTarget(this);
 
 		delete this;
 	}

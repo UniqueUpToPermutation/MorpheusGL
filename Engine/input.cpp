@@ -1,98 +1,97 @@
 #include "input.hpp"
 #include "engine.hpp"
 
+#include <iostream>
+
 #include <GLFW/glfw3.h>
 
 namespace Morpheus {
 	void cursorPosHandler(GLFWwindow* win, double x, double y) {
 		auto input_ = input();
-
-		for (auto f : input_->mCursorPosCaptureCallbacks) {
-			auto result = (*f)(win, x, y);
-			if (result)
-				return;
+		input_->bInEvent = true;
+		for (auto& f : input_->mTargets) {
+			if (f.mCursorPosCallback)
+				if ((*f.mCursorPosCallback)(win, x, y))
+					break;
 		}
-
-		for (auto f : input_->mCursorPosCallbacks)
-			(*f)(win, x, y);
+		input_->bInEvent = false;
+		input_->resolveGrabs();
 	}
 
 	void mouseButtonHandler(GLFWwindow* win, int button, int action, int modifiers) {
 		auto input_ = input();
-
-		for (auto f : input_->mMouseButtonCaptureCallbacks) {
-			auto result = (*f)(win, button, action, modifiers);
-			if (result)
-				return;
+		input_->bInEvent = true;
+		for (auto& f : input_->mTargets) {
+			if (f.mMouseButtonCallback)
+				if ((*f.mMouseButtonCallback)(win, button, action, modifiers))
+					break;
 		}
-
-		for (auto f : input_->mMouseButtonCallbacks)
-			(*f)(win, button, action, modifiers);
+		input_->bInEvent = false;
+		input_->resolveGrabs();
 	}
 
 	void keyHandler(GLFWwindow* win, int key, int scancode, int action, int mods) {
 		auto input_ = input();
-
-		for (auto f : input_->mKeyCaptureCallbacks) {
-			auto result = (*f)(win, key, scancode, action, mods);
-			if (result)
-				return;
+		input_->bInEvent = true;
+		for (auto& f : input_->mTargets) {
+			if (f.mKeyCallback)
+				if ((*f.mKeyCallback)(win, key, scancode, action, mods))
+					break;
 		}
-
-		for (auto f : input_->mKeyCallbacks)
-			(*f)(win, key, scancode, action, mods);
+		input_->bInEvent = false;
+		input_->resolveGrabs();
 	}
 
 	void charHandler(GLFWwindow* win, unsigned int codepoint) {
 		auto input_ = input();
-
-		for (auto f : input_->mCharCaptureCallbacks) {
-			auto result = (*f)(win, codepoint);
-			if (result)
-				return;
+		input_->bInEvent = true;
+		for (auto& f : input_->mTargets) {
+			if (f.mCharCallback)
+				if ((*f.mCharCallback)(win, codepoint))
+					break;
 		}
-
-		for (auto f : input_->mCharCallbacks)
-			(*f)(win, codepoint);
+		input_->bInEvent = false;
+		input_->resolveGrabs();
 	}
 
 	void dropHandler(GLFWwindow* win, int count, const char** filenames) {
 		auto input_ = input();
-
-		for (auto f : input_->mDropCaptureCallbacks) {
-			auto result = (*f)(win, count, filenames);
-			if (result)
-				return;
+		input_->bInEvent = true;
+		for (auto& f : input_->mTargets) {
+			if (f.mDropCallback)
+				if ((*f.mDropCallback)(win, count, filenames))
+					break;
 		}
-
-		for (auto f : input_->mDropCallbacks)
-			(*f)(win, count, filenames);
+		input_->bInEvent = false;
+		input_->resolveGrabs();
 	}
 
 	void scrollHandler(GLFWwindow* win, double x, double y) {
 		auto input_ = input();
-
-		for (auto f : input_->mScrollCaptureCallbacks) {
-			auto result = (*f)(win, x, y);
-			if (result)
-				return;
+		input_->bInEvent = true;
+		for (auto& f : input_->mTargets) {
+			if (f.mScrollCallback)
+				if ((*f.mScrollCallback)(win, x, y))
+					break;
 		}
-
-		for (auto f : input_->mScrollCallbacks)
-			(*f)(win, x, y);
+		input_->bInEvent = false;
+		input_->resolveGrabs();
 	}
 
 	void framebufferSizeHandler(GLFWwindow* win, int width, int height) {
 		auto input_ = input();
-
-		for (auto f : input_->mFramebufferSizeCaptureCallbacks) {
-			auto result = (*f)(win, width, height);
-			if (result)
-				return;
+		input_->bInEvent = true;
+		for (auto& f : input_->mTargets) {
+			if (f.mFramebufferSizeCallback)
+				if ((*f.mFramebufferSizeCallback)(win, width, height))
+					break;
 		}
+		input_->bInEvent = false;
+		input_->resolveGrabs();
+	}
 
-		for (auto f : input_->mFramebufferSizeCallbacks)
-			(*f)(win, width, height);
+	Input::Input() : bInEvent(false) {
+
 	}
 
 	void Input::glfwRegister() {
@@ -107,91 +106,193 @@ namespace Morpheus {
 		glfwSetFramebufferSizeCallback(window, &framebufferSizeHandler);
 	}
 
-	void Input::bindCursorPosEvent(const f_cursor_pos_t* f) {
-		mCursorPosCallbacks.insert(f);
-	}
-	void Input::bindMouseButtonEvent(const f_mouse_button_t* f) {
-		mMouseButtonCallbacks.insert(f);
-	}
-	void Input::bindKeyEvent(const f_key_t* f) {
-		mKeyCallbacks.insert(f);
-	}
-	void Input::bindCharEvent(const f_char_t* f) {
-		mCharCallbacks.insert(f);
-	}
-	void Input::bindDropEvent(const f_drop_t* f) {
-		mDropCallbacks.insert(f);
-	}
-	void Input::bindScrollEvent(const f_scroll_t* f) {
-		mScrollCallbacks.insert(f);
-	}
-	void Input::bindFramebufferSizeEvent(const f_framebuffer_size_t* f) {
-		mFramebufferSizeCallbacks.insert(f);
+	void Input::glfwUnregster() {
+		auto window = engine()->window();
+
+		glfwSetCursorPosCallback(window, nullptr);
+		glfwSetMouseButtonCallback(window, nullptr);
+		glfwSetKeyCallback(window, nullptr);
+		glfwSetCharCallback(window, nullptr);
+		glfwSetDropCallback(window, nullptr);
+		glfwSetScrollCallback(window, nullptr);
+		glfwSetFramebufferSizeCallback(window, nullptr);
 	}
 
-	void Input::unbindCursorPosEvent(const f_cursor_pos_t* f) {
-		mCursorPosCallbacks.erase(f);
+	// Target registration
+	void Input::registerTarget(void* owner, InputPriority priority) {
+		InputTarget target;
+		target.mCharCallback = nullptr;
+		target.mCursorPosCallback = nullptr;
+		target.mDropCallback = nullptr;
+		target.mFramebufferSizeCallback = nullptr;
+		target.mKeyCallback = nullptr;
+		target.mMouseButtonCallback = nullptr;
+		target.mScrollCallback = nullptr;
+		target.mOwner = owner;
+		target.mPriority = priority;
+		target.mDefaultPriority = priority;
+
+		auto result = mTargets.emplace(target);
+		mOwnerToTargetMap[owner] = result.first;
 	}
-	void Input::unbindMouseButtonEvent(const f_mouse_button_t* f) {
-		mMouseButtonCallbacks.erase(f);
+	void Input::unregisterTarget(void* owner) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end()) {
+			auto setIt = it->second;
+			mOwnerToTargetMap.erase(it);
+			mTargets.erase(setIt);
+		}
 	}
-	void Input::unbindKeyEvent(const f_key_t* f) {
-		mKeyCallbacks.erase(f);
+	void Input::actuallyGrab(void* owner) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end()) {
+			auto targetStruct = *it->second;
+			mTargets.erase(it->second);
+			targetStruct.mPriority = InputPriority::GRABBED;
+			auto it = mTargets.emplace(targetStruct);
+			mOwnerToTargetMap[owner] = it.first;
+		}
+		else {
+			std::cout << "Failed to grab, could not find owner!" << std::endl;
+		}
 	}
-	void Input::unbindCharEvent(const f_char_t* f) {
-		mCharCallbacks.erase(f);
+	void Input::grab(void* owner) {
+		if (bInEvent) {
+			mNewGrabers.push_back(owner);
+		}
+		else {
+			actuallyGrab(owner);
+		}
 	}
-	void Input::unbindDropEvent(const f_drop_t* f) {
-		mDropCallbacks.erase(f);
+	void Input::resolveGrabs() {
+		for (auto g : mNewGrabers)
+			actuallyGrab(g);
+		for (auto ug : mUngrabers)
+			actuallyUngrab(ug);
+		mNewGrabers.clear();
+		mUngrabers.clear();
 	}
-	void Input::unbindScrollEvent(const f_scroll_t* f) {
-		mScrollCallbacks.erase(f);
+	void Input::actuallyUngrab(void* owner) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end()) {
+			auto targetStruct = *it->second;
+			mTargets.erase(it->second);
+			targetStruct.mPriority = targetStruct.mDefaultPriority;
+			auto it = mTargets.emplace(targetStruct);
+			mOwnerToTargetMap[owner] = it.first;
+		}
+		else {
+			std::cout << "Failed to ungrab, could not find owner!" << std::endl;
+		}
 	}
-	void Input::unbindFramebufferSizeEvent(const f_framebuffer_size_t* f) {
-		mFramebufferSizeCallbacks.erase(f);
+	void Input::ungrab(void* owner) {
+		if (bInEvent) {
+			mUngrabers.push_back(owner);
+		}
+		else {
+			actuallyUngrab(owner);
+		}
 	}
 
-	void Input::bindCursorPosCaptureEvent(const f_cursor_pos_capture_t* f) {
-		mCursorPosCaptureCallbacks.insert(f);
+	// Events that can be bound to
+	void Input::bindCursorPosEvent(void* owner, const f_cursor_pos_capture_t* f) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mCursorPosCallback = f;
+		else {
+			registerTarget(owner);
+			bindCursorPosEvent(owner, f);
+		}
 	}
-	void Input::bindMouseButtonCaptureEvent(const f_mouse_button_capture_t* f) {
-		mMouseButtonCaptureCallbacks.insert(f);
+	void Input::bindMouseButtonEvent(void* owner, const f_mouse_button_capture_t* f) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mMouseButtonCallback = f;
+		else {
+			registerTarget(owner);
+			bindMouseButtonEvent(owner, f);
+		}
 	}
-	void Input::bindKeyCaptureEvent(const f_key_capture_t* f) {
-		mKeyCaptureCallbacks.insert(f);
+	void Input::bindKeyEvent(void* owner, const f_key_capture_t* f) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mKeyCallback = f;
+		else {
+			registerTarget(owner);
+			bindKeyEvent(owner, f);
+		}
 	}
-	void Input::bindCharCaptureEvent(const f_char_capture_t* f) {
-		mCharCaptureCallbacks.insert(f);
+	void Input::bindCharEvent(void* owner, const f_char_capture_t* f) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mCharCallback = f;
+		else {
+			registerTarget(owner);
+			bindCharEvent(owner, f);
+		}
 	}
-	void Input::bindDropCaptureEvent(const f_drop_capture_t* f) {
-		mDropCaptureCallbacks.insert(f);
+	void Input::bindDropEvent(void* owner, const f_drop_capture_t* f) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mDropCallback = f;
+		else {
+			registerTarget(owner);
+			bindDropEvent(owner, f);
+		}
 	}
-	void Input::bindScrollCaptureEvent(const f_scroll_capture_t* f) {
-		mScrollCaptureCallbacks.insert(f);
+	void Input::bindScrollEvent(void* owner, const f_scroll_capture_t* f) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mScrollCallback = f;
+		else {
+			registerTarget(owner);
+			bindScrollEvent(owner, f);
+		}
 	}
-	void Input::bindFramebufferSizeCaptureEvent(const f_framebuffer_size_capture_t* f) {
-		mFramebufferSizeCaptureCallbacks.insert(f);
+	void Input::bindFramebufferSizeEvent(void* owner, const f_framebuffer_size_capture_t* f) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mFramebufferSizeCallback = f;
+		else {
+			registerTarget(owner);
+			bindFramebufferSizeEvent(owner, f);
+		}
 	}
 
-	void Input::unbindCursorPosCaptureEvent(const f_cursor_pos_capture_t* f) {
-		mCursorPosCaptureCallbacks.erase(f);
+	// Events that can be bound to
+	void Input::unbindCursorPosEvent(void* owner) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mCursorPosCallback = nullptr;
 	}
-	void Input::unbindMouseButtonCaptureEvent(const f_mouse_button_capture_t* f) {
-		mMouseButtonCaptureCallbacks.erase(f);
+	void Input::unbindMouseButtonEvent(void* owner) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mMouseButtonCallback = nullptr;
 	}
-	void Input::unbindKeyCaptureEvent(const f_key_capture_t* f) {
-		mKeyCaptureCallbacks.erase(f);
+	void Input::unbindKeyEvent(void* owner) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mKeyCallback = nullptr;
 	}
-	void Input::unbindCharCaptureEvent(const f_char_capture_t* f) {
-		mCharCaptureCallbacks.erase(f);
+	void Input::unbindCharEvent(void* owner) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mCharCallback = nullptr;
 	}
-	void Input::unbindDropCaptureEvent(const f_drop_capture_t* f) {
-		mDropCaptureCallbacks.erase(f);
+	void Input::unbindDropEvent(void* owner) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mDropCallback = nullptr;
 	}
-	void Input::unbindScrollCaptureEvent(const f_scroll_capture_t* f) {
-		mScrollCaptureCallbacks.erase(f);
+	void Input::unbindScrollEvent(void* owner) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mScrollCallback = nullptr;
 	}
-	void Input::unbindFramebufferSizeCaptureEvent(const f_framebuffer_size_capture_t* f) {
-		mFramebufferSizeCaptureCallbacks.erase(f);
+	void Input::unbindFramebufferSizeEvent(void* owner) {
+		auto it = mOwnerToTargetMap.find(owner);
+		if (it != mOwnerToTargetMap.end())
+			it->second->mFramebufferSizeCallback = nullptr;
 	}
 }

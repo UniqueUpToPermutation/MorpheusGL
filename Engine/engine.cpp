@@ -7,6 +7,7 @@
 #include "engine.hpp"
 #include "content.hpp"
 #include "forwardrenderer.hpp"
+#include "input.hpp"
 
 using namespace std;
 
@@ -69,7 +70,7 @@ namespace Morpheus {
 
 		glfwSetErrorCallback(error_callback);
 
-		mWindow = glfwCreateWindow(640, 480, "Morpheus Engine", NULL, NULL);
+		mWindow = glfwCreateWindow(800, 600, "Morpheus", NULL, NULL);
 		if (!mWindow)
 		{
 			Error err(ErrorCode::FAIL_GLFW_WINDOW_INIT);
@@ -115,6 +116,8 @@ namespace Morpheus {
 	}
 
 	void Engine::shutdown() {
+
+		mInput.glfwUnregster();
 
 		// Clean up anything disposable
 		for (auto nodeIt = mGraph.vertices(); nodeIt.valid(); nodeIt.next()) {

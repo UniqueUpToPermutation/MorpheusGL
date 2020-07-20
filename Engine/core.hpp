@@ -140,6 +140,7 @@ namespace Morpheus {
 		CONTENT_BEGIN,
 		CONTENT_MANAGER,
 		GEOMETRY,
+		HALF_EDGE_GEOMETRY,
 		MATERIAL,
 		SHADER,
 		TEXTURE_2D,
@@ -230,6 +231,7 @@ namespace Morpheus {
 	SET_POOLED(CUBE_MAP, false);
 	SET_POOLED(TEXTURE_2D_ARRAY, false);
 	SET_POOLED(STATIC_MESH, false);
+	SET_POOLED(HALF_EDGE_GEOMETRY, false);
 
 	// The IS_RENDERABLE FLAG
 	SET_RENDERABLE(ENGINE, false);
@@ -246,6 +248,7 @@ namespace Morpheus {
 	SET_RENDERABLE(NANOGUI_SCREEN, true);
 	SET_RENDERABLE(SCENE_ROOT, true);
 
+	SET_RENDERABLE(HALF_EDGE_GEOMETRY, false);
 	SET_RENDERABLE(CONTENT_MANAGER, false);
 	SET_RENDERABLE(GEOMETRY, false);
 	SET_RENDERABLE(MATERIAL, false);
@@ -260,6 +263,7 @@ namespace Morpheus {
 	SET_RENDERABLE(MATERIAL_PROXY, true);
 
 	// The content flag
+	SET_CONTENT(HALF_EDGE_GEOMETRY, true);
 	SET_CONTENT(CONTENT_MANAGER, false);
 	SET_CONTENT(GEOMETRY, true);
 	SET_CONTENT(MATERIAL, true);
@@ -849,4 +853,24 @@ namespace Morpheus {
 	/// </summary>
 	/// <param name="node">The ancestor node to start at.</param>
 	void init(Node node);
+
+	/// <summary>
+	/// Destroys all ancestors of a node in the scene graph, self included.
+	/// </summary>
+	/// <param name="bIgnoreContent">Whether or to ignore nodes managed by the content manager.</param>
+	void prune(Node start, bool bIgnoreContent = true);
+
+	/// <summary>
+	/// Destroys all ancestors of a node with the given name.
+	/// </summary>
+	/// <param name="name">Node of the node to prune.</param>
+	/// <param name="bIgnoreContent">Whether to ignore nodes managed by the content manage.</param>
+	void prune(const std::string& name, bool bIgnoreContent = true);
+
+	/// <summary>
+	/// Destroys all ancestors of a node with the given handle.
+	/// </summary>
+	/// <param name="handle">Handle of the node to prune.</param>
+	/// <param name="bIgnoreContent">Whether to ignore nodes managed by the content manager.</param>
+	void prune(NodeHandle handle, bool bIgnoreContent = true);
 }

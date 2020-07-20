@@ -35,18 +35,18 @@ namespace Morpheus {
 		return vec2type(vec.x, vec.y);
 	}
 
-	HalfEdgeLoader::HalfEdgeLoader()
+	ContentFactory<HalfEdgeGeometry>::ContentFactory()
 	{
 		mImporter = new Assimp::Importer();
 	}
 
-	HalfEdgeGeometry* HalfEdgeLoader::load(const std::string& source) {
+	HalfEdgeGeometry* ContentFactory<HalfEdgeGeometry>::loadUnmanaged(const std::string& source) {
 		HalfEdgeLoadParameters params;
 		params.mRelativeJoinEpsilon = DEFAULT_RELATIVE_JOIN_EPSILON;
-		return load(source, params);
+		return loadUnmanaged(source, params);
 	}
 
-	HalfEdgeGeometry* HalfEdgeLoader::load(const std::string& source, const HalfEdgeLoadParameters& params) {
+	HalfEdgeGeometry* ContentFactory<HalfEdgeGeometry>::loadUnmanaged(const std::string& source, const HalfEdgeLoadParameters& params) {
 
 		HalfEdgeGeometry* geo;
 
@@ -338,8 +338,18 @@ namespace Morpheus {
 
 		return geo;
 	}
-	HalfEdgeLoader::~HalfEdgeLoader()
+
+	ref<void> ContentFactory<HalfEdgeGeometry>::load(const std::string& source, Node& loadInto) {
+		return ref<void>(loadUnmanaged(source));
+	}
+
+	void ContentFactory<HalfEdgeGeometry>::unload(ref<void>& ref) {
+		delete ref.reinterpretGet<HalfEdgeGeometry>();
+	}
+
+	void ContentFactory<HalfEdgeGeometry>::dispose()
 	{
 		delete mImporter;
+		delete this;
 	}
 }

@@ -133,6 +133,7 @@ namespace Morpheus {
 			T_CASE(CUBE_MAP);
 			T_CASE(STATIC_MESH);
 			T_CASE(CONTENT_END);
+			T_CASE(HALF_EDGE_GEOMETRY);
 			T_CASE(END);
 		default:
 			return "UNKNOWN";
@@ -252,5 +253,39 @@ namespace Morpheus {
 		auto graph_ = graph();
 		auto updaterNode = (*graph_)[updater()->handle()];
 		init(node, graph_, updaterNode);
+	}
+
+	void prune(Node start, bool bIgnoreContent)
+	{
+		auto desc_ = desc(start);
+		if (bIgnoreContent && NodeMetadata::isContent(desc_->type))
+			return;
+		else {
+			for (auto it = start.children(); it.valid();) {
+				auto node = it();
+				it.next();
+				prune(node, bIgnoreContent);
+			}
+
+			if (NodeMetadata::isContent(desc_->type))
+				content()->unload(start);
+			else {
+				auto disposableInterface = getInterface<IDisposable>(*desc_);
+				if (disposableInterface)
+					disposableInterface->dispose();
+			}
+
+			graph()->deleteVertex(start);
+		}
+	}
+
+	void prune(const std::string& name, bool bIgnoreContent) {
+		auto node = (*graph())[name];
+		prune(node, bIgnoreContent);
+	}
+
+	void prune(NodeHandle handle, bool bIgnoreContent) {
+		auto node = (*graph())[handle];
+		prune(node, bIgnoreContent);
 	}
 }

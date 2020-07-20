@@ -62,7 +62,7 @@ namespace Morpheus {
         // Load the shader through the content manager
         ref<Shader> shaderRef;
         auto shaderNode = content()->load<Shader>(shaderSrc, &shaderRef);
-        if (!shaderNode.isValid()) {
+        if (!shaderNode.valid()) {
             cout << "Error: could not load dependency " << shaderSrc << "!" << endl;
             return ref<void>(nullptr);
         }
@@ -91,6 +91,6 @@ namespace Morpheus {
         delete ref.reinterpretGet<Material>();
     }
     void ContentFactory<Material>::dispose() {
-
+        delete this;
     }
 }

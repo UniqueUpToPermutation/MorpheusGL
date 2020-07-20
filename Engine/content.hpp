@@ -57,7 +57,7 @@ namespace Morpheus {
 		NodeHandle mHandle;
 		std::set<IContentFactory*> mFactories;
 		std::unordered_map<NodeType, IContentFactory*> mTypeToFactory;
-		DigraphVertexLookupView<std::string> mSources;
+		DigraphTwoWayVertexLookupView<std::string> mSources;
 
 	public:
 		void init(Node& node) override;
@@ -174,7 +174,7 @@ namespace Morpheus {
 				desc->owner = ref;
 				
 				// If a parent was passed, add the created content as a child of the parent
-				if (parent.isValid())
+				if (parent.valid())
 					graph_->createEdge(parent, v);
 
 				mSources.set(v, source_mod);
@@ -230,6 +230,13 @@ namespace Morpheus {
 		/// Unload all children.
 		/// </summary>
 		void unloadAll();
+
+		/// <summary>
+		/// Sets the source string of a content node.
+		/// </summary>
+		/// <param name="node">The node which to set.</param>
+		/// <param name="source">The content tag to set.</param>
+		void setSource(const Node& node, const std::string& source);
 
 		/// <summary>
 		/// Dispose of the content manager

@@ -96,10 +96,17 @@ namespace Morpheus {
 		delete ref.reinterpret<StaticMesh>().get();
 	}
 	void ContentFactory<StaticMesh>::dispose() {
+		delete this;
 	}
 	Node ContentFactory<StaticMesh>::makeStaticMesh(const Node& material, 
 		const Node& geometry, ref<StaticMesh>* refOut)
 	{
+		return makeStaticMesh(material, geometry, "", refOut);
+	}
+
+	Node ContentFactory<StaticMesh>::makeStaticMesh(const Node& material, const Node& geometry,
+		const std::string& source,
+		ref<StaticMesh>* refOut) {
 		assert(graph()->desc(geometry)->type == NodeType::GEOMETRY);
 		assert(graph()->desc(material)->type == NodeType::MATERIAL);
 
@@ -118,6 +125,7 @@ namespace Morpheus {
 		graph()->createEdge(staticMeshNode, materialProxy);
 		graph()->createEdge(materialProxy, geometryProxy);
 
+		content()->addContentNode(staticMeshNode, source);
 		return staticMeshNode;
 	}
 }

@@ -35,6 +35,10 @@ namespace Morpheus {
 	struct DigraphEdgeLookupView;
 	template <typename T>
 	struct DigraphSparseDataView;
+	template <typename T>
+	struct DigraphTwoWayVertexLookupView;
+	template <typename T>
+	struct DigraphTwoWayEdgeLookupView;
 
 	struct DigraphVertexRaw {
 		int mInEdge;
@@ -129,7 +133,7 @@ namespace Morpheus {
 		/// Whether or not this is a valid vertex.
 		/// </summary>
 		/// <returns></returns>
-		inline bool isValid() const { return mId != -1; }
+		inline bool valid() const { return mId != -1; }
 		/// <summary>
 		/// Returns the graph this vertex belongs to.
 		/// </summary>
@@ -421,13 +425,14 @@ namespace Morpheus {
 		template <typename T>
 		DigraphEdgeLookupView<T> createEdgeLookup(const std::string& name);
 
-		/// <summary>
-		/// Destroys a data attachment from its view.
-		/// </summary>
-		/// <typeparam name="T">The type of the data attachment</typeparam>
-		/// <param name="view">The view to the data attachment to destroy</param>
 		template <typename T>
-		void destroyData(DigraphDataView<T>& view);
+		DigraphTwoWayEdgeLookupView<T> createTwoWayEdgeLookup(const std::string& name);
+		template <typename T>
+		DigraphTwoWayVertexLookupView<T> createTwoWayVertexLookup(const std::string& name);
+		template <typename T>
+		DigraphTwoWayEdgeLookupView<T> createTwoWayEdgeLookup();
+		template <typename T>
+		DigraphTwoWayVertexLookupView<T> createTwoWayVertexLookup();
 
 		/// <summary>
 		/// Destroys a data attachment from its view.
@@ -435,7 +440,15 @@ namespace Morpheus {
 		/// <typeparam name="T">The type of the data attachment</typeparam>
 		/// <param name="view">The view to the data attachment to destroy</param>
 		template <typename T>
-		void destroyData(DigraphSparseDataView<T>& view);
+		void destroyData(DigraphDataView<T> view);
+
+		/// <summary>
+		/// Destroys a data attachment from its view.
+		/// </summary>
+		/// <typeparam name="T">The type of the data attachment</typeparam>
+		/// <param name="view">The view to the data attachment to destroy</param>
+		template <typename T>
+		void destroyData(DigraphSparseDataView<T> view);
 
 		/// <summary>
 		/// Destroys the lookup associated with this view
@@ -443,7 +456,7 @@ namespace Morpheus {
 		/// <typeparam name="T">The type of the lookup attachment.</typeparam>
 		/// <param name="view">The view to the lookup attachment to destroy.</param>
 		template <typename T>
-		void destroyLookup(DigraphVertexLookupView<T>& view);
+		void destroyLookup(DigraphVertexLookupView<T> view);
 
 		/// <summary>
 		/// Destroys the lookup associated with this view
@@ -451,7 +464,13 @@ namespace Morpheus {
 		/// <typeparam name="T">The type of the lookup attachment.</typeparam>
 		/// <param name="view">The view to the lookup attachment to destroy.</param>
 		template <typename T>
-		void destroyLookup(DigraphEdgeLookupView<T>& view);
+		void destroyLookup(DigraphEdgeLookupView<T> view);
+
+		template <typename T>
+		void destroyLookup(DigraphTwoWayEdgeLookupView<T> view);
+
+		template <typename T>
+		void destroyLookup(DigraphTwoWayVertexLookupView<T> view);
 
 		/// <summary>
 		/// Get an edge data attachment by name.
@@ -678,6 +697,124 @@ namespace Morpheus {
 		friend struct DigraphEdgeLookupView<T>;
 	};
 
+	template <typename T>
+	class DigraphTwoWayLookup : public IDigraphLookup {
+	private:
+		Digraph* mParent;
+		DigraphLookupType mType;
+		std::unordered_map<T, int> mTtoId;
+		std::unordered_map<int, T> mIdToT;
+		std::string mName;
+
+	protected:
+		void applyMap(const int map[], const uint32_t mapSize) override {
+			mIdToT.clear();
+			mIdToT.reserve(mTtoId.size());
+			for (auto& item : mTtoId) {
+				item.second = map[item.second];
+				mIdToT[item.second] = item.first;
+			}
+		}
+
+	public:
+		inline std::string name() const {
+			return mName;
+		}
+		inline void setv(const DigraphVertex& v, const T& t) {
+			mTtoId[t] = v.id();
+			mIdToT[v.id()] = t;
+		}
+		inline void sete(const DigraphEdge& e, const T& t) {
+			mTtoId[t] = e.id();
+			mIdToT[e.id()] = t;
+		}
+		inline DigraphVertex getv(const T& t) {
+			return mParent->getVertex(mTtoId[t]);
+		}
+		inline DigraphEdge gete(const T& t) {
+			return mParent->getEdge(mTtoId[t]);
+		}
+		inline T get(const DigraphVertex& v) {
+			return mIdToT[v.id()];
+		}
+		inline T get(const DigraphEdge& e) {
+			return mIdToT[e.id()];
+		}
+		inline void clear() {
+			mTtoId.clear();
+			mIdToT.clear();
+		}
+		inline void remove(const int i) {
+			auto it = mIdToT.find(i);
+			if (it != mIdToT.end()) {
+				auto first = it->first;
+				auto second = it->second;
+				mIdToT.erase(it);
+
+				auto otherIt = mTtoId.find(second);
+				if (otherIt != mTtoId.end()) {
+					if (otherIt->second == i)
+						mTtoId.erase(otherIt);
+				}
+			}
+		}
+		inline void remove(const DigraphVertex& v) {
+			remove(v.id());
+		}
+		inline void remove(const DigraphEdge& e) {
+			remove(e.id());
+		}
+		inline void remove(const T& t) {
+			auto it = mTtoId.find(t);
+			if (it != mTtoId.end()) {
+				auto first = it->first;
+				auto second = it->second;
+				mTtoId.erase(it);
+
+				auto otherIt = mIdToT.find(second);
+				if (otherIt != mIdToT.end()) {
+					if (otherIt->second == t)
+						mIdToT.erase(otherIt);
+				}
+			}
+		}
+		inline bool tryFind(const DigraphVertex& v, T* out) {
+			auto it = mIdToT.find(v.id());
+			if (it == mIdToT.end())
+				return false;
+			else {
+				*out = it->second;
+				return true;
+			}
+		}
+		inline bool tryFind(const T& t, DigraphVertex* out) {
+			auto it = mTtoId.find(t);
+			if (it == mTtoId.end())
+				return false;
+			else {
+				*out = DigraphVertex(mParent, it->second);
+				return true;
+			}
+		}
+		inline bool tryFind(const T& t, DigraphEdge* out) {
+			auto it = mTtoId.find(t);
+			if (it == mTtoId.end())
+				return false;
+			else {
+				*out = DigraphEdge(mParent, it->second);
+				return true;
+			}
+		}
+
+		inline explicit DigraphTwoWayLookup(Digraph* parent,
+			const DigraphLookupType type, const std::string& name) :
+			mParent(parent), mType(type), mName(name) { }
+
+		friend class Digraph;
+		friend struct DigraphTwoWayVertexLookupView<T>;
+		friend struct DigraphTwoWayEdgeLookupView<T>;
+	};
+
 	/// <summary>
 	/// A view to a lookup attachment on vertices of a graph.
 	/// </summary>
@@ -728,6 +865,8 @@ namespace Morpheus {
 				return true;
 			}
 		}
+
+		friend class Digraph;
 	};
 
 	/// <summary>
@@ -780,6 +919,104 @@ namespace Morpheus {
 				return true;
 			}
 		}
+
+		friend class Digraph;
+	};
+
+	template <typename T>
+	struct DigraphTwoWayVertexLookupView {
+	private:
+		DigraphTwoWayLookup<T>* mLookup;
+
+	public:
+		inline DigraphTwoWayVertexLookupView(DigraphTwoWayLookup<T>* lookup) : mLookup(lookup) { }
+		inline DigraphTwoWayVertexLookupView() : mLookup(nullptr) { }
+
+		inline std::string name() {
+			return mLookup->mName;
+		}
+
+		inline DigraphVertex operator[](const T& t) {
+			return mLookup->mParent->getVertex(mLookup->mTtoId[t]);
+		}
+
+		inline T operator[](const DigraphVertex& v) {
+			return mLookup->get(v);
+		}
+
+		inline void set(const DigraphVertex& v, const T& t) {
+			mLookup->setv(v, t);
+		}
+
+		inline void remove(const T& t) {
+			mLookup->remove(t);
+		}
+
+		inline void remove(const DigraphVertex& v) {
+			mLookup->remove(v);
+		}
+
+		inline void clear() {
+			mLookup->clear();
+		}
+
+		inline bool tryFind(const T& t, DigraphVertex* out) {
+			return mLookup->tryFind(t, out);
+		}
+
+		inline bool tryFind(const DigraphVertex& v, T* out) {
+			return mLookup->tryFind(v, out);
+		}
+
+		friend class Digraph;
+	};
+
+	template <typename T>
+	struct DigraphTwoWayEdgeLookupView {
+	private:
+		DigraphTwoWayLookup<T>* mLookup;
+
+	public:
+		inline DigraphTwoWayEdgeLookupView(DigraphTwoWayLookup<T>* lookup) : mLookup(lookup) { }
+		inline DigraphTwoWayEdgeLookupView() : mLookup(nullptr) { }
+
+		inline std::string name() {
+			return mLookup->mName;
+		}
+
+		inline DigraphEdge operator[](const T& t) {
+			return mLookup->mParent->getVertex(mLookup->mTtoId[t]);
+		}
+
+		inline T operator[](const DigraphEdge& v) {
+			return mLookup->get(v);
+		}
+
+		inline void set(const DigraphEdge& v, const T& t) {
+			mLookup->setv(v, t);
+		}
+
+		inline void remove(const T& t) {
+			mLookup->remove(t);
+		}
+
+		inline void remove(const DigraphEdge& v) {
+			mLookup->remove(v);
+		}
+
+		inline void clear() {
+			mLookup->clear();
+		}
+
+		inline bool tryFind(const T& t, DigraphEdge* out) {
+			return mLookup->tryFind(t, out);
+		}
+
+		inline bool tryFind(const DigraphEdge& v, T* out) {
+			return mLookup->tryFind(v, out);
+		}
+
+		friend class Digraph;
 	};
 
 	template <typename T>
@@ -1141,7 +1378,7 @@ namespace Morpheus {
 	}
 
 	template <typename T>
-	void Digraph::destroyData(DigraphDataView<T>& view) {
+	void Digraph::destroyData(DigraphDataView<T> view) {
 		switch (view.type()) {
 		case DigraphDataType::VERTEX:
 			mVertexDatas.erase(view.name());
@@ -1154,7 +1391,7 @@ namespace Morpheus {
 	}
 
 	template <typename T>
-	void Digraph::destroyData(DigraphSparseDataView<T>& view) {
+	void Digraph::destroyData(DigraphSparseDataView<T> view) {
 		switch (view.type()) {
 		case DigraphDataType::VERTEX:
 			mVertexDatas.erase(view.name());
@@ -1167,14 +1404,29 @@ namespace Morpheus {
 	}
 
 	template <typename T>
-	void Digraph::destroyLookup(DigraphVertexLookupView<T>& view) {
+	void Digraph::destroyLookup(DigraphVertexLookupView<T> view) {
 		mVertexLookups.erase(view.name());
+		delete view.mLookup;
 	}
 
 	template <typename T>
-	void Digraph::destroyLookup(DigraphEdgeLookupView<T>& view) {
+	void Digraph::destroyLookup(DigraphEdgeLookupView<T> view) {
 		mEdgeLookups.erase(view.name());
+		delete view.mLookup;
 	}
+
+	template <typename T>
+	void Digraph::destroyLookup(DigraphTwoWayEdgeLookupView<T> view) {
+		mEdgeLookups.erase(view.name());
+		delete view.mLookup;
+	}
+
+	template <typename T>
+	void Digraph::destroyLookup(DigraphTwoWayVertexLookupView<T> view) {
+		mVertexLookups.erase(view.name());
+		delete view.mLookup;
+	}
+
 
 	template <typename T>
 	inline T& DigraphVertex::data(const std::string& s) {
@@ -1232,6 +1484,38 @@ namespace Morpheus {
 		++mLookupsCreated;
 		return DigraphEdgeLookupView<T>(lookup);
 	}
+
+	template <typename T>
+	DigraphTwoWayEdgeLookupView<T> Digraph::createTwoWayEdgeLookup(const std::string& name) {
+		auto lookup = new DigraphTwoWayLookup<T>(this, DigraphLookupType::EDGE, name);
+		mEdgeLookups[name] = lookup;
+		++mLookupsCreated;
+		return DigraphTwoWayEdgeLookupView<T>(lookup);
+	}
+	template <typename T>
+	DigraphTwoWayVertexLookupView<T> Digraph::createTwoWayVertexLookup(const std::string& name) {
+		auto lookup = new DigraphTwoWayLookup<T>(this, DigraphLookupType::VERTEX, name);
+		mVertexLookups[name] = lookup;
+		++mLookupsCreated;
+		return DigraphTwoWayVertexLookupView<T>(lookup);
+	}
+	template <typename T>
+	DigraphTwoWayEdgeLookupView<T> Digraph::createTwoWayEdgeLookup() {
+		std::stringstream s;
+		s << "__unamed__";
+		s << mLookupsCreated;
+		s << "__";
+		return createTwoWayEdgeLookup<T>(s.str());
+	}
+	template <typename T>
+	DigraphTwoWayVertexLookupView<T> Digraph::createTwoWayVertexLookup() {
+		std::stringstream s;
+		s << "__unamed__";
+		s << mLookupsCreated;
+		s << "__";
+		return createTwoWayEdgeLookup<T>(s.str());
+	}
+
 
 	template <typename T>
 	DigraphVertexLookupView<T> Digraph::createVertexLookup() {
