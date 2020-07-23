@@ -15,8 +15,8 @@
 #include <iostream>
 #include <Eigen/Sparse>
 
-#include <Spectra/MatOp/SparseGenMatProd.h>
-#include <Spectra/SymEigsSolver.h>
+#include <Spectra/MatOp/SparseSymShiftSolve.h>
+#include <Spectra/SymEigsShiftSolver.h>
 
 using namespace Morpheus;
 using namespace glm;
@@ -30,12 +30,13 @@ Eigen::SparseMatrix<double> lap;
 Eigen::MatrixXd modes;
 
 void computeModes() {
-	SparseGenMatProd<double> lapOp(lap);
+	SparseSymShiftSolve<double> lapOp(lap);
 
 	auto numModes = std::min<uint32_t>(modeCount, lap.rows() - 2);
 
-	SymEigsSolver<double, SMALLEST_MAGN,
-		SparseGenMatProd<double>> eigs(&lapOp, numModes+1, std::min<uint32_t>(7 * (numModes + 1), lap.rows()));
+	SymEigsShiftSolver<double, LARGEST_MAGN,
+		SparseSymShiftSolve<double>> eigs(&lapOp, numModes+1, std::min<uint32_t>(2 * (numModes + 1), lap.rows()), 0.0001);
+
 	eigs.init();
 	eigs.compute();
 	if (eigs.info() == SUCCESSFUL)

@@ -9,6 +9,11 @@ namespace Morpheus {
 	LookAtCameraController::LookAtCameraController(double distance) : bM1Captured(false), bM2Captured(false),
 		mMoveMode(CameraMoveMode::NONE), mCamera(nullptr) {
 		reset(distance);
+
+		mInputToMode[CameraControllerMouseInput::NONE] = CameraMoveMode::NONE;
+		mInputToMode[CameraControllerMouseInput::LEFT_MOUSE] = CameraMoveMode::ROTATE;
+		mInputToMode[CameraControllerMouseInput::RIGHT_MOUSE] = CameraMoveMode::PAN;
+		mInputToMode[CameraControllerMouseInput::LEFT_RIGHT_MOUSE] = CameraMoveMode::ZOOM;
 	}
 
 	void LookAtCameraController::reset(double distance) {
@@ -21,7 +26,7 @@ namespace Morpheus {
 		mPhiSpeed = 0.007;
 		mDollySpeed = distance * 0.002;
 		mPanSpeed = distance * 0.002;
-		mZoomSpeed = 0.04;
+		mZoomSpeed = 0.005;
 		if (mCamera)
 			applyTo(mCamera);
 	}
@@ -84,6 +89,35 @@ namespace Morpheus {
 
 	}
 
+	void LookAtCameraController::beginZoom(GLFWwindow* window) {
+		glfwGetCursorPos(window, &mLastPosX, &mLastPosY);
+		bIgnoreMoveEvent = true;
+	}
+
+	void LookAtCameraController::endZoom(GLFWwindow* window) {
+
+	}
+
+	CameraControllerMouseInput LookAtCameraController::getCurrentInput()
+	{
+		if (bM1Captured) {
+			if (bM2Captured) {
+				return CameraControllerMouseInput::LEFT_RIGHT_MOUSE;
+			}
+			else {
+				return CameraControllerMouseInput::LEFT_MOUSE;
+			}
+		}
+		else {
+			if (bM2Captured) {
+				return CameraControllerMouseInput::RIGHT_MOUSE;
+			}
+			else {
+				return CameraControllerMouseInput::NONE;
+			}
+		}
+	}
+
 	void LookAtCameraController::doPan(double dx, double dy) {
 		mLookAt += mPanX * (float)dx * (float)mPanSpeed;
 		mLookAt -= mPanY * (float)dy * (float)mPanSpeed;
@@ -116,14 +150,7 @@ namespace Morpheus {
 	void LookAtCameraController::onInputStateChanged(GLFWwindow* window) {
 		CameraMoveMode newMode = CameraMoveMode::NONE;
 
-		if (bM1Captured && !bM2Captured)
-			newMode = CameraMoveMode::ROTATE;
-		else if (bM2Captured && !bM1Captured)
-			newMode = CameraMoveMode::PAN;
-		else if (bM1Captured && bM2Captured)
-			newMode = CameraMoveMode::DOLLY;
-		else
-			newMode = CameraMoveMode::NONE;
+		newMode = mInputToMode[getCurrentInput()];
 
 		if (newMode != mMoveMode) {
 			switch (mMoveMode) {
@@ -136,6 +163,9 @@ namespace Morpheus {
 			case CameraMoveMode::DOLLY:
 				endDolly(window);
 				break;
+			case CameraMoveMode::ZOOM:
+				endZoom(window);
+				break;
 			}
 
 			switch (newMode) {
@@ -147,6 +177,9 @@ namespace Morpheus {
 				break;
 			case CameraMoveMode::DOLLY:
 				beginDolly(window);
+				break;
+			case CameraMoveMode::ZOOM:
+				beginZoom(window);
 				break;
 			}
 		}
@@ -210,6 +243,9 @@ namespace Morpheus {
 						case CameraMoveMode::DOLLY:
 							doDolly(dx, dy);
 							break;
+						case CameraMoveMode::ZOOM:
+							doZoom(dx, dy);
+							break;
 						case CameraMoveMode::PAN:
 							doPan(dx, dy);
 							break;
@@ -230,9 +266,6 @@ namespace Morpheus {
 		};
 
 		mScrollHandler = [this](GLFWwindow* window, double dx, double dy) {
-			if (bEnabled)
-				doZoom(dx, dy);
-
 			return false;
 		};
 

@@ -13,7 +13,15 @@ namespace Morpheus {
 		NONE,
 		ROTATE,
 		PAN,
-		DOLLY
+		DOLLY,
+		ZOOM
+	};
+
+	enum class CameraControllerMouseInput {
+		NONE,
+		LEFT_MOUSE,
+		RIGHT_MOUSE,
+		LEFT_RIGHT_MOUSE
 	};
 
 	class LookAtCameraController : public ILogic {
@@ -24,6 +32,7 @@ namespace Morpheus {
 		f_cursor_pos_capture_t mCursorPosHandler;
 		f_scroll_capture_t mScrollHandler;
 		CameraMoveMode mMoveMode;
+		std::map<CameraControllerMouseInput, CameraMoveMode> mInputToMode;
 
 		double mLastPosX;
 		double mLastPosY;
@@ -44,6 +53,7 @@ namespace Morpheus {
 		double mPanSpeed;
 		bool bIgnoreMoveEvent;
 
+		CameraControllerMouseInput getCurrentInput();
 		void doPan(double dx, double dy);
 		void doDolly(double dx, double dy);
 		void doRotate(double dx, double dy);
@@ -54,6 +64,8 @@ namespace Morpheus {
 		void endDolly(GLFWwindow*);
 		void beginRotate(GLFWwindow*);
 		void endRotate(GLFWwindow*);
+		void beginZoom(GLFWwindow*);
+		void endZoom(GLFWwindow*);
 		void onInputStateChanged(GLFWwindow*);
 
 		vec3 getLookDirection() const;
