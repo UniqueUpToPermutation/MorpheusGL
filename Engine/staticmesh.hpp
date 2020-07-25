@@ -7,10 +7,11 @@
 namespace Morpheus {
 	class StaticMesh  {
 	public:
-		static ref<Geometry> getGeometry(Node& meshNode);
-		static Node getGeometryNode(Node& meshNode);
-		static ref<Material> getMaterial(Node& meshNode);
-		static Node getMaterialNode(Node& meshNode);
+		static ref<Geometry> getGeometry(Node meshNode);
+		static Node getGeometryNode(Node meshNode);
+		static ref<Material> getMaterial(Node meshNode);
+		static Node getMaterialNode(Node meshNode);
+		static void getParts(Node meshNode, ref<Geometry>* geo_out, ref<Material>* mat_out);
 	};
 	SET_NODE_ENUM(StaticMesh, STATIC_MESH);
 

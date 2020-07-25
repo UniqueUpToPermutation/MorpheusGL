@@ -10,7 +10,7 @@ namespace Morpheus {
 	Updater::Updater() : mLastTick(0.0), bFirstTick(true) {
 	}
 
-	void Updater::init(Node& node)
+	void Updater::init(Node node)
 	{
 		mHandle = graph()->issueHandle(node);
 		restartClock();

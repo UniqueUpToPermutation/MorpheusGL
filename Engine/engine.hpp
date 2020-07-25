@@ -198,7 +198,7 @@ namespace Morpheus {
 	class IRenderer : public IDisposable, public IInitializable {
 	public:
 		virtual void postGlfwRequests() = 0;
-		virtual void draw(Node& scene) = 0;
+		virtual void draw(Node scene) = 0;
 		virtual NodeHandle handle() const = 0;
 		virtual RendererType getType() const = 0;
 		inline Node node() const { return (*graph())[handle()]; }

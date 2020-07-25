@@ -12,7 +12,7 @@ namespace Morpheus {
 	public:
 		Updater();
 
-		void init(Node& node) override;
+		void init(Node node) override;
 
 		void restartClock();
 		void updateChildren();

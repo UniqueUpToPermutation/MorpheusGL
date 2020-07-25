@@ -88,7 +88,7 @@ namespace Morpheus {
 		void setEnabled(const bool value) override;
 		void update(const double dt) override;
 		void applyTo(Camera* camera);
-		void init(Node& node) override;
+		void init(Node node) override;
 		void dispose() override;
 	};
 	SET_BASE_TYPE(LookAtCameraController, ILogic);

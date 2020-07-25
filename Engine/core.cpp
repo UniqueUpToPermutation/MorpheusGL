@@ -117,8 +117,6 @@ namespace Morpheus {
 			T_CASE(BOUNDING_BOX);
 			T_CASE(STATIC_OBJECT_MANAGER);
 			T_CASE(DYNAMIC_OBJECT_MANAGER);
-			T_CASE(MATERIAL_PROXY);
-			T_CASE(GEOMETRY_PROXY);
 			T_CASE(NANOGUI_SCREEN);
 			T_CASE(SCENE_END);
 			T_CASE(CONTENT_BEGIN);
@@ -234,7 +232,7 @@ namespace Morpheus {
 		// Initialize all children
 		for (auto it = node.children(); it.valid(); it.next()) {
 			auto child = it();
-			init(child);
+			init(child, graph, updater);
 		}
 
 		// Initialize node after all its children have been initialized

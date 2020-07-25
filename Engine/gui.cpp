@@ -5,7 +5,7 @@
 
 namespace Morpheus {
 
-	void GuiBase::init(Node& node)
+	void GuiBase::init(Node node)
 	{
 		auto input_ = input();
 		auto engine_ = engine();

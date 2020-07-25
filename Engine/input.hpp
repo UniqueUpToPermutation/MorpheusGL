@@ -2,6 +2,8 @@
 
 #include <functional>
 #include <set>
+#include <vector>
+#include <unordered_map>
 
 struct GLFWwindow;
 

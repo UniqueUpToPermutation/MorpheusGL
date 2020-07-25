@@ -149,6 +149,25 @@ namespace Morpheus {
 		/// </summary>
 		/// <param name="v">The tail of the new edge.</param>
 		inline void addParent(const DigraphVertex& v);
+
+		/// <summary>
+		/// Gets the i-th child of a node. Note that children are stored
+		/// in a linked list format, so this is not a good way to retrieve
+		/// children if the number of children is large.
+		/// </summary>
+		/// <param name="i">The index of the child.</param>
+		/// <returns>The i-th child.</returns>
+		inline DigraphVertex getChild(const uint32_t i);
+
+		/// <summary>
+		/// Gets the i-th parent of a node. Note that the parents are stored
+		/// in a linked list format, so this is not a good way to retrieve
+		/// parents if the number of parents is large.
+		/// </summary>
+		/// <param name="i">The index of the parent.</param>
+		/// <returns>The i-th parent.</returns>
+		inline DigraphVertex getParent(const uint32_t i);
+
 		/// <summary>
 		/// Query data associated with this vertex by name.
 		/// </summary>
@@ -1467,6 +1486,18 @@ namespace Morpheus {
 
 	inline void DigraphVertex::addParent(const DigraphVertex& v) {
 		mPtr->createEdge(v, *this);
+	}
+
+	inline DigraphVertex DigraphVertex::getChild(const uint32_t i) {
+		auto it = children();
+		for (uint32_t current = 0; it.valid() && current < i; it.next(), ++current);
+		return it();
+	}
+
+	inline DigraphVertex DigraphVertex::getParent(const uint32_t i) {
+		auto it = parents();
+		for (uint32_t current = 0; it.valid() && current < i; it.next(), ++current);
+		return it();
 	}
 
 	template <typename T>

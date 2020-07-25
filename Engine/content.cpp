@@ -8,7 +8,7 @@
 
 namespace Morpheus {
 
-	void ContentManager::init(Node& node) {
+	void ContentManager::init(Node node) {
 		// Make shader factory
 		addFactory<Shader>();
 		// Make geometry factory

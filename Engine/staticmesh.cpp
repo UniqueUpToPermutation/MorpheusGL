@@ -7,59 +7,41 @@
 using namespace std;
 using namespace nlohmann;
 
-namespace Morpheus {
-	ref<Geometry> StaticMesh::getGeometry(Node& meshNode) {
-		Node material = StaticMesh::getMaterialNode(meshNode);
-		auto& graph_ = *graph();
-		auto it = material.children();
-		NodeData* desc = nullptr;
-		for (; it.valid(); it.next()) {
-			desc = graph_.desc(it());
-			if (graph_.desc(it())->type == NodeType::GEOMETRY_PROXY)
-				break;
-		}
-		if (it.valid())
-			return desc->owner.reinterpretGet<Geometry>();
-		else
-			return ref<Geometry>(nullptr);
-	}
-	Node StaticMesh::getGeometryNode(Node& meshNode) {
-		Node material = StaticMesh::getMaterialNode(meshNode);
-		auto& graph_ = *graph();
-		auto it = material.children();
-		for (; it.valid(); it.next())
-			if (graph_.desc(it())->type == NodeType::GEOMETRY_PROXY)
-				break;
-		if (it.valid())
-			return it();
-		else
-			return Node::invalid();
-	}
-	ref<Material> StaticMesh::getMaterial(Node& meshNode) {
-		auto& graph_ = *graph();
-		auto it = meshNode.children();
-		NodeData* desc = nullptr;
-		for (; it.valid(); it.next()) {
-			desc = graph_.desc(it());
-			if (desc->type == NodeType::MATERIAL_PROXY)
-				break;
-		}
+#define GEOMETRY_PART_INDEX 1
+#define MATERIAL_PART_INDEX 0
 
-		if (it.valid())
-			return desc->owner.reinterpretGet<Material>();
-		else
-			return ref<Material>(nullptr);
+namespace Morpheus {
+	ref<Geometry> StaticMesh::getGeometry(Node meshNode) {
+		auto desc_ = desc(getGeometryNode(meshNode));
+		assert(desc_->type == NodeType::MATERIAL);
+		return desc_->owner.reinterpret<Geometry>();
 	}
-	Node StaticMesh::getMaterialNode(Node& meshNode) {
-		auto& graph_ = *graph();
+	Node StaticMesh::getGeometryNode(Node meshNode) {
+		auto n = meshNode.getChild(GEOMETRY_PART_INDEX);
+		assert(n.valid());
+		return n;
+	}
+	ref<Material> StaticMesh::getMaterial(Node meshNode) {
+		auto desc_ = desc(getMaterialNode(meshNode));
+		assert(desc_->type == NodeType::MATERIAL);
+		return desc_->owner.reinterpret<Material>();
+	}
+	Node StaticMesh::getMaterialNode(Node meshNode) {
+		auto n = meshNode.getChild(MATERIAL_PART_INDEX);
+		assert(n.valid());
+		return n;
+	}
+	void StaticMesh::getParts(Node meshNode, ref<Geometry>* geo_out, ref<Material>* mat_out) {
 		auto it = meshNode.children();
-		for (; it.valid(); it.next())
-			if (graph_.desc(it())->type == NodeType::MATERIAL_PROXY)
-				break;
-		if (it.valid())
-			return it();
-		else
-			return Node::invalid();
+		assert(it.valid());
+		auto desc_ = desc(it());
+		assert(desc_->type == NodeType::MATERIAL);
+		*mat_out = desc_->owner.reinterpret<Material>();
+		it.next();
+		assert(it.valid());
+		desc_ = desc(it());
+		assert(desc_->type == NodeType::GEOMETRY);
+		*geo_out = desc_->owner.reinterpret<Geometry>();
 	}
 
 	ref<void> ContentFactory<StaticMesh>::load(const std::string& source, Node& loadInto) {
@@ -117,13 +99,9 @@ namespace Morpheus {
 
 		Node staticMeshNode = graph()->addNode(mesh);
 
-		// Create proxies for geometry and material
-		Node materialProxy = graph()->makeContentProxy(material);
-		Node geometryProxy = graph()->makeContentProxy(geometry);
-
 		// Add those proxies as children to the static mesh
-		graph()->createEdge(staticMeshNode, materialProxy);
-		graph()->createEdge(materialProxy, geometryProxy);
+		graph()->createEdge(staticMeshNode, geometry);
+		graph()->createEdge(staticMeshNode, material);
 
 		content()->addContentNode(staticMeshNode, source);
 		return staticMeshNode;

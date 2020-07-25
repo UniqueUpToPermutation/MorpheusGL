@@ -166,6 +166,10 @@ namespace Morpheus {
 		return ref<Geometry>(geo);
 	}
 
+	ref<Geometry> ContentFactory<Geometry>::makeGeometryUnmanaged(const HalfEdgeGeometry* geo) const {
+		return makeGeometryUnmanaged(geo, HalfEdgeAttributes::defaults());
+	}
+
 	ref<Geometry> ContentFactory<Geometry>::makeGeometryUnmanaged(const HalfEdgeGeometry* geo,
 		const HalfEdgeAttributes& attrib) const {
 		uint32_t current_off = 0;
@@ -405,24 +409,12 @@ namespace Morpheus {
 	Node ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
 		const std::string& source,
 		ref<Geometry>* refOut) const {
-		HalfEdgeAttributes attrib;
-		attrib.mPositionAttribute = 0;
-		attrib.mUVAttribute = 1;
-		attrib.mNormalAttribute = 2;
-		attrib.mTangentAttribute = 3;
-		attrib.mColorAttribute = 4;
-		return makeGeometry(geo, attrib, source, refOut);
+		return makeGeometry(geo, HalfEdgeAttributes::defaults(), source, refOut);
 	}
 
 	Node ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
 		ref<Geometry>* refOut) const {
-		HalfEdgeAttributes attrib;
-		attrib.mPositionAttribute = 0;
-		attrib.mUVAttribute = 1;
-		attrib.mNormalAttribute = 2;
-		attrib.mTangentAttribute = 3;
-		attrib.mColorAttribute = 4;
-		return makeGeometry(geo, attrib, "", refOut);
+		return makeGeometry(geo, HalfEdgeAttributes::defaults(), "", refOut);
 	}
 
 	Node ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
@@ -444,5 +436,16 @@ namespace Morpheus {
 			content()->addContentNode(node);
 
 		return node;
+	}
+
+	HalfEdgeAttributes HalfEdgeAttributes::defaults()
+	{
+		HalfEdgeAttributes attrib;
+		attrib.mPositionAttribute = 0;
+		attrib.mUVAttribute = 1;
+		attrib.mNormalAttribute = 2;
+		attrib.mTangentAttribute = 3;
+		attrib.mColorAttribute = 4;
+		return attrib;
 	}
 }

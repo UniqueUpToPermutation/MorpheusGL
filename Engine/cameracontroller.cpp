@@ -192,7 +192,7 @@ namespace Morpheus {
 		mMoveMode = newMode;
 	}
 
-	void LookAtCameraController::init(Node& node) {
+	void LookAtCameraController::init(Node node) {
 		auto parentDesc = desc(node.parents()());
 		assert(parentDesc->type == NodeType::CAMERA);
 		mCamera = parentDesc->owner.reinterpretGet<Camera>();

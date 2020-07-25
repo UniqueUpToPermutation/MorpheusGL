@@ -117,10 +117,48 @@ namespace Morpheus {
         output->setFromTriplets(nzEntries.begin(), nzEntries.end());
     }
 
+    void makeInteriorSelector(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output) {
+        auto interior = geo.interiorArray();
+
+        std::vector<Eigen::Triplet<double>> nzEntries;
+        nzEntries.reserve(interior.size());
+        uint32_t indx = 0;
+        for (auto v : interior) {
+            nzEntries.push_back(Eigen::Triplet<double>(indx, v, 1.0));
+            ++indx;
+        }
+        output->resize(interior.size(), geo.vertexCount());
+        output->setFromTriplets(nzEntries.begin(), nzEntries.end());
+    }
+
+    void laplacianInteriorMinor(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output) {
+        Eigen::SparseMatrix<double> selector;
+        laplacianInteriorMinor(geo, output, &selector);
+    }
+
+    void laplacianInteriorMinor(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output, Eigen::SparseMatrix<double>* interiorSelector) {
+        makeInteriorSelector(geo, interiorSelector);
+        laplacian(geo, output);
+        Eigen::SparseMatrix<double> selectorTranspose = interiorSelector->transpose();
+        *output = (*interiorSelector) * (*output) * (selectorTranspose);
+    }
+
     void laplacianPositiveDefinite(const HalfEdgeGeometry& geo, SparseMatrix<double>* output) {
         std::vector<Eigen::Triplet<double>> nzEntries;
         enumLaplacianPositiveDefinite(geo, &nzEntries);
         output->resize(geo.vertexCount(), geo.vertexCount());
         output->setFromTriplets(nzEntries.begin(), nzEntries.end());
+    }
+
+    void laplacianInteriorMinorPositiveDefinite(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output) {
+        Eigen::SparseMatrix<double> selector;
+        laplacianInteriorMinorPositiveDefinite(geo, output, &selector);
+    }
+
+    void laplacianInteriorMinorPositiveDefinite(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output, Eigen::SparseMatrix<double>* interiorSelector) {
+        makeInteriorSelector(geo, interiorSelector);
+        laplacianPositiveDefinite(geo, output);
+        Eigen::SparseMatrix<double> selectorTranspose = interiorSelector->transpose();
+        *output = (*interiorSelector) * (*output) * (selectorTranspose);
     }
 }

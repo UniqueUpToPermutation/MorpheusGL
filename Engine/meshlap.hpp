@@ -21,7 +21,12 @@ namespace Morpheus {
     void massVector(const HalfEdgeGeometry& geo, Eigen::VectorXd* output);
     void massMatrix(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output);
     void laplacian(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output);
+    void makeInteriorSelector(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output);
+    void laplacianInteriorMinor(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output);
+    void laplacianInteriorMinor(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output, Eigen::SparseMatrix<double>* interiorSelector);
     void laplacianPositiveDefinite(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output);
+    void laplacianInteriorMinorPositiveDefinite(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output);
+    void laplacianInteriorMinorPositiveDefinite(const HalfEdgeGeometry& geo, Eigen::SparseMatrix<double>* output, Eigen::SparseMatrix<double>* interiorSelector);
 }
 
 #endif //OPERATORAUGMENTATION_MESHLAP_H

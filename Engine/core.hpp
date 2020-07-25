@@ -99,7 +99,7 @@ namespace Morpheus {
 	/// </summary>
 	class IInitializable {
 	public:
-		virtual void init(Node& node) = 0;
+		virtual void init(Node node) = 0;
 	};
 	
 	enum class RendererType {
@@ -131,8 +131,6 @@ namespace Morpheus {
 		BOUNDING_BOX,
 		STATIC_OBJECT_MANAGER,
 		DYNAMIC_OBJECT_MANAGER,
-		MATERIAL_PROXY,
-		GEOMETRY_PROXY,
 		NANOGUI_SCREEN,
 		SCENE_END,
 
@@ -216,9 +214,7 @@ namespace Morpheus {
 	SET_POOLED(STATIC_OBJECT_MANAGER, false);
 	SET_POOLED(DYNAMIC_OBJECT_MANAGER, false);
 	SET_POOLED(CAMERA, false);
-	SET_POOLED(MATERIAL_PROXY, false);
 	SET_POOLED(NANOGUI_SCREEN, false);
-	SET_POOLED(GEOMETRY_PROXY, false);
 	SET_POOLED(SCENE_ROOT, false);
 
 	SET_POOLED(CONTENT_MANAGER, false);
@@ -259,8 +255,6 @@ namespace Morpheus {
 	SET_RENDERABLE(CUBE_MAP, false);
 	SET_RENDERABLE(TEXTURE_2D_ARRAY, false);
 	SET_RENDERABLE(STATIC_MESH, true);
-	SET_RENDERABLE(GEOMETRY_PROXY, true);
-	SET_RENDERABLE(MATERIAL_PROXY, true);
 
 	// The content flag
 	SET_CONTENT(HALF_EDGE_GEOMETRY, true);
@@ -274,8 +268,6 @@ namespace Morpheus {
 	SET_CONTENT(CUBE_MAP, true);
 	SET_CONTENT(TEXTURE_2D_ARRAY, true);
 	SET_CONTENT(STATIC_MESH, true);
-	SET_CONTENT(GEOMETRY_PROXY, true);
-	SET_CONTENT(MATERIAL_PROXY, true);
 
 	template <typename T, 
 		bool type_check=std::is_same<T, typename BASE_TYPE_<T>::RESULT>::value>
@@ -406,6 +398,10 @@ namespace Morpheus {
 		inline ref<T> reinterpret();
 		template <typename T>
 		inline T* reinterpretGet();
+		template <typename T>
+		inline ref(const ref<T>& other);
+		template <typename T>
+		inline T* getAs();
 	};
 
 	template <typename T, bool pooled>
@@ -526,8 +522,19 @@ namespace Morpheus {
 	}
 
 	template <typename T>
+	inline T* ref<void, true>::getAs() {
+		return dynamic_cast<T*>(REF_POOL_GATE_<T,
+			IS_POOLED_<NODE_ENUM(typename BASE_TYPE_<T>::RESULT)>::RESULT>::get(*this));
+	}
+
+	template <typename T>
 	inline T* ref<void, true>::reinterpretGet() {
 		return REF_POOL_GATE_<T, IS_POOLED_<NODE_ENUM(T)>::RESULT>::get(*this);
+	}
+
+	template <typename T>
+	inline ref<void, true>::ref(const ref<T>& other) {
+		other.mPoolGate.to(*this);
 	}
 
 	struct NodeData {
@@ -575,6 +582,9 @@ namespace Morpheus {
 		}
 		inline NodeData* desc(const Node& v) {
 			return &(mDescs[v]);
+		}
+		inline NodeData* desc(const std::string& s) {
+			return &(mDescs[mNames[s]]);
 		}
 		inline NodeHandleLookupView handles() const {
 			return mHandles;
@@ -689,7 +699,7 @@ namespace Morpheus {
 			auto& desc = mDescs[base];
 			NodeType instanceType = NodeMetadata::getProxyType(desc.type);
 			assert(instanceType != desc.type);
-			return addNode(desc.owner, instanceType);
+			return addNode(ref<void>(nullptr), instanceType);
 		}
 
 		/// <summary>
@@ -821,9 +831,6 @@ namespace Morpheus {
 	SET_NODE_ENUM(char, EMPTY);
 	SET_NODE_ENUM(Transform, TRANSFORM);
 	SET_NODE_ENUM(IRenderer, RENDERER);
-
-	DEF_PROXY(GEOMETRY_PROXY, GEOMETRY);
-	DEF_PROXY(MATERIAL_PROXY, MATERIAL);
 
 	template <typename T>
 	ref<T> duplicateRef(const ref<T>& a);

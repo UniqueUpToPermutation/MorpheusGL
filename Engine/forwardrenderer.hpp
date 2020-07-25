@@ -34,7 +34,6 @@ namespace Morpheus {
 		ForwardRenderQueue* mQueues;
 		std::stack<bool>* mIsStaticStack;
 		std::stack<ref<Transform>>* mTransformStack;
-		std::stack<ref<Material>>* mMaterialStack;
 		RenderInstanceType mCurrentRenderType;
 		Camera* mRenderCamera;
 	};
@@ -59,9 +58,9 @@ namespace Morpheus {
 	public:
 		NodeHandle handle() const override;
 		RendererType getType() const override;
-		void init(Node& node) override;
+		void init(Node node) override;
 		void postGlfwRequests() override;
-		void draw(Node& scene) override;
+		void draw(Node scene) override;
 		void dispose() override;
 
 		friend class Engine;

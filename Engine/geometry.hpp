@@ -64,6 +64,8 @@ namespace Morpheus {
 		GLint mNormalAttribute;
 		GLint mTangentAttribute;
 		GLint mColorAttribute;
+
+		static HalfEdgeAttributes defaults();
 	};
 
 	/// <summary>
@@ -87,6 +89,7 @@ namespace Morpheus {
 			BoundingBox aabb) const;
 		ref<Geometry> makeGeometryUnmanaged(const HalfEdgeGeometry* geo,
 			const HalfEdgeAttributes& attrib) const;
+		ref<Geometry> makeGeometryUnmanaged(const HalfEdgeGeometry* geo) const;
 
 		Node makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
 			GLenum elementType, GLsizei elementCount, GLenum indexType,

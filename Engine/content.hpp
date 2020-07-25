@@ -60,7 +60,7 @@ namespace Morpheus {
 		DigraphTwoWayVertexLookupView<std::string> mSources;
 
 	public:
-		void init(Node& node) override;
+		void init(Node node) override;
 
 		/// <summary>
 		/// The handle of this content manager in the scene graph.

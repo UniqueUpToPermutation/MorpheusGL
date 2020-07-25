@@ -24,7 +24,7 @@ namespace Morpheus {
 	public:
 		inline nanogui::Screen* screen() { return mScreen; }
 
-		void init(Node& node) override;
+		void init(Node node) override;
 		void dispose() override;
 	};
 	SET_NODE_ENUM(GuiBase, NANOGUI_SCREEN);

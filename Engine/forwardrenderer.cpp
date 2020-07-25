@@ -3,6 +3,7 @@
 #include "gui.hpp"
 #include "camera.hpp"
 #include "scene.hpp"
+#include "staticmesh.hpp"
 
 #include <stack>
 #include <iostream>
@@ -28,17 +29,17 @@ namespace Morpheus {
 
 	void ForwardRenderer::collectRecursive(Node& current, ForwardRenderCollectParams& params) {
 
-		auto& desc = mNodeDataView[current];
+		auto desc = &mNodeDataView[current];
 
 		// Ignore anything that is not a scene child.
-		if (!NodeMetadata::isRenderable(desc.type))
+		if (!NodeMetadata::isRenderable(desc->type))
 			return;
 
 		// Visiting a node on the way down
-		switch (desc.type) {
+		switch (desc->type) {
 		case NodeType::SCENE_ROOT:
 		{
-			auto scene = getOwner<Scene>(desc);
+			auto scene = getOwner<Scene>(*desc);
 
 			// Set the active camera
 			if (!params.mRenderCamera)
@@ -47,7 +48,7 @@ namespace Morpheus {
 		}
 		case NodeType::TRANSFORM:
 		{
-			auto newTransform = desc.owner.reinterpret<Transform>();
+			auto newTransform = desc->owner.reinterpret<Transform>();
 			// Is this transform is static, then it has already been cached
 			// Otherwise, cache (evaluate and save) this transform using the
 			// last transform on the stack
@@ -62,44 +63,23 @@ namespace Morpheus {
 		}
 		case NodeType::STATIC_MESH:
 		{
-			params.mCurrentRenderType = RenderInstanceType::STATIC_MESH;
-			break;
-		}
-		case NodeType::MATERIAL_PROXY:
-		{
-			// Found a material
-			params.mMaterialStack->push(getOwner<Material>(desc));
-			break;
-		}
-		case NodeType::GEOMETRY_PROXY:
-		{
-			// Found some geometry
-			auto geo = getOwner<Geometry>(desc);
-			switch (params.mCurrentRenderType) {
-			case RenderInstanceType::STATIC_MESH:
-				{
-					// Push this static mesh onto the queue
-					StaticMeshRenderInstance inst;
-					inst.mGeometry = geo;
-					inst.mMaterial = params.mMaterialStack->top();
-					inst.mTransform = params.mTransformStack->top();
-					params.mQueues->mStaticMeshes.push(inst);
-					break;
-				}
-			}
+			StaticMeshRenderInstance inst;
+			inst.mTransform = params.mTransformStack->top();
+			StaticMesh::getParts(current, &inst.mGeometry, &inst.mMaterial);
+			params.mQueues->mStaticMeshes.push(inst);
 			break;
 		}
 		case NodeType::NANOGUI_SCREEN:
 		{
 			// Found a GUI
-			params.mQueues->mGuis.push(getOwner<GuiBase>(desc));
+			params.mQueues->mGuis.push(getOwner<GuiBase>(*desc));
 			break;
 		}
 		case NodeType::CAMERA:
 		{
 			// Found a camera
 			if (!params.mRenderCamera)
-				params.mRenderCamera = getOwner<Camera>(desc);
+				params.mRenderCamera = getOwner<Camera>(*desc);
 			break;
 		}
 		}
@@ -111,14 +91,10 @@ namespace Morpheus {
 		}
 
 		// Visiting a node on the way up
-		switch (desc.type) {
+		switch (desc->type) {
 		case NodeType::TRANSFORM:
 			// Pop the transformation from the stack
 			params.mTransformStack->pop();
-			break;
-		case NodeType::MATERIAL:
-			// Pop the material from the stack
-			params.mMaterialStack->pop();
 			break;
 		}
 	}
@@ -130,7 +106,6 @@ namespace Morpheus {
 
 		params.mQueues = &mQueues;
 		params.mTransformStack = &mTransformStack;
-		params.mMaterialStack = &mMaterialStack;
 		params.mIsStaticStack = &mIsStaticStack;
 		params.mRenderCamera = nullptr;
 
@@ -210,7 +185,7 @@ namespace Morpheus {
 		}
 	}
 
-	void ForwardRenderer::draw(Node& scene) {
+	void ForwardRenderer::draw(Node scene) {
 		ForwardRenderCollectParams collectParams;
 		collectParams.mQueues = &mQueues;
 		collectParams.mIsStaticStack = &mIsStaticStack;
@@ -245,7 +220,7 @@ namespace Morpheus {
 		glfwWindowHint(GLFW_DEPTH_BITS, 24);
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	}
-	void ForwardRenderer::init(Node& n)
+	void ForwardRenderer::init(Node n)
 	{
 		// Set VSync on
 		glfwSwapInterval(1); 

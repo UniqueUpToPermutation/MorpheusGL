@@ -2,9 +2,7 @@
 
 #include "core.hpp"
 
-namespace Assimp {
-
-}
+#include <set>
 
 namespace Morpheus {
 	template <typename T>
@@ -293,6 +291,42 @@ namespace Morpheus {
 		explicit HalfEdgeGeometry() {}
 		explicit HalfEdgeGeometry(const HalfEdgeGeometry& geo);
 
+		inline std::set<uint32_t> interiorSet() const {
+			std::set<uint32_t> result;
+			for (auto it = constGetVertex(0); it.valid(); it = it.nextById()) {
+				if (!it.isBoundary())
+					result.emplace(it.id());
+			}
+			return result;
+		}
+
+		inline std::vector<uint32_t> interiorArray() const {
+			std::vector<uint32_t> result;
+			for (auto it = constGetVertex(0); it.valid(); it = it.nextById()) {
+				if (!it.isBoundary())
+					result.emplace_back(it.id());
+			}
+			return result;
+		}
+
+		inline std::set<uint32_t> boundarySet() const {
+			std::set<uint32_t> result;
+			for (auto it = constGetVertex(0); it.valid(); it = it.nextById()) {
+				if (it.isBoundary())
+					result.emplace(it.id());
+			}
+			return result;
+		}
+
+		inline std::vector<uint32_t> boundaryArray() const {
+			std::vector<uint32_t> result;
+			for (auto it = constGetVertex(0); it.valid(); it = it.nextById()) {
+				if (it.isBoundary())
+					result.emplace_back(it.id());
+			}
+			return result;
+		}
+
 		inline BoundingBox boundingBox() const {
 			return aabb;
 		}
@@ -493,8 +527,8 @@ namespace Morpheus {
 		return id_ >= 0 && id_ < (int)cgeo_->vertices.size();
 	}
 	inline bool Vertex::isBoundary() const {
-		for (auto it = faces(); it.valid(); it.next()) {
-			if (!it().valid())
+		for (auto it = outgoing(); it.valid(); it.next()) {
+			if (!it().face().valid())
 				return true;
 		}
 		return false;
