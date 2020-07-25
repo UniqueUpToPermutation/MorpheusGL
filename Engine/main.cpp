@@ -87,12 +87,12 @@ void updateGui() {
 }
 
 void updateCurrentMode() {
-	uint32_t mode_to_get = std::min<uint32_t>(std::max<uint32_t>(0, currentMode), modes.cols());
+	uint32_t mode_to_get = std::min<uint32_t>(std::max<uint32_t>(0, modes.cols() - currentMode - 1), modes.cols());
 
 	Eigen::VectorXd mode = lifter * modes.col(mode_to_get);
 
 	double maxVal = 0.0;
-	for (uint32_t i = 0; i < mode.cols(); ++i)
+	for (uint32_t i = 0; i < mode.size(); ++i)
 		maxVal = std::max<double>(maxVal, std::abs(mode(i)));
 
 	// Make adjustments to raw geometry
@@ -141,8 +141,8 @@ void computeModes() {
 
 	auto numModes = std::min<uint32_t>(requestedModeCount, lap.rows() - 3);
 
-	GenEigsRealShiftSolver<double, LARGEST_REAL,
-		SparseGenRealShiftSolve<double>> eigs(&lapOp, numModes+1, std::min<uint32_t>(2 * (numModes + 1), lap.rows()), 0.0001);
+	GenEigsRealShiftSolver<double, LARGEST_MAGN,
+		SparseGenRealShiftSolve<double>> eigs(&lapOp, numModes+1, std::min<uint32_t>(2 * (numModes + 1), lap.rows()), 0.01);
 
 	eigs.init();
 	eigs.compute();
@@ -181,9 +181,6 @@ void loadGeo(const string& source) {
 	laplacianInteriorMinor(*rawGeo.get(), &lap, &lifter);
 	lifter = lifter.transpose();
 
-	Eigen::MatrixXd d_lifter = lifter;
-	Eigen::MatrixXd d_lap = lap;
-	
 	// Load material node if necessary
 	Node matNode = content()->load<Material>("funcvizmaterial.json");
 
