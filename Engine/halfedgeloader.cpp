@@ -319,15 +319,12 @@ namespace Morpheus {
 		// Link up dummy edges
 		// NOTE Mesh cannot have a vertex adjacent to multiple holes!
 		for (auto edgeId : dummyEdges) {
-			auto& edge = geo->edges[edgeId];
-			int traverseEdgeId = edge.opposite;
-			assert(edge.opposite != -1);
-			auto& traverseEdge = geo->edges[traverseEdgeId];
+			auto traverseEdgeId = geo->edges[edgeId].opposite;
+			assert(traverseEdgeId != -1);
 
-			while (traverseEdge.face != -1) {
-				traverseEdgeId = traverseEdge.opposite;
+			while (geo->edges[traverseEdgeId].face != -1) {
 				traverseEdgeId = geo->edges[traverseEdgeId].next;
-				traverseEdge = geo->edges[traverseEdgeId];
+				traverseEdgeId = geo->edges[traverseEdgeId].opposite;
 			}
 
 			geo->edges[traverseEdgeId].next = edgeId;

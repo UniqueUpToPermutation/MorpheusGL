@@ -600,7 +600,10 @@ namespace Morpheus {
 	}
 	inline stype Face::area() const {
 		// Assumes the face is a triangle
-		return glm::length(glm::cross(edge().direction(), edge().next().direction())) / 2.0f;
+		if (id_ != -1)
+			return glm::length(glm::cross(edge().direction(), edge().next().direction())) / 2.0f;
+		else
+			return 0.0;
 	}
 	inline uint32_t Face::edgeCount() const {
 		uint32_t count = 0;

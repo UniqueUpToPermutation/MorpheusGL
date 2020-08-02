@@ -233,6 +233,9 @@
     <None Include="cube.obj">
       <Filter>Content</Filter>
     </None>
+    <None Include="boundary.obj">
+      <Filter>Content</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\nanogui\out\build\x64-Debug\nanogui.dll">
