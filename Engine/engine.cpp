@@ -70,7 +70,17 @@ namespace Morpheus {
 
 		glfwSetErrorCallback(error_callback);
 
-		mWindow = glfwCreateWindow(800, 600, "Morpheus", NULL, NULL);
+		int width = 800;
+		int height = 600;
+		std::string title = "Morpheus";
+		if (mConfig.contains("window")) {
+			auto& windowConfig = mConfig["window"];
+			if (windowConfig.contains("width")) windowConfig["width"].get_to(width);
+			if (windowConfig.contains("height")) windowConfig["height"].get_to(height);
+			if (windowConfig.contains("title")) windowConfig["title"].get_to(title);
+		}
+
+		mWindow = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
 		if (!mWindow)
 		{
 			Error err(ErrorCode::FAIL_GLFW_WINDOW_INIT);

@@ -4,8 +4,8 @@
     "v_minor": 3
   },
   "window": {
-    "default_width": 800,
-    "default_height": 600,
+    "width": 800,
+    "height": 600,
     "title": "Laplacian Viewer"
   },
   "renderer": {
