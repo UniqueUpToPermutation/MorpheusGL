@@ -21,9 +21,6 @@
     <Filter Include="Source Files\core">
       <UniqueIdentifier>{b04f2d26-41c1-4f03-b2c5-62846556e1fd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{fa663aaa-aadc-4d7e-915e-eedae3c40d94}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\renderer">
       <UniqueIdentifier>{60d44e6e-c4dd-49e2-9bb5-32a95a539498}</UniqueIdentifier>
     </Filter>
@@ -38,13 +35,6 @@
     </Filter>
     <Filter Include="Copy Files">
       <UniqueIdentifier>{20d9edef-7508-4c80-8197-5dedf27ca196}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content">
-      <UniqueIdentifier>{13bb7455-feab-4531-93ad-dbe3b9dd7885}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shaders\Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -161,9 +151,6 @@
     <ClCompile Include="updater.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="meshlap.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
@@ -185,62 +172,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="shaders\basic.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\basic.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\basic.json">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\cooktorrance.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\cooktorrance.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\cooktorrance.json">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="material.json">
-      <Filter>Content</Filter>
-    </None>
-    <None Include="staticmesh.json">
-      <Filter>Content</Filter>
-    </None>
-    <None Include="bunny.obj">
-      <Filter>Content</Filter>
-    </None>
-    <None Include="basicmat.json">
-      <Filter>Content</Filter>
-    </None>
-    <None Include="shaders\cooktorrance.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\funcviz.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\funcviz.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\funcviz.json">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="funcvizmaterial.json">
-      <Filter>Content</Filter>
-    </None>
-    <None Include="cube.obj">
-      <Filter>Content</Filter>
-    </None>
-    <None Include="boundary.obj">
-      <Filter>Content</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\nanogui\out\build\x64-Debug\nanogui.dll">
       <Filter>Copy Files</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="config.json" />
+    <CopyFileToFolders Include="..\nanogui\out\build\x64-Release\nanogui.dll">
+      <Filter>Copy Files</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

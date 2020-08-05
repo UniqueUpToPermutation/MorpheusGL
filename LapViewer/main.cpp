@@ -13,7 +13,11 @@
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
 #include <iostream>
-#include <Eigen/Sparse>
+
+#include <Eigen/Sparse> 
+#include <Eigen/Core>
+#include <Eigen/Eigen>
+#include <Eigen/Dense>
 
 #include <Spectra/GenEigsRealShiftSolver.h>
 #include <Spectra/MatOp/SparseGenRealShiftSolve.h>
@@ -87,7 +91,8 @@ void updateGui() {
 }
 
 void updateCurrentMode() {
-	uint32_t mode_to_get = std::min<uint32_t>(std::max<uint32_t>(0, modes.cols() - currentMode - 1), modes.cols());
+	uint32_t mode_to_get = std::min<uint32_t>(std::max<uint32_t>(0, 
+		static_cast<uint32_t>(modes.cols()) - currentMode - 1), static_cast<uint32_t>(modes.cols()));
 
 	Eigen::VectorXd mode = lifter * modes.col(mode_to_get);
 

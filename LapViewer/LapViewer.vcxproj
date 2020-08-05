@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -21,10 +21,9 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{26fc6ade-b792-4ee8-a2fc-c4b6c9dc09a7}</ProjectGuid>
-    <RootNamespace>Morpheus</RootNamespace>
+    <ProjectGuid>{f965a3b7-22b6-4dce-81d5-0d0ca8172802}</ProjectGuid>
+    <RootNamespace>LapViewer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Engine</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -41,13 +40,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -73,20 +72,18 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../glad/GL/include/;../nanogui/include;../nanogui/ext/eigen;../nanogui/ext/nanovg;../nanogui/ext/nanovg/src;$(IncludePath)</IncludePath>
-    <LibraryPath>../nanogui/out/build/x86-Debug/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;..\Engine;$(IncludePath)</IncludePath>
     <LibraryPath>..\nanogui\out\build\x64-Debug\;..\nanogui\out\build\x64-Debug\ext_build\glfw\src;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;..\Engine;$(IncludePath)</IncludePath>
     <LibraryPath>..\nanogui\out\build\x64-Release\;..\nanogui\out\build\x64-Release\ext_build\glfw\src;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -99,12 +96,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;nanogui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -128,7 +120,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;NANOGUI_USE_OPENGL;NANOGUI_GLAD;NANOGUI_SHARED;GLAD_GLAPI_EXPORT;GRAPHICS_DEBUG;_SILENCE_CXX17_ADAPTOR_TYPEDEFS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -154,67 +145,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="camera.hpp" />
-    <ClInclude Include="cameracontroller.hpp" />
-    <ClInclude Include="content.hpp" />
-    <ClInclude Include="core.hpp" />
-    <ClInclude Include="digraph.hpp" />
-    <ClInclude Include="dynamicmanager.hpp" />
-    <ClInclude Include="engine.hpp" />
-    <ClInclude Include="geometry.hpp" />
-    <ClInclude Include="gui.hpp" />
-    <ClInclude Include="halfedge.hpp" />
-    <ClInclude Include="halfedgeloader.hpp" />
-    <ClInclude Include="input.hpp" />
-    <ClInclude Include="json.hpp" />
-    <ClInclude Include="mapcpy.hpp" />
-    <ClInclude Include="material.hpp" />
-    <ClInclude Include="meshlap.hpp" />
-    <ClInclude Include="pool.hpp" />
-    <ClInclude Include="region.hpp" />
-    <ClInclude Include="forwardrenderer.hpp" />
-    <ClInclude Include="renderqueue.hpp" />
-    <ClInclude Include="scene.hpp" />
-    <ClInclude Include="shader.hpp" />
-    <ClInclude Include="staticmanager.hpp" />
-    <ClInclude Include="staticmesh.hpp" />
-    <ClInclude Include="updater.hpp" />
+    <ProjectReference Include="..\Engine\Morpheus.vcxproj">
+      <Project>{26fc6ade-b792-4ee8-a2fc-c4b6c9dc09a7}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="camera.cpp" />
-    <ClCompile Include="cameracontroller.cpp" />
-    <ClCompile Include="content.cpp" />
-    <ClCompile Include="core.cpp" />
-    <ClCompile Include="digraph.cpp" />
-    <ClCompile Include="engine.cpp" />
-    <ClCompile Include="geometry.cpp" />
-    <ClCompile Include="gui.cpp" />
-    <ClCompile Include="halfedge.cpp" />
-    <ClCompile Include="forwardrenderer.cpp" />
-    <ClCompile Include="halfedgeloader.cpp" />
-    <ClCompile Include="input.cpp" />
-    <ClCompile Include="material.cpp" />
-    <ClCompile Include="meshlap.cpp" />
-    <ClCompile Include="scene.cpp" />
-    <ClCompile Include="shader.cpp" />
-    <ClCompile Include="staticmesh.cpp" />
-    <ClCompile Include="updater.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\nanogui\out\build\x64-Debug\nanogui.dll">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</DeploymentContent>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</DeploymentContent>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\nanogui\out\build\x64-Release\nanogui.dll">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</DeploymentContent>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</DeploymentContent>
-    </CopyFileToFolders>
+    <None Include="config.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

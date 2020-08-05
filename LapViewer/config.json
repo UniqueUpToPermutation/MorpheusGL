@@ -6,7 +6,7 @@
   "window": {
     "default_width": 800,
     "default_height": 600,
-    "title": "Morpheus"
+    "title": "Laplacian Viewer"
   },
   "renderer": {
     "type": "default"
