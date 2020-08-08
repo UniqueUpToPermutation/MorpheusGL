@@ -17,6 +17,7 @@ namespace Morpheus {
 	};
 	SET_NODE_ENUM(Texture2D, TEXTURE_2D);
 
+	template <>
 	class ContentFactory<Texture2D> : public IContentFactory {
 	public:
 		ref<void> load(const std::string& source, Node& loadInto) override;

@@ -39,6 +39,7 @@ namespace Morpheus {
 
 	SamplerParameters makeSamplerParams(SamplerPrototype prototype);
 
+	template <>
 	class ContentFactory<Sampler> : public IContentFactory {
 	private:
 		ref<Sampler> makeInternal(const SamplerParameters& params);

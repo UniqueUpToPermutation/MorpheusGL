@@ -6,6 +6,7 @@
 #include "halfedge.hpp"
 #include "halfedgeloader.hpp"
 #include "texture2d.hpp"
+#include "sampler.hpp"
 
 namespace Morpheus {
 
@@ -22,6 +23,8 @@ namespace Morpheus {
 		addFactory<HalfEdgeGeometry>();
 		// Make the Texture2D factory
 		addFactory<Texture2D>();
+		// Make the Sampler factory
+		addFactory<Sampler>();
 
 		mSources = graph()->createTwoWayVertexLookup<std::string>("__content__");
 		mHandle = graph()->issueHandle(node);

@@ -175,10 +175,10 @@
     <ClCompile Include="cameracontroller.cpp">
       <Filter>Source Files\renderer</Filter>
     </ClCompile>
-    <ClCompile Include="texture2d.cpp">
-      <Filter>Source Files\scene</Filter>
-    </ClCompile>
     <ClCompile Include="sampler.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="texture2d.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
   </ItemGroup>

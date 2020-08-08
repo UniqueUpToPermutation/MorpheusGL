@@ -45,6 +45,8 @@ namespace Morpheus {
 	}
 
 	ref<void> ContentFactory<StaticMesh>::load(const std::string& source, Node& loadInto) {
+		std::cout << "loading static mesh " << source << "..." << std::endl;
+
 		ifstream f(source);
 
 		if (!f.is_open()) {

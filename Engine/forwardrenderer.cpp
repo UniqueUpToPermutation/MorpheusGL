@@ -15,8 +15,8 @@
 using namespace std;
 using namespace glm;
 
-#define DEFAULT_VERSION_MAJOR 3
-#define DEFAULT_VERSION_MINOR 3
+#define DEFAULT_VERSION_MAJOR 4
+#define DEFAULT_VERSION_MINOR 5
 
 namespace Morpheus {
 
@@ -166,6 +166,9 @@ namespace Morpheus {
 			GL_ASSERT;
 			// Set individual material parameters
 			material->uniformAssignments().assign();
+			GL_ASSERT;
+			// Assign textures
+			material->samplerAssignments().assign();
 			GL_ASSERT;
 			// Bind the geometry's vertex arary and draw the geometry
 			glBindVertexArray(geo->vertexArray());

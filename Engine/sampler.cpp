@@ -1,4 +1,5 @@
 #include "sampler.hpp"
+#include <unordered_map>
 
 namespace Morpheus {
 	SamplerParameters makeSamplerParams(SamplerPrototype prototype) {
@@ -39,6 +40,8 @@ namespace Morpheus {
 
 	ref<void> ContentFactory<Sampler>::load(const std::string& source, Node& loadInto)
 	{
+		std::cout << "Loading sampler " << source << "..." << std::endl;
+
 		auto it = mStringToPrototypeMap.find(source);
 		if (it != mStringToPrototypeMap.end()) {
 			auto params = makeSamplerParams(it->second);
@@ -80,9 +83,12 @@ namespace Morpheus {
 		glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, params.mWrapT);
 		glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, params.mWrapS);
 		glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_R, params.mWrapR);
+		auto sampler = new Sampler();
+		sampler->mId = sampler_id;
+		return ref<Sampler>(sampler);
 	}
 
-	Node ContentFactory<Sampler>::makeUnmanaged(const SamplerParameters& params, ref<Sampler>* samplerOut = nullptr) {
+	Node ContentFactory<Sampler>::makeUnmanaged(const SamplerParameters& params, ref<Sampler>* samplerOut) {
 		auto sampler = makeInternal(params);
 
 		if (samplerOut)
@@ -91,7 +97,7 @@ namespace Morpheus {
 		return graph()->addNode(samplerOut);
 	}
 
-	Node ContentFactory<Sampler>::makeUnmanaged(SamplerPrototype prototype, ref<Sampler>* samplerOut = nullptr) {
+	Node ContentFactory<Sampler>::makeUnmanaged(SamplerPrototype prototype, ref<Sampler>* samplerOut) {
 		return makeUnmanaged(makeSamplerParams(prototype), samplerOut);
 	}
 }

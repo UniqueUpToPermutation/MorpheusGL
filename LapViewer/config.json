@@ -1,7 +1,7 @@
 {
   "opengl": {
-    "v_major": 3,
-    "v_minor": 3
+    "v_major": 4,
+    "v_minor": 5
   },
   "window": {
     "width": 800,

@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{c5bb03ad-19f7-4f76-ab2d-522d4e07ec53}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Content">
+      <UniqueIdentifier>{32f42b8e-fff5-4130-b53e-ad0d3865a98a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -44,6 +47,9 @@
     </None>
     <None Include="spheremesh.json">
       <Filter>Source Files</Filter>
+    </None>
+    <None Include="brick.ktx">
+      <Filter>Content</Filter>
     </None>
   </ItemGroup>
 </Project>

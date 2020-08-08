@@ -47,6 +47,9 @@ namespace Morpheus {
     }
 
     ref<void> ContentFactory<Material>::load(const std::string& source, Node& loadInto) {
+        
+        cout << "Loading material " << source << "..." << endl;
+
         ifstream f(source);
 
         if (!f.is_open()) {
@@ -73,8 +76,8 @@ namespace Morpheus {
         mat->mShader = shaderRef;
 
         // Perform an override of shader parameters
-        if (j.contains("uniform_override")) {
-            readUniformDefaults(j["uniform_override"], shaderRef.get(),
+        if (j.contains("uniforms")) {
+            readUniformDefaults(j["uniforms"], shaderRef.get(),
                 &mat->mUniformAssigments);
             // Overwrite necessary things
             mat->mUniformAssigments = mat->mUniformAssigments.overwrite(shaderRef->defaultUniformAssignments());
@@ -84,8 +87,8 @@ namespace Morpheus {
             mat->mUniformAssigments = shaderRef->defaultUniformAssignments();
 
         // Perform an override of shader sampler assignments
-        if (j.contains("sampler_override")) {
-            loadSamplerDefaults(j["sampler_override"], shaderRef.get(), &mat->mSamplerAssignments,
+        if (j.contains("samplers")) {
+            loadSamplerDefaults(j["samplers"], shaderRef.get(), &mat->mSamplerAssignments,
                 content(), loadInto);
         }
         else
