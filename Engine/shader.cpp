@@ -181,10 +181,8 @@ namespace Morpheus {
 			std::string name = unif.key();
 			GLint a = glGetUniformLocation(shad->id(), name.c_str());
 			if (a >= 0) {
-				GLint size;
 				GLenum type;
-
-				glGetActiveUniform(shad->id(), a, 0, nullptr, &size, &type, nullptr);
+				glGetActiveUniform(shad->id(), a, 0, nullptr, nullptr, &type, nullptr);
 
 				ShaderUniformAssignment assign;
 				assign.mUniformLocation = a;
@@ -210,6 +208,41 @@ namespace Morpheus {
 			// Read actual data from json
 			GLTypeMetadata::fromJson(j[name], binding.mUniformType,
 				&out->mData[binding.mOffset]);
+		}
+	}
+
+	void loadSamplerDefaults(const nlohmann::json& j, const Shader* shad, ShaderSamplerAssignments* out,
+		ContentManager* content, Node parent) {
+		out->mBindings.clear();
+
+		GLint current_bind_target = 0;
+
+		for (auto& unif : j.items()) {
+			std::string name = unif.key();
+			GLint a = glGetUniformLocation(shad->id(), name.c_str());
+			if (a >= 0) {
+				GLenum type;
+				glGetActiveUniform(shad->id(), a, 0, nullptr, nullptr, &type, nullptr);
+
+				if (type == GL_SAMPLER_2D) {
+					std::string samplerSrc;
+					std::string textureSrc = MATERIAL_DEFAULT_SAMPLER_SRC;
+					if (j.contains("sampler"))
+						j["sampler"].get_to(samplerSrc);
+					j["texture"].get_to(textureSrc);
+					ShaderSamplerAssignment assignment;
+					content->load<Texture2D>(textureSrc, parent, &assignment.mTexture);
+					content->load<Sampler>(samplerSrc, parent, &assignment.mSampler);
+					assignment.mUniformLocation = a;
+					assignment.mBindTarget = current_bind_target++;
+				}
+				else {
+					cout << "Warning: uniform " << unif.key().c_str() << " does not have type GL_SAMPLER_2D!" << std::endl;
+				}
+			}
+			else {
+				cout << "Warning: could not find uniform " << unif.key().c_str() << endl;
+			}
 		}
 	}
 
@@ -250,7 +283,7 @@ namespace Morpheus {
 		}
 	}
 
-	void ContentFactory<Shader>::readJsonMetadata(const nlohmann::json& j, Shader* shad) {
+	void ContentFactory<Shader>::readJsonMetadata(const nlohmann::json& j, Shader* shad, Node& loadInto) {
 		
 		shad->mRenderView.init();
 
@@ -260,11 +293,15 @@ namespace Morpheus {
 		}
 		if (j.contains("uniform_defaults")) {
 			auto jsonUnifDefaults = j["uniform_defaults"];
-			readUniformDefaults(jsonUnifDefaults, shad, &shad->mDefaultAssignments);
+			readUniformDefaults(jsonUnifDefaults, shad, &shad->mDefaultUniformAssignments);
 		}
 		if (j.contains("renderer_uniforms")) {
 			auto jsonRendererUnif = j["renderer_uniforms"];
 			readRenderUniforms(jsonRendererUnif, shad, &shad->mRenderView);
+		}
+		if (j.contains("sampler_defaults")) {
+			auto jsonUnifSamplers = j["sampler_defaults"];
+			loadSamplerDefaults(jsonUnifSamplers, shad, &shad->mDefaultSamplerAssignments, content(), loadInto);
 		}
 	}
 
@@ -335,7 +372,7 @@ namespace Morpheus {
 
 		// Set the shader ID!
 		shader->mId = id;
-		readJsonMetadata(j, shader);
+		readJsonMetadata(j, shader, loadInto);
 
 		ref<void> r(shader);
 		return r;
@@ -384,6 +421,7 @@ namespace Morpheus {
 		}
 		return id;
 	}
+
 	void RendererShaderView::init()
 	{
 		mWorld.mLoc = -1;
@@ -392,6 +430,7 @@ namespace Morpheus {
 		mWorldInverseTranspose.mLoc = -1;
 		mEyePosition.mLoc = -1;
 	}
+
 	uint32_t Morpheus::ShaderUniformAssignments::computeSize() const
 	{
 		uint32_t size = 0u;
@@ -400,6 +439,7 @@ namespace Morpheus {
 		}
 		return size;
 	}
+
 	void ShaderUniformAssignments::assign() const
 	{
 		for (auto& binding : mBindings) {
@@ -447,8 +487,12 @@ namespace Morpheus {
 			}
 		}
 	}
+
 	ShaderUniformAssignments ShaderUniformAssignments::overwrite(const ShaderUniformAssignments& toOverwrite)
 	{
+		if (toOverwrite.mBindings.size() == 0)
+			return *this;
+
 		ShaderUniformAssignments result;
 		for (auto& binding : mBindings) {
 			result.mBindings.push_back(binding);
@@ -484,5 +528,43 @@ namespace Morpheus {
 				GLTypeMetadata::sizeOf(original_binding.mUniformType));
 		}
 		return result;
+	}
+
+	ShaderSamplerAssignments ShaderSamplerAssignments::overwrite(const ShaderSamplerAssignments& toOverwrite) {
+		if (toOverwrite.mBindings.size() == 0)
+			return *this;
+
+		ShaderSamplerAssignments result;
+		for (auto& binding : mBindings) {
+			result.mBindings.push_back(binding);
+		}
+
+		for (uint32_t i = 0; i < toOverwrite.mBindings.size(); ++i) {
+			auto& copy_binding = toOverwrite.mBindings[i];
+			bool bAdd = true;
+			for (uint32_t i = 0; i < mBindings.size(); ++i) {
+				auto& cmp_binding = mBindings[i];
+				if (cmp_binding.mUniformLocation == copy_binding.mUniformLocation)
+					bAdd = false;
+			}
+			if (bAdd) {
+				result.mBindings.push_back(copy_binding);
+			}
+		}
+
+		for (int i = 0; i < result.mBindings.size(); ++i) {
+			result.mBindings[i].mBindTarget = i;
+		}
+
+		return result;
+	}
+
+	void ShaderSamplerAssignments::assign() const
+	{
+		for (auto& binding : mBindings) {
+			glActiveTexture(binding.mBindTarget);
+			glBindTexture(GL_TEXTURE_2D, binding.mTexture->id());
+			glBindSampler(binding.mBindTarget, binding.mSampler->id());
+		}
 	}
 }

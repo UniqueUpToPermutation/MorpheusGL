@@ -5,6 +5,7 @@
 #include "staticmesh.hpp"
 #include "halfedge.hpp"
 #include "halfedgeloader.hpp"
+#include "texture2d.hpp"
 
 namespace Morpheus {
 
@@ -19,6 +20,8 @@ namespace Morpheus {
 		addFactory<StaticMesh>();
 		// Make the half edge geometry factory
 		addFactory<HalfEdgeGeometry>();
+		// Make the Texture2D factory
+		addFactory<Texture2D>();
 
 		mSources = graph()->createTwoWayVertexLookup<std::string>("__content__");
 		mHandle = graph()->issueHandle(node);

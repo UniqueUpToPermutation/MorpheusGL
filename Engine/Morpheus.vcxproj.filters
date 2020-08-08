@@ -104,13 +104,19 @@
     <ClInclude Include="meshlap.hpp">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="staticmesh.hpp">
-      <Filter>Header Files\scene</Filter>
-    </ClInclude>
     <ClInclude Include="cameracontroller.hpp">
       <Filter>Header Files\renderer</Filter>
     </ClInclude>
     <ClInclude Include="input.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="staticmesh.hpp">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="texture2d.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="sampler.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
@@ -168,6 +174,12 @@
     </ClCompile>
     <ClCompile Include="cameracontroller.cpp">
       <Filter>Source Files\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="texture2d.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="sampler.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

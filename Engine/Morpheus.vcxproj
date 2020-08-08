@@ -81,7 +81,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;..\soil\include;$(IncludePath)</IncludePath>
     <LibraryPath>..\nanogui\out\build\x64-Debug\;..\nanogui\out\build\x64-Debug\ext_build\glfw\src;$(LibraryPath)</LibraryPath>
     <TargetName>engine</TargetName>
   </PropertyGroup>
@@ -176,10 +176,12 @@
     <ClInclude Include="region.hpp" />
     <ClInclude Include="forwardrenderer.hpp" />
     <ClInclude Include="renderqueue.hpp" />
+    <ClInclude Include="sampler.hpp" />
     <ClInclude Include="scene.hpp" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="staticmanager.hpp" />
     <ClInclude Include="staticmesh.hpp" />
+    <ClInclude Include="texture2d.hpp" />
     <ClInclude Include="updater.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -197,9 +199,11 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="meshlap.cpp" />
+    <ClCompile Include="sampler.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="staticmesh.cpp" />
+    <ClCompile Include="texture2d.cpp" />
     <ClCompile Include="updater.cpp" />
   </ItemGroup>
   <ItemGroup>

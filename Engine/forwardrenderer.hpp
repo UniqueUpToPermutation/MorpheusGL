@@ -62,6 +62,7 @@ namespace Morpheus {
 		void postGlfwRequests() override;
 		void draw(Node scene) override;
 		void dispose() override;
+		void setClearColor(float r, float g, float b) override;
 
 		friend class Engine;
 	};

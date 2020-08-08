@@ -13,11 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Copy Files">
-      <UniqueIdentifier>{21685d0a-d18a-43e0-89f8-60c9bf784d1c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders">
-      <UniqueIdentifier>{96c8063e-9173-4a3b-bb22-cf53504255d2}</UniqueIdentifier>
+      <UniqueIdentifier>{c5bb03ad-19f7-4f76-ab2d-522d4e07ec53}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -26,45 +23,27 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="config.json">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="basicmat.json">
+    <None Include="packages.config" />
+    <None Include="cooktorrance.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="funcvizmaterial.json">
+    <None Include="pbr.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\basic.frag">
+    <None Include="pbr.json">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\basic.json">
+    <None Include="pbr.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\basic.vert">
+    <None Include="pbrmat.json">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\cooktorrance.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\cooktorrance.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\cooktorrance.json">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\cooktorrance.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\funcviz.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\funcviz.json">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\funcviz.vert">
-      <Filter>Shaders</Filter>
+    <None Include="spheremesh.json">
+      <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
 </Project>

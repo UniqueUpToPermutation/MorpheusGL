@@ -12,11 +12,15 @@ namespace Morpheus {
 	private:
 		ref<Shader> mShader;
 		ShaderUniformAssignments mUniformAssigments;
+		ShaderSamplerAssignments mSamplerAssignments;
 
 	public:
 		inline ref<Shader> shader() const { return mShader; }
 		inline const ShaderUniformAssignments& uniformAssignments() const {
 			return mUniformAssigments;
+		}
+		inline const ShaderSamplerAssignments& samplerAssignments() const {
+			return mSamplerAssignments;
 		}
 
 		friend ref<Material> duplicateRef<Material>(const ref<Material>& a);

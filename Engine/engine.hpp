@@ -201,6 +201,11 @@ namespace Morpheus {
 		virtual void draw(Node scene) = 0;
 		virtual NodeHandle handle() const = 0;
 		virtual RendererType getType() const = 0;
+		virtual void setClearColor(float r, float g, float b) = 0;
 		inline Node node() const { return (*graph())[handle()]; }
+
+		void setClearColor(const glm::vec3& color) {
+			setClearColor(color.x, color.y, color.z);
+		}
 	};
 }

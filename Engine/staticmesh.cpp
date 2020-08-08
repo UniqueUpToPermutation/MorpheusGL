@@ -7,13 +7,13 @@
 using namespace std;
 using namespace nlohmann;
 
-#define GEOMETRY_PART_INDEX 1
-#define MATERIAL_PART_INDEX 0
+#define GEOMETRY_PART_INDEX 0
+#define MATERIAL_PART_INDEX 1
 
 namespace Morpheus {
 	ref<Geometry> StaticMesh::getGeometry(Node meshNode) {
 		auto desc_ = desc(getGeometryNode(meshNode));
-		assert(desc_->type == NodeType::MATERIAL);
+		assert(desc_->type == NodeType::GEOMETRY);
 		return desc_->owner.reinterpret<Geometry>();
 	}
 	Node StaticMesh::getGeometryNode(Node meshNode) {
@@ -35,13 +35,13 @@ namespace Morpheus {
 		auto it = meshNode.children();
 		assert(it.valid());
 		auto desc_ = desc(it());
-		assert(desc_->type == NodeType::MATERIAL);
-		*mat_out = desc_->owner.reinterpret<Material>();
+		assert(desc_->type == NodeType::GEOMETRY);
+		*geo_out = desc_->owner.reinterpret<Geometry>();
 		it.next();
 		assert(it.valid());
 		desc_ = desc(it());
-		assert(desc_->type == NodeType::GEOMETRY);
-		*geo_out = desc_->owner.reinterpret<Geometry>();
+		assert(desc_->type == NodeType::MATERIAL);
+		*mat_out = desc_->owner.reinterpret<Material>();
 	}
 
 	ref<void> ContentFactory<StaticMesh>::load(const std::string& source, Node& loadInto) {
@@ -67,11 +67,10 @@ namespace Morpheus {
 		Node geometryNode = content()->load<Geometry>(geometrySrc);
 
 		// Create proxies for geometry and material
-		Node materialProxy = graph()->makeContentProxy(materialNode);
-		Node geometryProxy = graph()->makeContentProxy(geometryNode);
+		graph()->createEdge(loadInto, materialNode);
+		graph()->createEdge(loadInto, geometryNode);
 
-		graph()->createEdge(loadInto, materialProxy);
-		graph()->createEdge(materialProxy, geometryProxy);
+		content()->addContentNode(loadInto, source);
 		return ref<void>(new StaticMesh());
 	}
 	void ContentFactory<StaticMesh>::unload(ref<void>& ref) {
@@ -99,9 +98,9 @@ namespace Morpheus {
 
 		Node staticMeshNode = graph()->addNode(mesh);
 
-		// Add those proxies as children to the static mesh
-		graph()->createEdge(staticMeshNode, geometry);
+		// Add material and geometry as children to the static mesh
 		graph()->createEdge(staticMeshNode, material);
+		graph()->createEdge(staticMeshNode, geometry);
 
 		content()->addContentNode(staticMeshNode, source);
 		return staticMeshNode;

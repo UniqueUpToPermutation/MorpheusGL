@@ -148,6 +148,7 @@ namespace Morpheus {
 		CUBE_MAP,
 		STATIC_MESH,
 		CONTENT_END,
+		SAMPLER,
 
 		END
 	};
@@ -228,6 +229,7 @@ namespace Morpheus {
 	SET_POOLED(TEXTURE_2D_ARRAY, false);
 	SET_POOLED(STATIC_MESH, false);
 	SET_POOLED(HALF_EDGE_GEOMETRY, false);
+	SET_POOLED(SAMPLER, false);
 
 	// The IS_RENDERABLE FLAG
 	SET_RENDERABLE(ENGINE, false);
@@ -255,6 +257,7 @@ namespace Morpheus {
 	SET_RENDERABLE(CUBE_MAP, false);
 	SET_RENDERABLE(TEXTURE_2D_ARRAY, false);
 	SET_RENDERABLE(STATIC_MESH, true);
+	SET_RENDERABLE(SAMPLER, false);
 
 	// The content flag
 	SET_CONTENT(HALF_EDGE_GEOMETRY, true);
@@ -268,6 +271,7 @@ namespace Morpheus {
 	SET_CONTENT(CUBE_MAP, true);
 	SET_CONTENT(TEXTURE_2D_ARRAY, true);
 	SET_CONTENT(STATIC_MESH, true);
+	SET_CONTENT(SAMPLER, true);
 
 	template <typename T, 
 		bool type_check=std::is_same<T, typename BASE_TYPE_<T>::RESULT>::value>

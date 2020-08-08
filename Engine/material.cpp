@@ -15,6 +15,7 @@ namespace Morpheus {
             Material* mat = new Material();
             mat->mShader = a->mShader;
             mat->mUniformAssigments = a->mUniformAssigments;
+            mat->mSamplerAssignments = a->mSamplerAssignments;
             return ref<Material>(mat);
         }
         else {
@@ -24,6 +25,7 @@ namespace Morpheus {
             auto mat = pool->alloc();
             mat->mShader = a->mShader;
             mat->mUniformAssigments = a->mUniformAssigments;
+            mat->mSamplerAssignments = a->mSamplerAssignments;
             return ref<Material>(mat);
         }
     }
@@ -75,11 +77,20 @@ namespace Morpheus {
             readUniformDefaults(j["uniform_override"], shaderRef.get(),
                 &mat->mUniformAssigments);
             // Overwrite necessary things
-            mat->mUniformAssigments = mat->mUniformAssigments.overwrite(shaderRef->defaultAssignments());
+            mat->mUniformAssigments = mat->mUniformAssigments.overwrite(shaderRef->defaultUniformAssignments());
         }
         else
             // Carry over default assignments
-            mat->mUniformAssigments = shaderRef->defaultAssignments();
+            mat->mUniformAssigments = shaderRef->defaultUniformAssignments();
+
+        // Perform an override of shader sampler assignments
+        if (j.contains("sampler_override")) {
+            loadSamplerDefaults(j["sampler_override"], shaderRef.get(), &mat->mSamplerAssignments,
+                content(), loadInto);
+        }
+        else
+            // Carry over default assingments
+            mat->mSamplerAssignments = shaderRef->defaultSamplerAssignments();
 
         // Add this shader as a child of this material
         graph()->createEdge(loadInto, shaderNode);

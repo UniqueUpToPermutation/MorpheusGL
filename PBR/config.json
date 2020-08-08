@@ -1,0 +1,14 @@
+{
+  "opengl": {
+    "v_major": 3,
+    "v_minor": 3
+  },
+  "window": {
+    "width": 800,
+    "height": 600,
+    "title": "Physically Based Rendering"
+  },
+  "renderer": {
+    "type": "default"
+  }
+}

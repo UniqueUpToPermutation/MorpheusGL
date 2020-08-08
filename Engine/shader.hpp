@@ -4,6 +4,8 @@
 #include <iostream>
 
 #include "content.hpp"
+#include "sampler.hpp"
+#include "texture2d.hpp"
 
 #define SET_WORLD(loc_str) mWorld.mLoc = glGetUniformLocation(id(), loc_str)
 #define SET_VIEW(loc_str) mView.mLoc = glGetUniformLocation(id(), loc_str)
@@ -490,16 +492,35 @@ namespace Morpheus {
 		ShaderUniformAssignments overwrite(const ShaderUniformAssignments& toOverwrite);	
 	};
 
+	struct ShaderSamplerAssignment {
+		GLint mUniformLocation;
+		ref<Texture2D> mTexture;
+		ref<Sampler> mSampler;
+		GLint mBindTarget;
+	};
+
+	class ShaderSamplerAssignments {
+	public:
+		std::vector<ShaderSamplerAssignment> mBindings;
+
+		void assign() const;
+		ShaderSamplerAssignments overwrite(const ShaderSamplerAssignments& toOverwrite);
+	};
+
 	class Shader {
 	private:
 		GLuint mId;
 		RendererShaderView mRenderView;
 		ShaderEditorView mEditorView;
-		ShaderUniformAssignments mDefaultAssignments;
+		ShaderUniformAssignments mDefaultUniformAssignments;
+		ShaderSamplerAssignments mDefaultSamplerAssignments;
 
 	public:
-		inline const ShaderUniformAssignments& defaultAssignments() const {
-			return mDefaultAssignments;
+		inline const ShaderUniformAssignments& defaultUniformAssignments() const {
+			return mDefaultUniformAssignments;
+		}
+		inline const ShaderSamplerAssignments& defaultSamplerAssignments() const {
+			return mDefaultSamplerAssignments;
 		}
 		inline const RendererShaderView& renderView() const { return mRenderView; }
 		inline const ShaderEditorView& editorView() const { return mEditorView; }
@@ -532,7 +553,7 @@ namespace Morpheus {
 	template <>
 	class ContentFactory<Shader> : public IContentFactory {
 	private:
-		void readJsonMetadata(const nlohmann::json& j, Shader* shad);
+		void readJsonMetadata(const nlohmann::json& j, Shader* shad, Node& loadInto);
 
 	public:
 		ContentFactory();
@@ -541,8 +562,13 @@ namespace Morpheus {
 		void dispose() override;
 	};
 
-	void readEditorUniforms(const nlohmann::json& j, const Shader* shad, ShaderEditorView* out);
-	void readRenderUniforms(const nlohmann::json& j, const Shader* shad, RendererShaderView* out);
+	void readEditorUniforms(const nlohmann::json& j, const Shader* shad, 
+		ShaderEditorView* out);
+	void readRenderUniforms(const nlohmann::json& j, const Shader* shad, 
+		RendererShaderView* out);
 	void readUniformDefaults(const nlohmann::json& j, const Shader* shad,
 		ShaderUniformAssignments* out);
+	void loadSamplerDefaults(const nlohmann::json& j, const Shader* shad, 
+		ShaderSamplerAssignments* out,
+		ContentManager* content, Node parent);
 }

@@ -224,11 +224,17 @@ namespace Morpheus {
 	{
 		// Set VSync on
 		glfwSwapInterval(1); 
+		glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
 
 		mHandle = graph()->issueHandle(n);
 	}
+
 	void ForwardRenderer::dispose() {
 		graph()->recallHandle(mHandle);
+		delete this;
 	}
 
+	void ForwardRenderer::setClearColor(float r, float g, float b) {
+		glClearColor(r, g, b, 1.0f);
+	}
 }

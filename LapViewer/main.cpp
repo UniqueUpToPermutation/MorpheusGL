@@ -42,7 +42,7 @@ void nextMode();
 void previousMode();
 void computeModes();
 
-class GuiTest : public GuiBase {
+class LaplacianGui : public GuiBase {
 protected:
 	nanogui::FormHelper* gui;
 
@@ -83,10 +83,10 @@ public:
 		gui->refresh();
 	}
 };
-SET_BASE_TYPE(GuiTest, GuiBase);
+SET_BASE_TYPE(LaplacianGui, GuiBase);
 
 void updateGui() {
-	auto gui = desc("__gui__")->owner.getAs<GuiTest>();
+	auto gui = desc("__gui__")->owner.getAs<LaplacianGui>();
 	gui->update();
 }
 
@@ -227,7 +227,7 @@ int main() {
 		auto sceneHandle = graph()->issueHandle(sceneNode);
 
 		// Create our GUI
-		auto guiNode = graph()->addNode(new GuiTest(), sceneNode);
+		auto guiNode = graph()->addNode(new LaplacianGui(), sceneNode);
 		graph()->setName(guiNode, "__gui__");
 
 		// Make sure the material node is not unloaded
@@ -258,7 +258,7 @@ int main() {
 		// Game loop
 		while (en.valid()) {
 			en.update();
-			glClearColor(clr.r(), clr.g(), clr.b(), 1.0f);
+			en.renderer()->setClearColor(clr.r(), clr.g(), clr.b());
 			en.renderer()->draw((*graph())[sceneHandle]);
 			glfwSwapBuffers(en.window());
 		}
