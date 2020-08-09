@@ -5,7 +5,7 @@
 #include "staticmesh.hpp"
 #include "halfedge.hpp"
 #include "halfedgeloader.hpp"
-#include "texture2d.hpp"
+#include "texture.hpp"
 #include "sampler.hpp"
 
 namespace Morpheus {
@@ -21,8 +21,8 @@ namespace Morpheus {
 		addFactory<StaticMesh>();
 		// Make the half edge geometry factory
 		addFactory<HalfEdgeGeometry>();
-		// Make the Texture2D factory
-		addFactory<Texture2D>();
+		// Make the Texture factory
+		addFactory<Texture>();
 		// Make the Sampler factory
 		addFactory<Sampler>();
 

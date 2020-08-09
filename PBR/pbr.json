@@ -10,6 +10,7 @@
 
   "renderer_uniforms": {
     "world": "model",
+    "world_inverse_transpose": "modelInverseTranspose",
     "view": "view",
     "projection": "projection"
   }

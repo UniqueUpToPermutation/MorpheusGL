@@ -140,6 +140,7 @@ namespace Morpheus {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_STENCIL_TEST);
 		glEnable(GL_CULL_FACE);
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		glDisable(GL_BLEND);
 
 		// Draw static meshes

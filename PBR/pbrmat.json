@@ -3,7 +3,10 @@
 
   "samplers": {
     "albedo": {
-      "texture": "brick.ktx"
+      "texture": "textures/brick.ktx"
+    },
+    "skybox": {
+      "texture": "textures/skybox.ktx"
     }
   }
 }

@@ -48,8 +48,11 @@
     <None Include="spheremesh.json">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="brick.ktx">
+    <None Include="textures\brick.ktx">
       <Filter>Content</Filter>
+    </None>
+    <None Include="compute_lambert.glsl">
+      <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

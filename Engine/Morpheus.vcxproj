@@ -160,6 +160,7 @@
     <ClInclude Include="cameracontroller.hpp" />
     <ClInclude Include="content.hpp" />
     <ClInclude Include="core.hpp" />
+    <ClInclude Include="lambert.hpp" />
     <ClInclude Include="digraph.hpp" />
     <ClInclude Include="dynamicmanager.hpp" />
     <ClInclude Include="engine.hpp" />
@@ -181,7 +182,7 @@
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="staticmanager.hpp" />
     <ClInclude Include="staticmesh.hpp" />
-    <ClInclude Include="texture2d.hpp" />
+    <ClInclude Include="texture.hpp" />
     <ClInclude Include="updater.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -197,13 +198,14 @@
     <ClCompile Include="forwardrenderer.cpp" />
     <ClCompile Include="halfedgeloader.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="lambert.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="meshlap.cpp" />
     <ClCompile Include="sampler.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="staticmesh.cpp" />
-    <ClCompile Include="texture2d.cpp" />
+    <ClCompile Include="texture.cpp" />
     <ClCompile Include="updater.cpp" />
   </ItemGroup>
   <ItemGroup>

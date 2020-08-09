@@ -113,11 +113,14 @@
     <ClInclude Include="staticmesh.hpp">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="texture2d.hpp">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="sampler.hpp">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="texture.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="lambert.hpp">
+      <Filter>Header Files\renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -178,8 +181,11 @@
     <ClCompile Include="sampler.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="texture2d.cpp">
+    <ClCompile Include="texture.cpp">
       <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="lambert.cpp">
+      <Filter>Source Files\renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

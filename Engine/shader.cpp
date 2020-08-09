@@ -226,21 +226,30 @@ namespace Morpheus {
 				GLint size;
 				glGetActiveUniform(shad->id(), a, 0, nullptr, &size, &type, nullptr);
 
-				if (type == GL_SAMPLER_2D) {
-					std::string samplerSrc = MATERIAL_DEFAULT_SAMPLER_SRC;
+				if (type == GL_SAMPLER_2D || type == GL_SAMPLER_1D ||
+					type == GL_SAMPLER_1D_ARRAY || type == GL_SAMPLER_2D_ARRAY ||
+					type == GL_SAMPLER_CUBE || type == GL_SAMPLER_CUBE_MAP_ARRAY || 
+					type == GL_SAMPLER_3D) {
+					std::string samplerSrc;
+					if (type == GL_SAMPLER_2D)
+						samplerSrc = MATERIAL_TEXTURE_2D_DEFAULT_SAMPLER_SRC;
+					else if (type == GL_SAMPLER_CUBE)
+						samplerSrc = MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC;
+					else
+						samplerSrc = MATERIAL_TEXTURE_2D_DEFAULT_SAMPLER_SRC;
 					std::string textureSrc;
 					if (unif.value().contains("sampler"))
 						unif.value()["sampler"].get_to(samplerSrc);
 					unif.value()["texture"].get_to(textureSrc);
 					ShaderSamplerAssignment assignment;
-					content->load<Texture2D>(textureSrc, parent, &assignment.mTexture);
+					content->load<Texture>(textureSrc, parent, &assignment.mTexture);
 					content->load<Sampler>(samplerSrc, parent, &assignment.mSampler);
 					assignment.mUniformLocation = a;
 					assignment.mBindTarget = current_bind_target++;
 					out->mBindings.emplace_back(assignment);
 				}
 				else {
-					cout << "Warning: uniform " << unif.key().c_str() << " does not have type GL_SAMPLER_2D!" << std::endl;
+					cout << "Warning: uniform " << unif.key().c_str() << " does not have acceptable sampler type!" << std::endl;
 				}
 			}
 			else {
@@ -332,28 +341,54 @@ namespace Morpheus {
 		if (extract_ptr != string::npos)
 			prefix_include_path = source.substr(0, extract_ptr + 1);
 
+		bool bIsComputeShader = false;
+
+		GLuint vertex_id = 0;
+		GLuint frag_id = 0;
+		GLuint comp_id = 0;
+
 		// Compile an Open GL shader
-		string vertex_src = j["vertex_shader"];
-		string frag_src = j["fragment_shader"];
-		vertex_src = prefix_include_path + vertex_src;
-		frag_src = prefix_include_path + frag_src;
+		if (j.contains("compute_shader")) {
+			bIsComputeShader = true;
+			string compute_src = j["compute_shader"];
+			compute_src = prefix_include_path + compute_src;
 
-		vector<string> paths;
-		stringstream vertex_ss;
-		stringstream frag_ss;
+			vector<string> paths;
+			stringstream comp_ss;
 
-		preprocessor(vertex_src, paths, vertex_ss);
-		preprocessor(frag_src, paths, frag_ss);
+			preprocessor(compute_src, paths, comp_ss);
 
-		cout << "Compiling vertex shader: " << vertex_src << endl;
-		GLuint vertex_id = compileShader(vertex_ss.str(), ShaderType::VERTEX);
-		cout << "Compiling fragment shader: " << frag_src << endl;
-		GLuint frag_id = compileShader(frag_ss.str(), ShaderType::FRAGMENT);
+			cout << "Compiling compute shader: " << compute_src << endl;
+			comp_id = compileShader(comp_ss.str(), ShaderType::COMPUTE);
+		}
+		else {
+			string vertex_src = j["vertex_shader"];
+			string frag_src = j["fragment_shader"];
+			vertex_src = prefix_include_path + vertex_src;
+			frag_src = prefix_include_path + frag_src;
+
+			vector<string> paths;
+			stringstream vertex_ss;
+			stringstream frag_ss;
+
+			preprocessor(vertex_src, paths, vertex_ss);
+			preprocessor(frag_src, paths, frag_ss);
+
+			cout << "Compiling vertex shader: " << vertex_src << endl;
+			vertex_id = compileShader(vertex_ss.str(), ShaderType::VERTEX);
+			cout << "Compiling fragment shader: " << frag_src << endl;
+			frag_id = compileShader(frag_ss.str(), ShaderType::FRAGMENT);
+		}
 
 		// Link the program and spit any errors to stdout
 		GLuint id = glCreateProgram();
-		glAttachShader(id, vertex_id);
-		glAttachShader(id, frag_id);
+		if (!bIsComputeShader) {
+			glAttachShader(id, vertex_id);
+			glAttachShader(id, frag_id);
+		}
+		else {
+			glAttachShader(id, comp_id);
+		}
 		glLinkProgram(id);
 
 		GLint len;
@@ -401,6 +436,9 @@ namespace Morpheus {
 			break;
 		case ShaderType::FRAGMENT:
 			shader_type = GL_FRAGMENT_SHADER;
+			break;
+		case ShaderType::COMPUTE:
+			shader_type = GL_COMPUTE_SHADER;
 			break;
 		default:
 			shader_type = GL_VERTEX_SHADER;
@@ -566,7 +604,29 @@ namespace Morpheus {
 	{
 		for (auto& binding : mBindings) {
 			glActiveTexture(GL_TEXTURE0 + binding.mBindTarget);
-			glBindTexture(GL_TEXTURE_2D, binding.mTexture->id());
+			switch (binding.mTexture->type()) {
+			case TextureType::TEXTURE_1D:
+				glBindTexture(GL_TEXTURE_1D, binding.mTexture->id());
+				break;
+			case TextureType::TEXTURE_1D_ARRAY:
+				glBindTexture(GL_TEXTURE_1D_ARRAY, binding.mTexture->id());
+				break;
+			case TextureType::TEXTURE_2D:
+				glBindTexture(GL_TEXTURE_2D, binding.mTexture->id());
+				break;
+			case TextureType::TEXTURE_2D_ARRAY:
+				glBindTexture(GL_TEXTURE_2D_ARRAY, binding.mTexture->id());
+				break;
+			case TextureType::TEXTURE_3D:
+				glBindTexture(GL_TEXTURE_3D, binding.mTexture->id());
+				break;
+			case TextureType::CUBE_MAP:
+				glBindTexture(GL_TEXTURE_CUBE_MAP, binding.mTexture->id());
+				break;
+			case TextureType::CUBE_MAP_ARRAY:
+				glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, binding.mTexture->id());
+				break;
+			}
 			glBindSampler(binding.mBindTarget, binding.mSampler->id());
 		}
 	}

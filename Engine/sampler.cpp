@@ -49,7 +49,7 @@ namespace Morpheus {
 		}
 		else {
 			std::cout << "Could not find sampler type " << source << ", defaulting to TRILINEAR_TILE!" << std::endl;
-			auto params = makeSamplerParams(MATERIAL_DEFAULT_SAMPLER_PROTOTYPE);
+			auto params = makeSamplerParams(SamplerPrototype::TRILINEAR_TILE);
 			return makeInternal(params);
 		}
 	}
@@ -61,7 +61,6 @@ namespace Morpheus {
 		mStringToPrototypeMap["BILINEAR_TILE_SAMPLER"] = SamplerPrototype::BILINEAR_TILE;
 		mStringToPrototypeMap["POINT_CLAMP_SAMPLER"] = SamplerPrototype::POINT_CLAMP;
 		mStringToPrototypeMap["POINT_TILE_SAMPLER"] = SamplerPrototype::POINT_TILE;
-		mStringToPrototypeMap[MATERIAL_DEFAULT_SAMPLER_SRC] = MATERIAL_DEFAULT_SAMPLER_PROTOTYPE;
 	}
 
 	void ContentFactory<Sampler>::unload(ref<void>& ref)

@@ -5,7 +5,7 @@
 
 #include "content.hpp"
 #include "sampler.hpp"
-#include "texture2d.hpp"
+#include "texture.hpp"
 
 #define SET_WORLD(loc_str) mWorld.mLoc = glGetUniformLocation(id(), loc_str)
 #define SET_VIEW(loc_str) mView.mLoc = glGetUniformLocation(id(), loc_str)
@@ -457,7 +457,8 @@ namespace Morpheus {
 
 	enum class ShaderType {
 		VERTEX,
-		FRAGMENT
+		FRAGMENT,
+		COMPUTE
 	};
 
 	struct RendererShaderView {
@@ -494,7 +495,7 @@ namespace Morpheus {
 
 	struct ShaderSamplerAssignment {
 		GLint mUniformLocation;
-		ref<Texture2D> mTexture;
+		ref<Texture> mTexture;
 		ref<Sampler> mSampler;
 		GLint mBindTarget;
 	};

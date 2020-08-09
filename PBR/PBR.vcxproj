@@ -78,7 +78,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;..\Engine;..\gli;$(IncludePath)</IncludePath>
+    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;..\Engine;..\glm;$(IncludePath)</IncludePath>
     <LibraryPath>..\nanogui\out\build\x64-Debug\;..\nanogui\out\build\x64-Debug\ext_build\glfw\src;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -145,7 +145,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="brick.ktx" />
+    <None Include="compute_lambert.glsl" />
     <None Include="config.json" />
     <None Include="pbr.frag" />
     <None Include="cooktorrance.glsl" />
@@ -154,6 +154,7 @@
     <None Include="packages.config" />
     <None Include="pbrmat.json" />
     <None Include="spheremesh.json" />
+    <None Include="textures\brick.ktx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Engine\Morpheus.vcxproj">

@@ -16,21 +16,25 @@ namespace Morpheus {
 		assert(desc_->type == NodeType::GEOMETRY);
 		return desc_->owner.reinterpret<Geometry>();
 	}
+
 	Node StaticMesh::getGeometryNode(Node meshNode) {
 		auto n = meshNode.getChild(GEOMETRY_PART_INDEX);
 		assert(n.valid());
 		return n;
 	}
+
 	ref<Material> StaticMesh::getMaterial(Node meshNode) {
 		auto desc_ = desc(getMaterialNode(meshNode));
 		assert(desc_->type == NodeType::MATERIAL);
 		return desc_->owner.reinterpret<Material>();
 	}
+
 	Node StaticMesh::getMaterialNode(Node meshNode) {
 		auto n = meshNode.getChild(MATERIAL_PART_INDEX);
 		assert(n.valid());
 		return n;
 	}
+
 	void StaticMesh::getParts(Node meshNode, ref<Geometry>* geo_out, ref<Material>* mat_out) {
 		auto it = meshNode.children();
 		assert(it.valid());
@@ -45,7 +49,7 @@ namespace Morpheus {
 	}
 
 	ref<void> ContentFactory<StaticMesh>::load(const std::string& source, Node& loadInto) {
-		std::cout << "loading static mesh " << source << "..." << std::endl;
+		std::cout << "Loading static mesh " << source << "..." << std::endl;
 
 		ifstream f(source);
 
@@ -75,12 +79,15 @@ namespace Morpheus {
 		content()->addContentNode(loadInto, source);
 		return ref<void>(new StaticMesh());
 	}
+
 	void ContentFactory<StaticMesh>::unload(ref<void>& ref) {
 		delete ref.reinterpret<StaticMesh>().get();
 	}
+
 	void ContentFactory<StaticMesh>::dispose() {
 		delete this;
 	}
+
 	Node ContentFactory<StaticMesh>::makeStaticMesh(const Node& material, 
 		const Node& geometry, ref<StaticMesh>* refOut)
 	{
