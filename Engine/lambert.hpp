@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core.hpp"
+#include "shader.hpp"
 
 namespace Morpheus {
 	class Texture;

@@ -8,7 +8,7 @@
 #include "halfedge.hpp"
 #include "halfedgeloader.hpp"
 #include "cameracontroller.hpp"
-#include "meshlap.hpp"
+#include "samplefunction.hpp"
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
@@ -90,6 +90,18 @@ int main() {
 		auto transform = scene->makeIdentityTransform();
 		sceneNode.addChild(transform);
 		transform.addChild(staticMeshNode);
+
+		Function2D<glm::vec4> func;
+		func.loadpng("brick3.png");
+
+		Function2D<glm::vec4> func_downsampled;
+		auto& downsampled_storage = func_downsampled.storage();
+		downsampled_storage.init(512, 512);
+		for (uint32_t i = 0; i < downsampled_storage.sampleCount(); ++i) {
+			auto location = downsampled_storage.getSampleLocation(i);
+			downsampled_storage[i] = func(location);
+		}
+		func_downsampled.savepng("brick4.png");
 
 		// Initialize the scene graph
 		init(sceneNode);

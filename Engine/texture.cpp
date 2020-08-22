@@ -1,4 +1,5 @@
 #include "texture.hpp"
+#include "lodepng/lodepng.h"
 
 #include <iostream>
 #include <gli/gli.hpp>
@@ -6,57 +7,80 @@
 
 namespace Morpheus {
 	ref<void> ContentFactory<Texture>::load(const std::string& source, Node& loadInto) {
-		std::cout << "Loading texture " << source << "..." << std::endl;
+		std::cout << "Loading texture " << source;
+		size_t loc = source.rfind('.');
+		if (loc != std::string::npos) {
+			auto ext = source.substr(loc);
+			if (ext == ".png") {
+				std::cout << " (using lodepng)..." << std::endl;
+				return loadpng(source);
+			}
+			else if (ext == ".ktx" || ext == ".dds" || ext == ".kmg") {
+				std::cout << " (using gli)..." << std::endl;
+				return loadgli(source);
+			}
+			else {
+				std::cout << "\nFormat not recognized!" << std::endl;
+				return ref<void>(nullptr);
+			}
+		}
+		else {
+			std::cout << std::endl << source << " missing file extension!" << std::endl;
+			return ref<void>(nullptr);
+		}
+	}
+
+	ref<Texture> ContentFactory<Texture>::loadgli(const std::string& source) {
 		TextureType type;
-		gli::texture Texture = gli::load(source);
-		if (Texture.empty()) {
+		gli::texture tex = gli::load(source);
+		if (tex.empty()) {
 			std::cout << "Failed to load texture " << source << "!" << std::endl;
 			return 0;
 		}
 
 		gli::gl GL(gli::gl::PROFILE_GL33);
-		gli::gl::format const Format = GL.translate(Texture.format(), Texture.swizzles());
-		GLenum Target = GL.translate(Texture.target());
+		gli::gl::format const Format = GL.translate(tex.format(), tex.swizzles());
+		GLenum Target = GL.translate(tex.target());
 
 		GLuint TextureName = 0;
 		glGenTextures(1, &TextureName);
 		glBindTexture(Target, TextureName);
 		glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, 0);
-		glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(Texture.levels() - 1));
+		glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(tex.levels() - 1));
 		glTexParameteri(Target, GL_TEXTURE_SWIZZLE_R, Format.Swizzles[0]);
 		glTexParameteri(Target, GL_TEXTURE_SWIZZLE_G, Format.Swizzles[1]);
 		glTexParameteri(Target, GL_TEXTURE_SWIZZLE_B, Format.Swizzles[2]);
 		glTexParameteri(Target, GL_TEXTURE_SWIZZLE_A, Format.Swizzles[3]);
 
-		glm::tvec3<GLsizei> const Extent(Texture.extent());
-		GLsizei const FaceTotal = static_cast<GLsizei>(Texture.layers() * Texture.faces());
+		glm::tvec3<GLsizei> const Extent(tex.extent());
+		GLsizei const FaceTotal = static_cast<GLsizei>(tex.layers() * tex.faces());
 
-		switch (Texture.target()) {
+		switch (tex.target()) {
 		case gli::TARGET_1D:
 			glTexStorage1D(
-				Target, static_cast<GLint>(Texture.levels()), Format.Internal, 
+				Target, static_cast<GLint>(tex.levels()), Format.Internal,
 				Extent.x);
 			break;
 		case gli::TARGET_1D_ARRAY:
 		case gli::TARGET_2D:
 		case gli::TARGET_CUBE:
 			glTexStorage2D(
-				Target, static_cast<GLint>(Texture.levels()), Format.Internal,
+				Target, static_cast<GLint>(tex.levels()), Format.Internal,
 				Extent.x, Extent.y);
 			break;
 		case gli::TARGET_2D_ARRAY:
 		case gli::TARGET_3D:
 		case gli::TARGET_CUBE_ARRAY:
 			glTexStorage3D(
-				Target, static_cast<GLint>(Texture.levels()), Format.Internal,
+				Target, static_cast<GLint>(tex.levels()), Format.Internal,
 				Extent.x, Extent.y, Extent.z);
 			break;
 		default:
 			assert(0);
 			break;
 		}
-		
-		switch (Texture.target()) {
+
+		switch (tex.target()) {
 		case gli::TARGET_1D:
 			type = TextureType::TEXTURE_1D;
 			break;
@@ -80,69 +104,69 @@ namespace Morpheus {
 			break;
 		}
 
-		for (std::size_t Layer = 0; Layer < Texture.layers(); ++Layer) {
-			for (std::size_t Face = 0; Face < Texture.faces(); ++Face) {
-				for (std::size_t Level = 0; Level < Texture.levels(); ++Level)
+		for (std::size_t Layer = 0; Layer < tex.layers(); ++Layer) {
+			for (std::size_t Face = 0; Face < tex.faces(); ++Face) {
+				for (std::size_t Level = 0; Level < tex.levels(); ++Level)
 				{
 					GLsizei const LayerGL = static_cast<GLsizei>(Layer);
-					glm::tvec3<GLsizei> Extent(Texture.extent(Level));
-					Target = gli::is_target_cube(Texture.target())
+					glm::tvec3<GLsizei> Extent(tex.extent(Level));
+					Target = gli::is_target_cube(tex.target())
 						? static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face)
 						: Target;
 
-					switch (Texture.target())
+					switch (tex.target())
 					{
 					case gli::TARGET_1D:
-						if (gli::is_compressed(Texture.format()))
+						if (gli::is_compressed(tex.format()))
 							glCompressedTexSubImage1D(
 								Target, static_cast<GLint>(Level), 0, Extent.x,
-								Format.Internal, static_cast<GLsizei>(Texture.size(Level)),
-								Texture.data(Layer, Face, Level));
+								Format.Internal, static_cast<GLsizei>(tex.size(Level)),
+								tex.data(Layer, Face, Level));
 						else
 							glTexSubImage1D(
 								Target, static_cast<GLint>(Level), 0, Extent.x,
 								Format.External, Format.Type,
-								Texture.data(Layer, Face, Level));
+								tex.data(Layer, Face, Level));
 						break;
 					case gli::TARGET_1D_ARRAY:
 					case gli::TARGET_2D:
 					case gli::TARGET_CUBE:
-						if (gli::is_compressed(Texture.format()))
+						if (gli::is_compressed(tex.format()))
 							glCompressedTexSubImage2D(
 								Target, static_cast<GLint>(Level),
 								0, 0,
 								Extent.x,
-								Texture.target() == gli::TARGET_1D_ARRAY ? LayerGL : Extent.y,
-								Format.Internal, static_cast<GLsizei>(Texture.size(Level)),
-								Texture.data(Layer, Face, Level));
+								tex.target() == gli::TARGET_1D_ARRAY ? LayerGL : Extent.y,
+								Format.Internal, static_cast<GLsizei>(tex.size(Level)),
+								tex.data(Layer, Face, Level));
 						else
 							glTexSubImage2D(
 								Target, static_cast<GLint>(Level),
 								0, 0,
 								Extent.x,
-								Texture.target() == gli::TARGET_1D_ARRAY ? LayerGL : Extent.y,
+								tex.target() == gli::TARGET_1D_ARRAY ? LayerGL : Extent.y,
 								Format.External, Format.Type,
-								Texture.data(Layer, Face, Level));
+								tex.data(Layer, Face, Level));
 						break;
 					case gli::TARGET_2D_ARRAY:
 					case gli::TARGET_3D:
 					case gli::TARGET_CUBE_ARRAY:
-						if (gli::is_compressed(Texture.format()))
+						if (gli::is_compressed(tex.format()))
 							glCompressedTexSubImage3D(
 								Target, static_cast<GLint>(Level),
 								0, 0, 0,
 								Extent.x, Extent.y,
-								Texture.target() == gli::TARGET_3D ? Extent.z : LayerGL,
-								Format.Internal, static_cast<GLsizei>(Texture.size(Level)),
-								Texture.data(Layer, Face, Level));
+								tex.target() == gli::TARGET_3D ? Extent.z : LayerGL,
+								Format.Internal, static_cast<GLsizei>(tex.size(Level)),
+								tex.data(Layer, Face, Level));
 						else
 							glTexSubImage3D(
 								Target, static_cast<GLint>(Level),
 								0, 0, 0,
 								Extent.x, Extent.y,
-								Texture.target() == gli::TARGET_3D ? Extent.z : LayerGL,
+								tex.target() == gli::TARGET_3D ? Extent.z : LayerGL,
 								Format.External, Format.Type,
-								Texture.data(Layer, Face, Level));
+								tex.data(Layer, Face, Level));
 						break;
 					default: assert(0); break;
 					}
@@ -150,11 +174,127 @@ namespace Morpheus {
 			}
 		}
 
-		Morpheus::Texture* tex = new Morpheus::Texture();
-		tex->mId = TextureName;
-		tex->mType = type;
-		return ref<void>(tex);
+		Morpheus::Texture* tex_ptr = new Morpheus::Texture();
+		tex_ptr->mId = TextureName;
+		tex_ptr->mType = type;
+		tex_ptr->mWidth = Extent.x;
+		tex_ptr->mHeight = Extent.y;
+		tex_ptr->mDepth = Extent.z;
+		return ref<Texture>(tex_ptr);
 	}
+
+	ref<Texture> ContentFactory<Texture>::loadpng(const std::string& source) {
+		std::vector<uint8_t> image;
+		uint32_t width, height;
+		uint32_t error = lodepng::decode(image, width, height, source);
+
+		//if there's an error, display it
+		if (error) std::cout << "Decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+
+		//the pixels are now in the vector "image", 4 bytes per pixel, ordered RGBARGBA..., use it as texture, draw it, ...
+		//State state contains extra information about the PNG such as text chunks, ...
+		if (!error) {
+			GLuint TextureName = 0;
+			glGenTextures(1, &TextureName);
+			glBindTexture(GL_TEXTURE_2D, TextureName);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
+			glGenerateTextureMipmap(TextureName);
+
+			Texture* tex = new Texture();
+			tex->mId = TextureName;
+			tex->mType = TextureType::TEXTURE_2D;
+			tex->mWidth = width;
+			tex->mHeight = height;
+			tex->mDepth = 1;
+
+			return ref<Texture>(tex);
+		}
+		else {
+			return ref<Texture>(nullptr);
+		}
+	}
+
+	void Texture::savepngcubemap(const std::string& path) {
+		size_t pos = path.rfind('.');
+		std::string base_path;
+		std::map<GLint, std::string> face_paths;
+		std::map<GLint, uint32_t> offsets;
+
+		if (pos == std::string::npos) {
+			base_path = path;
+		}
+		else {
+			base_path = path.substr(0, pos);
+		}
+
+		face_paths[GL_TEXTURE_CUBE_MAP_POSITIVE_X] = base_path + "_right.png";
+		offsets[GL_TEXTURE_CUBE_MAP_POSITIVE_X] = 0;
+		face_paths[GL_TEXTURE_CUBE_MAP_NEGATIVE_X] = base_path + "_left.png";
+		offsets[GL_TEXTURE_CUBE_MAP_NEGATIVE_X] = 1;
+		face_paths[GL_TEXTURE_CUBE_MAP_POSITIVE_Y] = base_path + "_top.png";
+		offsets[GL_TEXTURE_CUBE_MAP_POSITIVE_Y] = 2;
+		face_paths[GL_TEXTURE_CUBE_MAP_NEGATIVE_Y] = base_path + "_bottom.png";
+		offsets[GL_TEXTURE_CUBE_MAP_NEGATIVE_Y] = 3;
+		face_paths[GL_TEXTURE_CUBE_MAP_POSITIVE_Z] = base_path + "_front.png";
+		offsets[GL_TEXTURE_CUBE_MAP_POSITIVE_Z] = 4;
+		face_paths[GL_TEXTURE_CUBE_MAP_NEGATIVE_Z] = base_path + "_back.png";
+		offsets[GL_TEXTURE_CUBE_MAP_NEGATIVE_Z] = 5;
+
+		GLsizei memSize = 4 * mWidth * mHeight * 6;
+		std::vector<uint8_t> data(memSize);
+		glGetTextureImage(mId, 0, GL_RGBA, GL_UNSIGNED_BYTE, memSize, &data[0]);
+
+		auto do_save = [this, &face_paths, &offsets, &data](GLint side) {
+			auto& path = face_paths[side];
+			auto offset = offsets[side];
+			std::cout << "Saving cubemap face " << path << "..." << std::endl;
+			GLsizei memOffset = 4 * mWidth * mHeight * offset;
+			auto error = lodepng::encode(path, &data[memOffset], mWidth, mHeight);
+
+			if (error) {
+				std::cout << "Encoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+				throw std::exception(lodepng_error_text(error));
+			}
+		};
+
+		do_save(GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+		do_save(GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+		do_save(GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+		do_save(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+		do_save(GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+		do_save(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+	}
+
+	void Texture::savepngtex2d(const std::string& path) {
+		GLsizei memSize = 4 * mWidth * mHeight;
+		std::vector<uint8_t> data(memSize);
+		std::vector<uint8_t> png;
+		glGetTextureImage(mId, 0, GL_RGBA, GL_UNSIGNED_BYTE, memSize, &data[0]);
+
+		std::cout << "Saving texture2D " << path << "..." << std::endl;
+		auto error = lodepng::encode(path, &data[0], mWidth, mHeight);
+
+		if (error) {
+			std::cout << "Encoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+			throw std::exception(lodepng_error_text(error));
+		}
+	}
+
+	void Texture::savepng(const std::string& path) {
+		switch (mType) {
+		case TextureType::TEXTURE_2D:
+			savepngtex2d(path);
+			break;
+		case TextureType::CUBE_MAP:
+			savepngcubemap(path);
+			break;
+		default:
+			std::cout << "Texture type must be TEXTURE_2D or CUBE_MAP! Cannot save to png!" << std::endl;
+			throw std::exception("Texture type must be TEXTURE_2D or CUBE_MAP! Cannot save to png!");
+			break;
+		}	
+	}
+
 	void ContentFactory<Texture>::unload(ref<void>& ref) {
 		auto tex = ref.reinterpretGet<Texture>();
 		glDeleteTextures(1, &tex->mId);

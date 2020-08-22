@@ -19,10 +19,21 @@ namespace Morpheus {
 	private:
 		GLuint mId;
 		TextureType mType;
+		uint32_t mWidth;
+		uint32_t mHeight;
+		uint32_t mDepth;
+
+		void savepngtex2d(const std::string& path);
+		void savepngcubemap(const std::string& path);
 
 	public:
 		inline GLuint id() const { return mId; }
 		inline TextureType type() const { return mType; }
+		inline uint32_t width() const { return mWidth; }
+		inline uint32_t height() const { return mHeight; }
+		inline uint32_t depth() const { return mDepth; }
+
+		void savepng(const std::string& path);
 
 		friend class ContentFactory<Texture>;
 	};
@@ -32,6 +43,8 @@ namespace Morpheus {
 	class ContentFactory<Texture> : public IContentFactory {
 	public:
 		ref<void> load(const std::string& source, Node& loadInto) override;
+		ref<Texture> loadgli(const std::string& source);
+		ref<Texture> loadpng(const std::string& source);
 		void unload(ref<void>& ref) override;
 		void dispose() override;
 
