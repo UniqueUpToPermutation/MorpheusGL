@@ -9,6 +9,7 @@
 #include "halfedgeloader.hpp"
 #include "cameracontroller.hpp"
 #include "samplefunction.hpp"
+#include "lambert.hpp"
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
@@ -92,17 +93,13 @@ int main() {
 		transform.addChild(staticMeshNode);
 
 		FunctionSphere<glm::vec4> func;
-		func.loadpng("sky");
+		func.loadpng("textures/park");
 
 		FunctionSphere<glm::vec4> func_downsample;
-		func_downsample.allocate(128, 128);
-		auto& storage = func_downsample.storage();
-		size_t sampleCount = storage.sampleCount();
-		for (size_t i = 0; i < sampleCount; ++i) {
-			auto loc = storage.getSampleLocation(i);
-			storage[i] = func(loc);
-		}
-		storage.savepng("sky2");
+		func_downsample.allocate(256, 256);
+		LambertKernel lambert;
+		lambert.apply(func, &func_downsample, 1000);
+		func_downsample.savepng("sky2");
 
 		// Initialize the scene graph
 		init(sceneNode);

@@ -367,13 +367,13 @@ namespace Morpheus {
 			if (absQuery.x >= absQuery.y && absQuery.x >= absQuery.z) {
 				if (query.x >= 0.0) {
 					result.face = FACE_POSITIVE_X;
-					result.u = query.z / absQuery.x;
-					result.v = query.y / absQuery.x;
+					result.u = -query.z / absQuery.x;
+					result.v = -query.y / absQuery.x;
 				}
 				else {
 					result.face = FACE_NEGATIVE_X;
-					result.u = -query.z / absQuery.x;
-					result.v = query.y / absQuery.x;
+					result.u = query.z / absQuery.x;
+					result.v = -query.y / absQuery.x;
 				}
 			}
 			else if (absQuery.y >= absQuery.x && absQuery.y >= absQuery.z) {
@@ -392,18 +392,18 @@ namespace Morpheus {
 				if (query.z >= 0.0) {
 					result.face = FACE_POSITIVE_Z;
 					result.u = query.x / absQuery.z;
-					result.v = query.y / absQuery.z;
+					result.v = -query.y / absQuery.z;
 				}
 				else {
 					result.face = FACE_NEGATIVE_Z;
 					result.u = -query.x / absQuery.z;
-					result.v = query.y / absQuery.z;
+					result.v = -query.y / absQuery.z;
 				}
 			}
 
 			// Normalize to [0, 1] texture coordinates
 			result.u = static_cast<scalar_t>(0.5) * (result.u + static_cast<scalar_t>(1.0));
-			result.v = static_cast<scalar_t>(0.5) * (-result.v + static_cast<scalar_t>(1.0));
+			result.v = static_cast<scalar_t>(0.5) * (result.v + static_cast<scalar_t>(1.0));
 
 			assert(result.u >= 0.0 && result.u <= 1.0);
 			assert(result.v >= 0.0 && result.v <= 1.0);
@@ -419,9 +419,8 @@ namespace Morpheus {
 
 			CubemapUV uv = getUV(query);
 
-			// Account for boundary
-			scalar_t scaled_u = uv.u * mScaleInv.x + static_cast<scalar_t>(0.5);
-			scalar_t scaled_v = uv.v * mScaleInv.y + static_cast<scalar_t>(0.5);
+			scalar_t scaled_u = uv.u * mScaleInv.x - static_cast<scalar_t>(0.5);
+			scalar_t scaled_v = uv.v * mScaleInv.y - static_cast<scalar_t>(0.5);
 
 			IndexType indx;
 			indx.x = static_cast<decltype(indx.x)>(scaled_u);
@@ -486,18 +485,18 @@ namespace Morpheus {
 			v *= mScale.y;
 
 			u = u * static_cast<scalar_t>(2.0) - static_cast<scalar_t>(1.0);
-			v = -(v * static_cast<scalar_t>(2.0) - static_cast<scalar_t>(1.0));
+			v = v * static_cast<scalar_t>(2.0) - static_cast<scalar_t>(1.0);
 
 			switch (pos.z) {
 			case FACE_POSITIVE_X:
 				result.x = 1.0;
-				result.z = u;
-				result.y = v;
+				result.z = -u;
+				result.y = -v;
 				break;
 			case FACE_NEGATIVE_X:
 				result.x = -1.0;
-				result.z = -u;
-				result.y = v;
+				result.z = u;
+				result.y = -v;
 				break;
 			case FACE_POSITIVE_Y:
 				result.x = u;
@@ -511,12 +510,12 @@ namespace Morpheus {
 				break;
 			case FACE_POSITIVE_Z:
 				result.x = u;
-				result.y = v;
+				result.y = -v;
 				result.z = 1.0;
 				break;
 			case FACE_NEGATIVE_Z:
 				result.x = -u;
-				result.y = v;
+				result.y = -v;
 				result.z = -1.0;
 				break;
 			default:
@@ -868,6 +867,10 @@ namespace Morpheus {
 			mStorage.transition(mode);
 		}
 
+		inline StorageMode getStorageMode() const {
+			return mStorage.getMode();
+		}
+
 		ReturnType operator()(const InputType& input) const {
 			static_assert(std::is_same_v<typename SamplerType::WeightType, typename InterpolatorType::WeightType>,
 				"SamplerType and InterpolatorType do not share the same weight type!");
@@ -908,7 +911,7 @@ namespace Morpheus {
 	struct KernelProc<KernelType, FuncType, false> {
 		static void apply(KernelType& kernel, const FuncType& input,
 			FuncType* output, uint32_t sampleCount) {
-			input->transition(StorageMode::READ);
+			assert(input.getStorageMode() == StorageMode::READ);
 			output->transition(StorageMode::WRITE);
 			auto& storage = output->storage();
 			typedef typename ScalarType<typename FuncType::ReturnType>::RESULT NormType;
@@ -932,8 +935,8 @@ namespace Morpheus {
 		static void apply(KernelType& kernel, const FuncType& input,
 			FuncType* output, uint32_t sampleCount) {
 			auto& storage = output->storage();
+			assert(input.getStorageMode() == StorageMode::READ);
 			output->transition(StorageMode::WRITE);
-			input->transition(StorageMode::READ);
 			typedef typename ScalarType<typename FuncType::ReturnType>::RESULT NormType;
 			auto norm_factor = static_cast<NormType>(1.0) / static_cast<NormType>(sampleCount);
 			uint32_t outputSamples = static_cast<uint32_t>(storage.sampleCount());
