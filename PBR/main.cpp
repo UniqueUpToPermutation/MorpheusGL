@@ -92,16 +92,15 @@ int main() {
 		transform.addChild(staticMeshNode);
 
 		Function2D<glm::vec4> func;
-		func.loadpng("brick3.png");
+		func.loadpng("brick.png");
 
-		Function2D<glm::vec4> func_downsampled;
-		auto& downsampled_storage = func_downsampled.storage();
-		downsampled_storage.init(512, 512);
-		for (uint32_t i = 0; i < downsampled_storage.sampleCount(); ++i) {
-			auto location = downsampled_storage.getSampleLocation(i);
-			downsampled_storage[i] = func(location);
-		}
-		func_downsampled.savepng("brick4.png");
+		Function2D<glm::vec4> func_result;
+		func_result.initStorage(glm::ivec2(1024, 1024));
+	
+		GaussianKernel2D gaussian(0.004f);
+		gaussian.apply(func, &func_result, 400);
+
+		func_result.savepng("brick4.png");
 
 		// Initialize the scene graph
 		init(sceneNode);
