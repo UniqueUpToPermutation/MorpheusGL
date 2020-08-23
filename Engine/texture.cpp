@@ -227,17 +227,17 @@ namespace Morpheus {
 			base_path = path.substr(0, pos);
 		}
 
-		face_paths[GL_TEXTURE_CUBE_MAP_POSITIVE_X] = base_path + "_right.png";
+		face_paths[GL_TEXTURE_CUBE_MAP_POSITIVE_X] = base_path + "_pos_x.png";
 		offsets[GL_TEXTURE_CUBE_MAP_POSITIVE_X] = 0;
-		face_paths[GL_TEXTURE_CUBE_MAP_NEGATIVE_X] = base_path + "_left.png";
+		face_paths[GL_TEXTURE_CUBE_MAP_NEGATIVE_X] = base_path + "_neg_x.png";
 		offsets[GL_TEXTURE_CUBE_MAP_NEGATIVE_X] = 1;
-		face_paths[GL_TEXTURE_CUBE_MAP_POSITIVE_Y] = base_path + "_top.png";
+		face_paths[GL_TEXTURE_CUBE_MAP_POSITIVE_Y] = base_path + "_pos_y.png";
 		offsets[GL_TEXTURE_CUBE_MAP_POSITIVE_Y] = 2;
-		face_paths[GL_TEXTURE_CUBE_MAP_NEGATIVE_Y] = base_path + "_bottom.png";
+		face_paths[GL_TEXTURE_CUBE_MAP_NEGATIVE_Y] = base_path + "_neg_y.png";
 		offsets[GL_TEXTURE_CUBE_MAP_NEGATIVE_Y] = 3;
-		face_paths[GL_TEXTURE_CUBE_MAP_POSITIVE_Z] = base_path + "_front.png";
+		face_paths[GL_TEXTURE_CUBE_MAP_POSITIVE_Z] = base_path + "_pos_z.png";
 		offsets[GL_TEXTURE_CUBE_MAP_POSITIVE_Z] = 4;
-		face_paths[GL_TEXTURE_CUBE_MAP_NEGATIVE_Z] = base_path + "_back.png";
+		face_paths[GL_TEXTURE_CUBE_MAP_NEGATIVE_Z] = base_path + "_neg_z.png";
 		offsets[GL_TEXTURE_CUBE_MAP_NEGATIVE_Z] = 5;
 
 		GLsizei memSize = 4 * mWidth * mHeight * 6;
