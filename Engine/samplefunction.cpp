@@ -199,45 +199,6 @@ namespace Morpheus {
 		out->transition(StorageMode::READ);
 	}
 
-	void testSaveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<glm::vec4>& f) {
-		std::string filename_base;
-		size_t pindx = filename.rfind('.');
-		if (pindx == std::string::npos)
-			filename_base = filename;
-		else
-			filename_base = filename.substr(0, pindx);
-
-		std::map<uint32_t, std::string> append_str;
-		append_str[f.FACE_POSITIVE_X] = "_pos_x";
-		append_str[f.FACE_NEGATIVE_X] = "_neg_x";
-		append_str[f.FACE_POSITIVE_Y] = "_pos_y";
-		append_str[f.FACE_NEGATIVE_Y] = "_neg_y";
-		append_str[f.FACE_POSITIVE_Z] = "_pos_z";
-		append_str[f.FACE_NEGATIVE_Z] = "_neg_z";
-
-		std::vector<uint8_t> image;
-		uint32_t width = f.mGridSize.x;
-		uint32_t height = f.mGridSize.y;
-		image.resize((size_t)width * (size_t)height * 4);
-		size_t pixelCount = (size_t)width * (size_t)height;
-
-		for (uint32_t face = 0; face < 6; ++face) {
-			for (size_t i = 0; i < pixelCount; ++i) {
-				uint8_t* ptr = &image[i * 4];
-				savePixel(ptr, &f.mCubemapData[face * (size_t)width * (size_t)height + i]);
-			}
-
-			std::string save_path = filename_base + append_str[face] + ".png";
-
-			uint32_t error = lodepng::encode(save_path, &image[0], width, height);
-
-			if (error) {
-				std::cout << "Encoder error " << error << ": " << lodepng_error_text(error) << std::endl;
-				throw std::exception(lodepng_error_text(error));
-			}
-		}
-	}
-
 	void loadRectSurfaceStorageFromPNG(const std::string& filename, RectSurfaceGridStorage<float>* out) {
 		loadRectSurfaceStorageFromPNGinternal(filename, out);
 	}

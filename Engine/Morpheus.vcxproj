@@ -81,13 +81,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;..\gli;..\glm;$(IncludePath)</IncludePath>
+    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;..\gli;..\glm;.\spherical-harmonics\;$(IncludePath)</IncludePath>
     <LibraryPath>..\nanogui\out\build\x64-Debug\;..\nanogui\out\build\x64-Debug\ext_build\glfw\src;$(LibraryPath)</LibraryPath>
     <TargetName>engine</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;..\gli;..\glm;$(IncludePath)</IncludePath>
+    <IncludePath>..\nanogui\ext\glad\include\;..\nanogui\include\;..\nanogui\ext\glfw\include\;..\nanogui\ext\eigen\;..\nanogui\ext\nanovg\src;..\spectra\include;..\gli;..\glm;.\spherical-harmonics\;$(IncludePath)</IncludePath>
     <LibraryPath>..\nanogui\out\build\x64-Release\;..\nanogui\out\build\x64-Release\ext_build\glfw\src;$(LibraryPath)</LibraryPath>
     <TargetName>engine</TargetName>
   </PropertyGroup>
@@ -183,6 +183,7 @@
     <ClInclude Include="sampler.hpp" />
     <ClInclude Include="scene.hpp" />
     <ClInclude Include="shader.hpp" />
+    <ClInclude Include="sphericalharmonics.hpp" />
     <ClInclude Include="staticmanager.hpp" />
     <ClInclude Include="staticmesh.hpp" />
     <ClInclude Include="texture.hpp" />
@@ -209,6 +210,7 @@
     <ClCompile Include="sampler.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="shader.cpp" />
+    <ClCompile Include="sphericalharmonics.cpp" />
     <ClCompile Include="staticmesh.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="updater.cpp" />

@@ -19,14 +19,17 @@ namespace Morpheus {
 		std::uniform_real_distribution<scalar_t> distribution;
 
 	public:
-		constexpr static bool HAS_WEIGHTS = false;
+		constexpr static bool HAS_WEIGHTS = true;
+		typedef scalar_t WeightType;
 
 		LambertKernel() :
 			generator((unsigned int)std::chrono::system_clock::now().time_since_epoch().count()),
 			distribution(0.0, 1.0) {
 		}
 
-		VectorType sample(const VectorType& location) {
+		VectorType sample(const VectorType& location, scalar_t* weight) {
+			*weight = 10.0;
+
 			// Sample from hemisphere and rotate
 			scalar_t u = distribution(generator);
 			scalar_t v = distribution(generator);

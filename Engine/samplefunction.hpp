@@ -7,9 +7,28 @@
 #include <chrono>
 #include <random>
 
+#include <Eigen/Dense>
+
 #define DEFAULT_KERNEL_SAMPLE_COUNT 100u
 
 namespace Morpheus {
+
+	template <typename OutputType>
+	void checkValidFormat(const GLenum format) {
+		if constexpr (OutputType::length() == 1) {
+			return format == GL_R8 || format == GL_R16 || format == GL_R32F || format = GL_RED;
+		}
+		else if constexpr (OutputType::length() == 2) {
+			return format == GL_RG8 || format == GL_RG16 || format == GL_RG32F || format = GL_RG;
+		}
+		else if constexpr (OutputType::length() == 3) {
+			return format == GL_RGB8 || format == GL_RGB16 || format == GL_RGB32F || format = GL_RGB;
+		}
+		else if constexpr (OutputType::length() == 4) {
+			return format == GL_RGBA8 || format == GL_RGBA16 || format == GL_RGBA32F || format = GL_RGBA;
+		}
+	}
+
 	template <typename VectorType>
 	struct ScalarType;
 
@@ -148,13 +167,13 @@ namespace Morpheus {
 	void saveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<glm::vec3>& f);
 	void saveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<glm::vec4>& f);
 
-	void testSaveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<glm::vec4>& f);
-
 	template <typename OutputType, typename InputType>
 	class CubemapStorage {
 	public:
 		typedef glm::uvec2 SizeType;
 		typedef glm::ivec3 IndexType;
+		typedef OutputType OutputType;
+		typedef InputType InputType;
 
 		constexpr static uint32_t BORDER_TOP = 0;
 		constexpr static uint32_t BORDER_BOTTOM = 1;
@@ -169,6 +188,8 @@ namespace Morpheus {
 		constexpr static uint32_t FACE_NEGATIVE_Z = 5;
 
 		constexpr static uint32_t ALLOCATE_DIMENSION = 2;
+		constexpr static uint32_t SAMPLE_POSITION_DIMENSION = 3;
+		constexpr static bool SUPPORTS_POLAR_GRID = true;
 
 		typedef typename ScalarType<InputType>::RESULT scalar_t;
 
@@ -581,12 +602,102 @@ namespace Morpheus {
 			saveCubemapStorageToPNG(filename, *this);
 		}
 
+		template <typename VectorType>
+		void createGrid(VectorType* outX, VectorType* outY, VectorType* outZ) const {
+			size_t size = sampleCount();
+			outX->resize(size);
+			outY->resize(size);
+			outZ->resize(size);
+
+			for (size_t i = 0; i < size; ++i) {
+				auto loc = getSampleLocation(i);
+				(*outX)(i) = loc.x;
+				(*outY)(i) = loc.y;
+				(*outZ)(i) = loc.z;
+			}
+		}
+
+		template <typename VectorType>
+		void createPolarGrid(VectorType* outPhi, VectorType* outTheta) const {
+			size_t size = sampleCount();
+			outPhi->resize(size);
+			outTheta->resize(size);
+
+			for (size_t i = 0; i < size; ++i) {
+				auto loc = getSampleLocation(i);
+				(*outPhi)(i) = std::atan2(loc.y, loc.x);
+				(*outTheta)(i) = std::acos(loc.z);
+			}
+		}
+
+		void writeToTexture(ref<Texture> tex) {
+			assert(mStorageMode == StorageMode::READ);
+			assert(tex->type() == TextureType::CUBE_MAP);
+			if (tex->width() != width() || tex->height() != height()) {
+				throw std::invalid_argument("Texture has incorrect dimensions!");
+			}
+
+			std::vector<float> mData(OutputType::length() * (size_t)width() * (size_t)height());
+			// Copy data
+			uint32_t width_ = width();
+			uint32_t height_ = height();
+			size_t i_read = 0;
+			for (uint32_t i_side = 0; i_side < 6; ++i_side) {
+				size_t i_write = 0;
+
+				for (uint32_t y = 0; y < height_; ++y) {
+					for (uint32_t x = 0; x < width_; ++x) {
+						for (uint32_t i_component = 0; i_component < OutputType::length(); ++i_component)
+							mData[i_write++] = (*this)(x, y, i_side);
+					}
+				}
+
+				GLenum format;
+				if constexpr (OutputType::length() == 1) {
+					format = GL_RED;
+				}
+				else if constexpr (OutputType::length() == 2) {
+					format = GL_RG;
+				}
+				else if constexpr (OutputType::length() == 3) {
+					format = GL_RGB;
+				}
+				else if constexpr (OutputType::length() == 4) {
+					format = GL_RGBA;
+				}
+
+				// Copy data into texture
+				glGetError();
+				glBindTexture(GL_TEXTURE_CUBE_MAP, tex->id());
+				glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i_side, 0, 0, 0, tex->width(), tex->height(), format, GL_FLOAT, &mData[0]);
+				printError(glGetError());
+			}
+		}
+
+		ref<Texture> toTextureUnmanaged(const GLenum format,
+			ContentFactory<Texture>* factory) {
+			assert(mStorageMode == StorageMode::READ);
+			checkValidFormat<OutputType>(format);
+			ref<Texture> tex = factory->makeCubemapUnmanaged(width(), height(), format);
+			writeToTexture(tex);
+			return tex;
+		}
+
+		Node toTexture(ref<Texture>* out,
+			const GLenum format,
+			ContentFactory<Texture>* factory) {
+			assert(mStorageMode == StorageMode::READ);
+			checkValidFormat<OutputType>(format);
+			Node texNode = factory->makeCubemap(out, width(), height(), format);
+			writeToTexture(out);
+			return texNode;
+		}
+
+
 		template <typename ReturnType>
 		friend void loadCubemapStorageFromPNGinternal(const std::string& filename, CubemapStorage<ReturnType>* out);
 		template <typename ReturnType>
 		friend void saveCubemapStorageToPNGinternal(const std::string& filename, const CubemapStorage<ReturnType>& f);
-
-		friend void testSaveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<glm::vec4>& f);
 	};
 
 	void loadRectSurfaceStorageFromPNG(const std::string& filename, RectSurfaceGridStorage<float>* out);
@@ -604,8 +715,12 @@ namespace Morpheus {
 	public:
 		typedef glm::uvec2 SizeType;
 		typedef glm::ivec2 IndexType;
+		typedef OutputType OutputType;
+		typedef InputType InputType;
 
 		constexpr static uint32_t ALLOCATE_DIMENSION = 2;
+		constexpr static uint32_t SAMPLE_POSITION_DIMENSION = 2;
+		constexpr static bool SUPPORTS_POLAR_GRID = false;
 
 	private:
 		std::vector<OutputType> mGrid;
@@ -777,6 +892,72 @@ namespace Morpheus {
 			saveRectSurfaceStorageToPNG(filename, *this);
 		}
 
+		template <typename VectorType>
+		void createGrid(VectorType* outX, VectorType* outY) const {
+			size_t size = sampleCount();
+			outX->resize(size);
+			outY->resize(size);
+
+			for (size_t i = 0; i < size; ++i) {
+				auto loc = getSampleLocation(i);
+				(*outX)(i) = loc.x;
+				(*outY)(i) = loc.y;
+			}
+		}
+
+		void writeToTexture(ref<Texture> tex) {
+			assert(mStorageMode == StorageMode::READ);
+			assert(tex->type() == TextureType::TEXTURE_2D);
+			if (tex->width() != width() || tex->height() != height()) {
+				throw std::invalid_argument("Texture has incorrect dimensions!");
+			}
+
+			std::vector<float> mData(OutputType::length() * width() * height());
+			// Copy data
+			for (size_t i_write = 0, i_read = 0; i_read < mGrid.size(); ++i_read)
+				for (uint32_t i_component = 0; i_component < OutputType::length(); ++i_component)
+					mData[i_write++] = mGrid[i_read][i_component];
+
+			GLenum format;
+			if constexpr (OutputType::length() == 1) {
+				format = GL_RED;
+			}
+			else if constexpr (OutputType::length() == 2) {
+				format = GL_RG;
+			}
+			else if constexpr (OutputType::length() == 3) {
+				format = GL_RGB;
+			}
+			else if constexpr (OutputType::length() == 4) {
+				format = GL_RGBA;
+			}
+
+			// Copy data into texture
+			glGetError();
+			glBindTexture(GL_TEXTURE_2D, tex->id());
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex->width(), tex->height(), format, GL_FLOAT, &mData[0]);
+			printError(glGetError());
+		}
+
+		ref<Texture> toTextureUnmanaged(const GLenum format,
+			ContentFactory<Texture>* factory) {
+			assert(mStorageMode == StorageMode::READ);
+			checkValidFormat<OutputType>(format);
+			ref<Texture> tex = factory->makeTexture2DUnmanaged(width(), height(), format);
+			writeToTexture(tex);
+			return tex;
+		}
+
+		Node toTexture(ref<Texture>* out,
+			const GLenum format,
+			ContentFactory<Texture>* factory) {
+			assert(mStorageMode == StorageMode::READ);
+			checkValidFormat<OutputType>(format);
+			Node texNode = factory->makeTexture2D(out, width(), height(), format);
+			writeToTexture(out);
+			return texNode;
+		}
+
 		template <typename ReturnType>
 		friend void loadRectSurfaceStorageFromPNGinternal(const std::string& filename, RectSurfaceGridStorage<ReturnType>* out);
 		template <typename ReturnType>
@@ -822,6 +1003,64 @@ namespace Morpheus {
 		}
 	};
 
+	template <bool success>
+	struct CreateGridGate;
+
+	template <>
+	struct CreateGridGate<false> {
+		template <typename StorageType, typename VectorType>
+		inline static void createGrid(const StorageType* storage, VectorType* outX) {
+			throw std::exception("Storage does not support these dimensions!");
+		}
+
+		template <typename StorageType, typename VectorType>
+		inline static void createGrid(const StorageType* storage, VectorType* outX, VectorType* outY) {
+			throw std::exception("Storage does not support these dimensions!");
+		}
+
+		template <typename StorageType, typename VectorType>
+		inline static void createGrid(const StorageType* storage, VectorType* outX, VectorType* outY, VectorType* outZ) {
+			throw std::exception("Storage does not support these dimensions!");
+		}
+	};
+
+	template<>
+	struct CreateGridGate<true> {
+		template <typename StorageType, typename VectorType>
+		inline static void createGrid(const StorageType* storage, VectorType* outX) {
+			storage->createGrid(outX);
+		}
+
+		template <typename StorageType, typename VectorType>
+		inline static void createGrid(const StorageType* storage, VectorType* outX, VectorType* outY) {
+			storage->createGrid(outX, outY);
+		}
+
+		template <typename StorageType, typename VectorType>
+		inline static void createGrid(const StorageType* storage, VectorType* outX, VectorType* outY, VectorType* outZ) {
+			storage->createGrid(outX, outY, outZ);
+		}
+	};
+
+	template <bool success>
+	struct CreatePolarGridGate;
+
+	template <>
+	struct CreatePolarGridGate<false> {
+		template <typename StorageType, typename VectorType>
+		inline static void createPolarGrid(const StorageType* storage, VectorType* outPhi, VectorType* outTheta) {
+			throw std::exception("Storage does not support polar coordinates!");
+		}
+	};
+
+	template <>
+	struct CreatePolarGridGate<true> {
+		template <typename StorageType, typename VectorType>
+		inline static void createPolarGrid(const StorageType* storage, VectorType* outPhi, VectorType* outTheta) {
+			storage->createPolarGrid(outPhi, outTheta);
+		}
+	};
+
 	template <typename ReturnType, 
 		typename InputType, 
 		typename StorageType,
@@ -861,6 +1100,80 @@ namespace Morpheus {
 		inline void allocate(const uint32_t sizeX, const uint32_t sizeY, const uint32_t sizeZ) {
 			constexpr bool same = StorageType::ALLOCATE_DIMENSION == 3;
 			AllocateStorageGate<same>::allocate(&mStorage, sizeX, sizeY, sizeZ);
+		}
+
+		template <typename VectorType>
+		inline void createGrid(VectorType* outX) const {
+			constexpr bool same = StorageType::SAMPLE_POSITION_DIMENSION == 1;
+			CreateGridGate<same>::createGrid(&mStorage, outX);
+		}
+
+		template <typename VectorType>
+		inline void createGrid(VectorType* outX, VectorType* outY) const {
+			constexpr bool same = StorageType::SAMPLE_POSITION_DIMENSION == 2;
+			CreateGridGate<same>::createGrid(&mStorage, outX, outY);
+		}
+
+		template <typename VectorType>
+		inline void createGrid(VectorType* outX, VectorType* outY, VectorType* outZ) const {
+			constexpr bool same = StorageType::SAMPLE_POSITION_DIMENSION == 3;
+			CreateGridGate<same>::createGrid(&mStorage, outX, outY, outZ);
+		}
+
+		template <typename VectorType>
+		inline void createPolarGrid(VectorType* outPhi, VectorType* outTheta) const {
+			constexpr bool success = StorageType::SUPPORTS_POLAR_COORDINATES;
+			CreatePolarGridGate<success>::createPolarGrid(&mStorage, outPhi, outTheta);
+		}
+
+		template <typename MatrixType>
+		inline void toSampleMatrix(MatrixType* out) {
+			static_assert(std::is_same_v<ReturnType, typename StorageType::OutputType>, 
+				"Function and function storage must accept and return the same types!");
+			static_assert(std::is_same_v<InputType, typename StorageType::InputType>,
+				"Function and function storage must accept and return the same types!");
+
+			size_t size = mStorage.sampleCount();
+			out->resize(size, ReturnType::length());
+
+			for (size_t j = 0; j < ReturnType::length(); ++j) {
+				for (size_t i = 0; i < size; ++i) {
+					(*out)(i, j) = mStorage[i][j];
+				}
+			}
+		}
+
+		template <typename MatrixType>
+		inline void fromSampleMatrix(const MatrixType& in) {
+			static_assert(std::is_same_v<ReturnType, typename StorageType::OutputType>,
+				"Function and function storage must accept and return the same types!");
+			static_assert(std::is_same_v<InputType, typename StorageType::InputType>,
+				"Function and function storage must accept and return the same types!");
+
+			size_t size = mStorage.sampleCount();
+
+			assert(in.rows() == size && in.cols() == ReturnType::length());
+
+			for (size_t j = 0; j < ReturnType::length(); ++j) {
+				for (size_t i = 0; i < size; ++i) {
+					mStorage[i][j] = in(i, j);
+				}
+			}
+		}
+
+		inline ref<Texture> toTextureUnmanaged(const GLenum format = GL_INVALID_ENUM, 
+			ContentFactory<Texture>* factory = content()->getFactory<Texture>()) {
+			return mStorage.toTextureUnmanaged(format, factory);
+		}
+
+		inline Node toTexture(ref<Texture>* out = nullptr,
+			const GLenum format = GL_INVALID_ENUM, 
+			ContentFactory<Texture>* factory = content()->getFactory<Texture>()) {
+			return mStorage.toTexture(out, format, factory);
+		}
+
+		inline void writeToTexture(ref<Texture> target) {
+			mStorage.writeToTexture(target);
 		}
 
 		inline void transition(const StorageMode mode) {

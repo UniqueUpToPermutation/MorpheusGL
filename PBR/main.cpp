@@ -93,12 +93,12 @@ int main() {
 		transform.addChild(staticMeshNode);
 
 		FunctionSphere<glm::vec4> func;
-		func.loadpng("textures/park");
+		func.loadpng("textures/black");
 
 		FunctionSphere<glm::vec4> func_downsample;
-		func_downsample.allocate(256, 256);
+		func_downsample.allocate(64, 64);
 		LambertKernel lambert;
-		lambert.apply(func, &func_downsample, 1000);
+		lambert.apply(func, &func_downsample, 4000);
 		func_downsample.savepng("sky2");
 
 		// Initialize the scene graph

@@ -180,6 +180,7 @@ namespace Morpheus {
 		tex_ptr->mWidth = Extent.x;
 		tex_ptr->mHeight = Extent.y;
 		tex_ptr->mDepth = Extent.z;
+		tex_ptr->mFormat = Format.Internal;
 		return ref<Texture>(tex_ptr);
 	}
 
@@ -206,6 +207,7 @@ namespace Morpheus {
 			tex->mWidth = width;
 			tex->mHeight = height;
 			tex->mDepth = 1;
+			tex->mFormat = GL_RGBA8;
 
 			return ref<Texture>(tex);
 		}
@@ -300,7 +302,82 @@ namespace Morpheus {
 		glDeleteTextures(1, &tex->mId);
 		delete tex;
 	}
+
 	void ContentFactory<Texture>::dispose() {
 		delete this;
+	}
+
+	ref<Texture> ContentFactory<Texture>::makeTexture2DUnmanaged(const uint32_t width, const uint32_t height, 
+		const GLenum format, const int miplevels) {
+		GLuint TextureName = 0;
+		glGenTextures(1, &TextureName);
+		glBindTexture(GL_TEXTURE_2D, TextureName);
+
+		GLsizei actual_mip_levels = 0;
+		if (miplevels >= 0) {
+			actual_mip_levels = miplevels;
+		}
+		else {
+			uint32_t pow = 0;
+			uint32_t size = std::min(width, height);
+			while (size) { size /= 2; ++pow; }
+			actual_mip_levels = pow;
+		}
+
+		glTexStorage2D(GL_TEXTURE_2D, actual_mip_levels, format, width, height);
+
+		Texture* tex = new Texture();
+		tex->mWidth = width;
+		tex->mHeight = height;
+		tex->mType = TextureType::TEXTURE_2D;
+		tex->mId = TextureName;
+		tex->mDepth = 1;
+		tex->mFormat = format;
+		return ref<Texture>(tex);
+	}
+
+	Node ContentFactory<Texture>::makeTexture2D(ref<Texture>* out, const uint32_t width, const uint32_t height,
+		const GLenum format, const int miplevels) {
+		ref<Texture> texRef = makeTexture2DUnmanaged(width, height, format, miplevels);
+		if (out)
+			*out = texRef;
+		return content()->createContentNode(texRef);
+	}
+
+	ref<Texture> ContentFactory<Texture>::makeCubemapUnmanaged(const uint32_t width, const uint32_t height,
+		const GLenum format, const int miplevels) {
+		GLuint TextureName = 0;
+		glGenTextures(1, &TextureName);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, TextureName);
+
+		GLsizei actual_mip_levels = 0;
+		if (miplevels >= 0) {
+			actual_mip_levels = miplevels;
+		}
+		else {
+			uint32_t pow = 0;
+			uint32_t size = std::min(width, height);
+			while (size) { size /= 2; ++pow; }
+			actual_mip_levels = pow;
+		}
+
+		glTexStorage2D(GL_TEXTURE_CUBE_MAP, actual_mip_levels, format, width, height);
+
+		Texture* tex = new Texture();
+		tex->mWidth = width;
+		tex->mHeight = height;
+		tex->mType = TextureType::CUBE_MAP;
+		tex->mId = TextureName;
+		tex->mDepth = 1;
+		tex->mFormat = format;
+		return ref<Texture>(tex);
+	}
+
+	Node ContentFactory<Texture>::makeCubemap(ref<Texture>* out, const uint32_t width, const uint32_t height,
+		const GLenum format, const int miplevels) {
+		ref<Texture> texRef = makeCubemapUnmanaged(width, height, format, miplevels);
+		if (out)
+			*out = texRef;
+		return content()->createContentNode(texRef);
 	}
 }

@@ -109,6 +109,19 @@ namespace Morpheus {
 		}
 
 		/// <summary>
+		/// Create a node for a content object and transfer ownership of node to content manager.
+		/// </summary>
+		/// <typeparam name="ContentType">The type of the content.</typeparam>
+		/// <param name="content">A reference to the content.</param>
+		/// <returns>A child node of the content manager with the content as an owner.</returns>
+		template <typename ContentType>
+		Node createContentNode(ref<ContentType>& content) {
+			auto newNode = graph()->addNode(content);
+			addContentNode(newNode);
+			return newNode;
+		}
+
+		/// <summary>
 		/// Get a content factory by content type.
 		/// </summary>
 		/// <typeparam name="ContentType">The type of content to get a factory for</typeparam>

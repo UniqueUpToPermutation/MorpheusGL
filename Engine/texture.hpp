@@ -22,6 +22,7 @@ namespace Morpheus {
 		uint32_t mWidth;
 		uint32_t mHeight;
 		uint32_t mDepth;
+		GLenum mFormat;
 
 		void savepngtex2d(const std::string& path);
 		void savepngcubemap(const std::string& path);
@@ -32,6 +33,7 @@ namespace Morpheus {
 		inline uint32_t width() const { return mWidth; }
 		inline uint32_t height() const { return mHeight; }
 		inline uint32_t depth() const { return mDepth; }
+		inline GLenum format() const { return mFormat; }
 
 		void savepng(const std::string& path);
 
@@ -48,9 +50,9 @@ namespace Morpheus {
 		void unload(ref<void>& ref) override;
 		void dispose() override;
 
-		void makeTexture2DUnmanaged(const uint32_t width, const uint32_t height, const GLuint format, const int miplevels = -1);
-		void makeTexture2D(const uint32_t width, const uint32_t height, const GLuint format, const int miplevels = -1);
-		void makeCubemapUnmanaged(const uint32_t width, const uint32_t height, const GLuint format, const int miplevels = -1);
-		void makeCubemap(const uint32_t width, const uint32_t height, const GLuint format, const int miplevels = -1);
+		ref<Texture> makeTexture2DUnmanaged(const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeTexture2D(ref<Texture>* out, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
+		ref<Texture> makeCubemapUnmanaged(const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeCubemap(ref<Texture>* out, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
 	};
 }
