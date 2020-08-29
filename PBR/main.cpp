@@ -10,6 +10,7 @@
 #include "cameracontroller.hpp"
 #include "samplefunction.hpp"
 #include "lambert.hpp"
+#include "sphericalharmonics.hpp"
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
@@ -28,8 +29,6 @@ protected:
 		nanogui::ref<nanogui::Window> window = gui->addWindow(nanogui::Vector2i(10, 10), "Shader Settings");
 
 		gui->addGroup("Mesh");
-		gui->addButton("Do Something...", [&] {});
-
 		mScreen->setVisible(true);
 		mScreen->performLayout();
 	}
@@ -92,14 +91,36 @@ int main() {
 		sceneNode.addChild(transform);
 		transform.addChild(staticMeshNode);
 
-		FunctionSphere<glm::vec4> func;
-		func.loadpng("textures/black");
+		// Process the light field into an irradiance map
+		auto light_field = StaticMesh::getMaterial(staticMeshNode)->samplerAssignments().mBindings[0].mTexture;
 
-		FunctionSphere<glm::vec4> func_downsample;
-		func_downsample.allocate(64, 64);
-		LambertKernel lambert;
-		lambert.apply(func, &func_downsample, 4000);
-		func_downsample.savepng("sky2");
+		FunctionSphere<glm::vec3> light_field_func;
+		light_field_func.fromTexture(light_field);
+
+		Eigen::MatrixXd light_field_mat;
+		light_field_func.toSampleMatrix(&light_field_mat);
+
+		Eigen::VectorXd X, Y, Z;
+		Eigen::VectorXd mode;
+		light_field_func.createGrid(&X, &Y, &Z);
+		Eigen::MatrixXd modes;
+		Eigen::MatrixXd dual_modes;
+
+		SphericalHarmonics::generateIrradianceModes(X, Y, Z, &modes, 2);
+		CubemapMetric::dual(modes, &dual_modes);
+
+		Eigen::MatrixXd coeffs = dual_modes.transpose() * light_field_mat;
+		std::cout << coeffs << std::endl;
+		Eigen::MatrixXd proj_light_field_mat = modes * coeffs;
+
+		light_field_func.transition(StorageMode::WRITE);
+		light_field_func.fromSampleMatrix(proj_light_field_mat);
+		light_field_func.transition(StorageMode::READ);
+
+		Morpheus::ref<Texture> tex;
+		auto texNode = light_field_func.toTexture(&tex);
+		sceneNode.addChild(texNode); // Make sure the garbage collector doesn't come
+		auto mat = StaticMesh::getMaterial(staticMeshNode)->samplerAssignments().mBindings[0].mTexture = tex;
 
 		// Initialize the scene graph
 		init(sceneNode);

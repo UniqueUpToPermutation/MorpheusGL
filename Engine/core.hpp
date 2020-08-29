@@ -827,13 +827,14 @@ namespace Morpheus {
 	template <typename T>
 	Node duplicate(const Node& a);
 
-	#ifdef GRAPHICS_DEBUG
-	#define GL_ASSERT printError(glGetError())
+	#ifdef _DEBUG
+	#define GL_ASSERT checkGLError();
 	#else
 	#define GL_ASSERT
 	#endif
 
 	void printError(unsigned int err);
+	void checkGLError();
 
 	/// <summary>
 	/// Any class that derives from ILogic is meant to be a nonvisible node in

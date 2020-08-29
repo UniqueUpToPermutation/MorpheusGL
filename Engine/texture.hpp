@@ -36,6 +36,7 @@ namespace Morpheus {
 		inline GLenum format() const { return mFormat; }
 
 		void savepng(const std::string& path);
+		void genMipmaps();
 
 		friend class ContentFactory<Texture>;
 	};

@@ -218,6 +218,10 @@ namespace Morpheus {
 		assert(err == GL_NO_ERROR);
 	}
 
+	void checkGLError() {
+		printError(glGetError());
+	}
+
 	void init(Node& node, NodeGraph* graph, Node& updater) {
 		auto desc = graph->desc(node);
 

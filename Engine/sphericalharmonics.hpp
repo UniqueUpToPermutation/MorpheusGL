@@ -30,11 +30,15 @@ namespace Morpheus {
 			Eigen::VectorXd* out);
 	};
 
-	class CubemapJacobian {
+	class CubemapMetric {
 	public:
-		static void generate(const Eigen::VectorXf& inPhi, const Eigen::VectorXf& inTheta, Eigen::VectorXf* out);
-		static void generate(const Eigen::VectorXd& inPhi, const Eigen::VectorXd& inTheta, Eigen::VectorXd* out);
-		static void generate(const Eigen::VectorXf& inX, const Eigen::VectorXf& inY, const Eigen::VectorXf& inZ, Eigen::VectorXf* out);
-		static void generate(const Eigen::VectorXd& inX, const Eigen::VectorXd& inY, const Eigen::VectorXd& inZ, Eigen::VectorXd* out);
+		static void dual(const Eigen::VectorXf& primal, 
+			Eigen::VectorXf* out);
+		static void dual(const Eigen::VectorXd& primal, 
+			Eigen::VectorXd* out);
+		static void dual(const Eigen::MatrixXf& primal,
+			Eigen::MatrixXf* out);
+		static void dual(const Eigen::MatrixXd& primal,
+			Eigen::MatrixXd* out);
 	};
 }

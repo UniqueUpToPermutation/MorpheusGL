@@ -16,10 +16,10 @@ namespace Morpheus {
 
 	public:
 		inline ref<Shader> shader() const { return mShader; }
-		inline const ShaderUniformAssignments& uniformAssignments() const {
+		inline ShaderUniformAssignments& uniformAssignments() {
 			return mUniformAssigments;
 		}
-		inline const ShaderSamplerAssignments& samplerAssignments() const {
+		inline ShaderSamplerAssignments& samplerAssignments() {
 			return mSamplerAssignments;
 		}
 

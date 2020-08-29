@@ -44,7 +44,7 @@ namespace Morpheus {
 				}
 			};
 			generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-			break;
+			return;
 		}	
 		case 1:
 			switch (m) {
@@ -55,7 +55,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case 0: {
 				struct stct {
@@ -64,7 +64,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case 1: {
 				struct stct {
@@ -73,9 +73,8 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
-			break;
 			}
 		case 2:
 			switch (m) {
@@ -86,7 +85,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case -1: {
 				struct stct {
@@ -95,7 +94,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case 0: {
 				struct stct {
@@ -104,7 +103,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case 1: {
 				struct stct {
@@ -113,7 +112,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case 2: {
 				struct stct {
@@ -122,9 +121,8 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
-			break;
 			}
 		case 3:
 			switch (m) {
@@ -135,7 +133,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case -2: {
 				struct stct {
@@ -144,7 +142,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case -1: {
 				struct stct {
@@ -153,7 +151,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case 0: {
 				struct stct {
@@ -162,7 +160,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case 1: {
 				struct stct {
@@ -171,7 +169,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case 2: {
 				struct stct {
@@ -180,7 +178,7 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
 			case 3: {
 				struct stct {
@@ -189,13 +187,12 @@ namespace Morpheus {
 					}
 				};
 				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
-				break;
+				return;
 			}
-			break;
 			}
 		default:
 			throw std::invalid_argument("l > 3 modes not supported!");
-			break;
+			return;
 		}
 	}
 
@@ -214,9 +211,11 @@ namespace Morpheus {
 
 		out->resize(inX.size(), cols);
 
+		VectorType vec;
 		for (int l = 0, i = 0; l <= highestL; ++l) {
-			for (int m = -l; m <= l; ++m) {
-				generateInternalMode<VectorType, decltype(out->col(i)), scalar_t>(l, m, inX, inY, inZ, &out->col(i));
+			for (int m = -l; m <= l; ++m, ++i) {
+				generateInternalMode<VectorType, VectorType, scalar_t>(l, m, inX, inY, inZ, &vec);
+				out->col(i) = vec;
 			}
 		}
 	}
@@ -254,56 +253,73 @@ namespace Morpheus {
 		generateInternalMode<Eigen::VectorXd, Eigen::VectorXd, double>(l, m, inX, inY, inZ, out);
 	}
 
-	template <typename VectorType>
-	void cbjGenerateInternal(const VectorType& inPhi, const VectorType& inTheta, VectorType* out) {
-		typedef decltype(inPhi(0)) scalar_t;
+	template <typename VectorType, typename scalar_t>
+	void cbmDual(const VectorType& primal,
+		VectorType* out) {
+		size_t n = (size_t)std::sqrt(primal.size() / 6);
+		scalar_t h = (scalar_t)(2.0 / (scalar_t)n);
+		scalar_t h2 = (scalar_t)(h * h);
 
-		out->resize(inPhi.size());
-		size_t size = inPhi.size();
+		out->resize(primal.size());
 
-		for (size_t i = 0; i < size; ++i) {
-			scalar_t z = std::cos(inTheta(i));
-			scalar_t x = std::cos(inPhi(i)) * std::sin(inTheta(i));
-			scalar_t y = std::sin(inPhi(i)) * std::sin(inTheta(i));
-			scalar_t mag2 = x * x + y * y + z * z;
-
-			(*out)(i) = (scalar_t)1.0 / (mag2 * glm::sqrt(mag2));
+		for (size_t i_face = 0, i = 0; i_face < 6; ++i_face) {
+			for (size_t i_x = 0; i_x < n; ++i_x) {
+				for (size_t i_y = 0; i_y < n; ++i_y) {
+					scalar_t x = (scalar_t)((i_x + 0.5) * h - 1.0);
+					scalar_t y = (scalar_t)((i_y + 0.5) * h - 1.0);
+					scalar_t mag2 = x * x + y * y + 1;
+					scalar_t mag = std::sqrt(mag2);
+					scalar_t jacobian = (scalar_t)1.0 / (mag2 * mag);
+					scalar_t metricWeight = jacobian * h2;
+					(*out)(i++) = primal(i) * metricWeight;
+				}
+			}
 		}
 	}
 
-	template <typename VectorType>
-	void cbjGenerateInternal(const VectorType& inX, const VectorType& inY, const VectorType& inZ, VectorType* out) {
-		typedef decltype(inX(0)) scalar_t;
+	void CubemapMetric::dual(const Eigen::VectorXf& primal, 
+		Eigen::VectorXf* out) {
+		cbmDual<Eigen::VectorXf, float>(primal, out);
+	}
 
-		assert(inX.size() == inY.size());
-		assert(inY.size() == inZ.size());
+	void CubemapMetric::dual(const Eigen::VectorXd& primal, 
+		Eigen::VectorXd* out) {
+		cbmDual<Eigen::VectorXd, double>(primal, out);
+	}
 
-		out->resize(inX.size());
-		size_t size = inX.size();
+	template <typename MatrixType, typename VectorType, typename scalar_t>
+	void cbmDualMatrix(const MatrixType& primal,
+		MatrixType* out) {
+		out->resize(primal.rows(), primal.cols());
 
-		for (size_t i = 0; i < size; ++i) {
-			scalar_t z = inZ(i);
-			scalar_t x = inX(i);
-			scalar_t y = inY(i);
-			scalar_t mag2 = x * x + y * y + z * z;
+		size_t n = (size_t)std::sqrt(primal.rows() / 6);
+		scalar_t h = (scalar_t)(2.0 / (scalar_t)n);
+		scalar_t h2 = (scalar_t)(h * h);
 
-			(*out)(i) = (scalar_t)1.0 / (mag2 * glm::sqrt(mag2));
+		for (size_t i_col = 0; i_col < primal.cols(); ++i_col) {
+			for (size_t i_face = 0, i = 0; i_face < 6; ++i_face) {
+				for (size_t i_x = 0; i_x < n; ++i_x) {
+					for (size_t i_y = 0; i_y < n; ++i_y) {
+						scalar_t x = (scalar_t)((i_x + 0.5) * h - 1.0);
+						scalar_t y = (scalar_t)((i_y + 0.5) * h - 1.0);
+						scalar_t mag2 = x * x + y * y + 1;
+						scalar_t mag = std::sqrt(mag2);
+						scalar_t jacobian = (scalar_t)1.0 / (mag2 * mag);
+						scalar_t metricWeight = jacobian * h2;
+						(*out)(i++, i_col) = primal(i, i_col) * metricWeight;
+					}
+				}
+			}
 		}
 	}
 
-	void CubemapJacobian::generate(const Eigen::VectorXf& inPhi, const Eigen::VectorXf& inTheta, Eigen::VectorXf* out) {
-		cbjGenerateInternal(inPhi, inTheta, out);
+	void CubemapMetric::dual(const Eigen::MatrixXf& primal,
+		Eigen::MatrixXf* out) {
+		cbmDualMatrix<Eigen::MatrixXf, Eigen::VectorXf, float>(primal, out);
 	}
 
-	void CubemapJacobian::generate(const Eigen::VectorXd& inPhi, const Eigen::VectorXd& inTheta, Eigen::VectorXd* out) {
-		cbjGenerateInternal(inPhi, inTheta, out);
-	}
-
-	void CubemapJacobian::generate(const Eigen::VectorXf& inX, const Eigen::VectorXf& inY, const Eigen::VectorXf& inZ, Eigen::VectorXf* out) {
-		cbjGenerateInternal(inX, inY, inZ, out);
-	}
-
-	void CubemapJacobian::generate(const Eigen::VectorXd& inX, const Eigen::VectorXd& inY, const Eigen::VectorXd& inZ, Eigen::VectorXd* out) {
-		cbjGenerateInternal(inX, inY, inZ, out);
+	void CubemapMetric::dual(const Eigen::MatrixXd& primal,
+		Eigen::MatrixXd* out) {
+		cbmDualMatrix<Eigen::MatrixXd, Eigen::VectorXd, double>(primal,  out);
 	}
 }

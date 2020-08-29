@@ -6,8 +6,61 @@
 
 namespace Morpheus {
 
+	void writeCubemapSideBaseLevel(ref<Texture> tex, size_t i_side, GLenum format, const std::vector<float>& mData) {
+		GL_ASSERT;
+		glBindTexture(GL_TEXTURE_CUBE_MAP, tex->id());
+		GL_ASSERT;
+		glTexSubImage2D((GLenum)(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i_side), 0, 0, 0, tex->width(), 
+			tex->height(), format, GL_FLOAT, &mData[0]);
+		GL_ASSERT;
+		glGenerateTextureMipmap(tex->id());
+		GL_ASSERT;
+	}
+
+	void writeTextureBaseLevel(ref<Texture> tex, GLenum format, const std::vector<float>& mData) {
+		glBindTexture(GL_TEXTURE_2D, tex->id());
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex->width(), tex->height(), format, GL_FLOAT, &mData[0]);
+		GL_ASSERT;
+		glGenerateTextureMipmap(tex->id());
+		GL_ASSERT;
+	}
+
+	GLenum defaultFormatForLength(uint32_t element_length) {
+		switch (element_length) {
+		case 1:
+			return GL_RED;
+		case 2:
+			return GL_RG;
+		case 3:
+			return GL_RGB;
+		case 4:
+			return GL_RGBA;
+		}
+		return GL_INVALID_ENUM;
+	}
+
+	void readCubemapSideBaseLevel(ref<Texture> tex, size_t i_side, uint32_t element_length, std::vector<float>* mData) {
+		mData->resize((size_t)element_length * (size_t)tex->width() * (size_t)tex->height());
+		GLenum format = defaultFormatForLength(element_length);
+		glGetTextureSubImage(tex->id(), 0, 0, 0, (GLint)i_side, tex->width(), tex->height(), 1,
+			format, GL_FLOAT, (GLsizei)(mData->size() * sizeof(float)), &(*mData)[0]);
+		GL_ASSERT;
+	}
+
+	void readTextureBaseLevel(ref<Texture> tex, uint32_t element_length, std::vector<float>* mData) {
+		mData->resize((size_t)element_length * (size_t)tex->width() * (size_t)tex->height());
+		GLenum format = defaultFormatForLength(element_length);
+		glGetTextureSubImage(tex->id(), 0, 0, 0, 0, tex->width(), tex->height(), 1, 
+			format, GL_FLOAT, (GLsizei)(mData->size() * sizeof(float)), &(*mData)[0]);
+		GL_ASSERT;
+	}
+
 	inline void loadPixel(float* dest, const uint8_t* src) {
 		*dest = ((float)*src) / 255.0f;
+	}
+
+	inline void loadPixel(double* dest, const uint8_t* src) {
+		*dest = ((double)*src) / 255.0;
 	}
 
 	inline void loadPixel(glm::vec2* dest, const uint8_t* src) {
@@ -30,6 +83,13 @@ namespace Morpheus {
 
 	inline void savePixel(uint8_t* dest, const float* src) {
 		dest[0] = (uint8_t)((*src) * 255.0f);
+		dest[1] = 0;
+		dest[2] = 0;
+		dest[3] = 255u;
+	}
+
+	inline void savePixel(uint8_t* dest, const double* src) {
+		dest[0] = (uint8_t)((*src) * 255.0);
 		dest[1] = 0;
 		dest[2] = 0;
 		dest[3] = 255u;
@@ -134,7 +194,7 @@ namespace Morpheus {
 			}
 
 			if (face == 0) {
-				out->allocate(width, height);
+				out->init(width, height);
 			}
 			else {
 				if (width != out->width()) {
@@ -187,7 +247,7 @@ namespace Morpheus {
 		}
 
 		out->wrap() = WrapType::REPEAT;
-		out->allocate(width, height);
+		out->init(width, height);
 		auto& gridData = out->mGrid;
 
 		size_t pixelCount = (size_t)width * (size_t)height;
@@ -200,6 +260,9 @@ namespace Morpheus {
 	}
 
 	void loadRectSurfaceStorageFromPNG(const std::string& filename, RectSurfaceGridStorage<float>* out) {
+		loadRectSurfaceStorageFromPNGinternal(filename, out);
+	}
+	void loadRectSurfaceStorageFromPNG(const std::string& filename, RectSurfaceGridStorage<double>* out) {
 		loadRectSurfaceStorageFromPNGinternal(filename, out);
 	}
 	void loadRectSurfaceStorageFromPNG(const std::string& filename, RectSurfaceGridStorage<glm::vec2>* out) {
@@ -215,6 +278,9 @@ namespace Morpheus {
 	void saveRectSurfaceStorageToPNG(const std::string& filename, const RectSurfaceGridStorage<float>& f) {
 		saveRectSurfaceStorageToPNGinternal(filename, f);
 	}
+	void saveRectSurfaceStorageToPNG(const std::string& filename, const RectSurfaceGridStorage<double>& f) {
+		saveRectSurfaceStorageToPNGinternal(filename, f);
+	}
 	void saveRectSurfaceStorageToPNG(const std::string& filename, const RectSurfaceGridStorage<glm::vec2>& f) {
 		saveRectSurfaceStorageToPNGinternal(filename, f);
 	}
@@ -228,6 +294,9 @@ namespace Morpheus {
 	void loadCubemapStorageFromPNG(const std::string& filename, CubemapStorage<float>* out) {
 		loadCubemapStorageFromPNGinternal(filename, out);
 	}
+	void loadCubemapStorageFromPNG(const std::string& filename, CubemapStorage<double>* out) {
+		loadCubemapStorageFromPNGinternal(filename, out);
+	}
 	void loadCubemapStorageFromPNG(const std::string& filename, CubemapStorage<glm::vec2>* out) {
 		loadCubemapStorageFromPNGinternal(filename, out);
 	}
@@ -239,6 +308,9 @@ namespace Morpheus {
 	}
 
 	void saveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<float>& f) {
+		saveCubemapStorageToPNGinternal(filename, f);
+	}
+	void saveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<double>& f) {
 		saveCubemapStorageToPNGinternal(filename, f);
 	}
 	void saveCubemapeStorageToPNG(const std::string& filename, const CubemapStorage<glm::vec2>& f) {

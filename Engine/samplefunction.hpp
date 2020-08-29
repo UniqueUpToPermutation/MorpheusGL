@@ -6,29 +6,103 @@
 #include <type_traits>
 #include <chrono>
 #include <random>
+#include <functional>
 
 #include <Eigen/Dense>
 
 #define DEFAULT_KERNEL_SAMPLE_COUNT 100u
 
 namespace Morpheus {
+	void writeCubemapSideBaseLevel(ref<Texture> tex, size_t i_side, GLenum format, const std::vector<float>& mData);
+	void writeTextureBaseLevel(ref<Texture> tex, GLenum format, const std::vector<float>& mData);
+
+	void readCubemapSideBaseLevel(ref<Texture> tex, size_t i_side, uint32_t element_length, std::vector<float>* mData);
+	void readTextureBaseLevel(ref<Texture> tex, uint32_t element_length, std::vector<float>* mData);
 
 	template <typename OutputType>
-	void checkValidFormat(const GLenum format) {
-		if constexpr (OutputType::length() == 1) {
-			return format == GL_R8 || format == GL_R16 || format == GL_R32F || format = GL_RED;
+	constexpr size_t getElementLength() {
+		return OutputType::length();
+	}
+
+	template <>
+	constexpr size_t getElementLength<float>() {
+		return 1;
+	}
+
+	template <>
+	constexpr size_t getElementLength<double>() {
+		return 1;
+	}
+
+	template <typename OutputType>
+	bool checkValidFormat(const GLenum format) {
+		constexpr size_t element_length = getElementLength<OutputType>();
+		if constexpr (element_length == 1) {
+			return format == GL_R8 || format == GL_R16 || format == GL_R32F;
 		}
-		else if constexpr (OutputType::length() == 2) {
-			return format == GL_RG8 || format == GL_RG16 || format == GL_RG32F || format = GL_RG;
+		else if constexpr (element_length == 2) {
+			return format == GL_RG8 || format == GL_RG16 || format == GL_RG32F;
 		}
-		else if constexpr (OutputType::length() == 3) {
-			return format == GL_RGB8 || format == GL_RGB16 || format == GL_RGB32F || format = GL_RGB;
+		else if constexpr (element_length == 3) {
+			return format == GL_RGB8 || format == GL_RGB16 || format == GL_RGB32F;
 		}
-		else if constexpr (OutputType::length() == 4) {
-			return format == GL_RGBA8 || format == GL_RGBA16 || format == GL_RGBA32F || format = GL_RGBA;
+		else if constexpr (element_length == 4) {
+			return format == GL_RGBA8 || format == GL_RGBA16 || format == GL_RGBA32F;
 		}
 	}
 
+	template <typename OutputType>
+	constexpr GLenum defaultTextureFormatForFunctionOutput() {
+		constexpr size_t element_length = getElementLength<OutputType>();
+		if constexpr (element_length == 1) {
+			return GL_R8;
+		}
+		else if constexpr (element_length == 2) {
+			return GL_RG8;
+		}
+		else if constexpr (element_length == 3) {
+			return GL_RGB8;
+		}
+		else if constexpr (element_length == 4) {
+			return GL_RGBA8;
+		}
+	}
+
+	template <typename OutputType>
+	inline void funcSampleCopyInto(OutputType* dest, float* src) {
+		constexpr size_t element_count = getElementLength<OutputType>();
+		for (uint32_t i = 0; i < element_count; ++i, ++src) {
+			(*dest)[i] = *src;
+		}
+	}
+
+	template <>
+	inline void funcSampleCopyInto<float>(float* dest, float* src) {
+		*dest = *src;
+	}
+
+	template <>
+	inline void funcSampleCopyInto<double>(double* dest, float* src) {
+		*dest = *src;
+	}
+
+	template <typename OutputType>
+	inline void funcSampleCopyOutOf(float* dest, OutputType* src) {
+		constexpr uint32_t element_count = (uint32_t)getElementLength<OutputType>();
+		for (uint32_t i = 0; i < element_count; ++i, ++dest) {
+			*dest = (*src)[i];
+		}
+	}
+
+	template <>
+	inline void funcSampleCopyOutOf<float>(float* dest, float* src) {
+		*dest = *src;
+	}
+
+	template <>
+	inline void funcSampleCopyOutOf<double>(float* dest, double* src) {
+		*dest = (float)*src;
+	}
 	template <typename VectorType>
 	struct ScalarType;
 
@@ -158,11 +232,13 @@ namespace Morpheus {
 	};
 
 	void loadCubemapStorageFromPNG(const std::string& filename, CubemapStorage<float>* out);
+	void loadCubemapStorageFromPNG(const std::string& filename, CubemapStorage<double>* out);
 	void loadCubemapStorageFromPNG(const std::string& filename, CubemapStorage<glm::vec2>* out);
 	void loadCubemapStorageFromPNG(const std::string& filename, CubemapStorage<glm::vec3>* out);
 	void loadCubemapStorageFromPNG(const std::string& filename, CubemapStorage<glm::vec4>* out);
 
 	void saveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<float>& f);
+	void saveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<double>& f);
 	void saveCubemapeStorageToPNG(const std::string& filename, const CubemapStorage<glm::vec2>& f);
 	void saveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<glm::vec3>& f);
 	void saveCubemapStorageToPNG(const std::string& filename, const CubemapStorage<glm::vec4>& f);
@@ -354,25 +430,34 @@ namespace Morpheus {
 			return mStorageMode;
 		}
 
+		void allocate() {
+			mCubemapData.resize(mGridSize.x * mGridSize.y * 6);
+			mStorageMode = StorageMode::ALLOCATED;
+		}
+
+		void deallocate() {
+			mCubemapData.clear();
+			mStorageMode = StorageMode::UNALLOCATED;
+		}
+
 		// Must be called before samples are assigned to
-		void allocate(const SizeType& gridSize) {
+		void init(const SizeType& gridSize, bool bAllocate = true) {
 			mGridSize = gridSize;
 			// Make room for the padding
 			mGridSize.x += 2;
 			mGridSize.y += 2;
-
-			mCubemapData.resize(mGridSize.x * mGridSize.y * 6);
 
 			mScale.x = static_cast<decltype(mScale.x)>(1.0 / gridSize.x);
 			mScale.y = static_cast<decltype(mScale.y)>(1.0 / gridSize.y);
 			mScaleInv.x = static_cast<decltype(mScale.x)>(gridSize.x);
 			mScaleInv.y = static_cast<decltype(mScale.y)>(gridSize.y);
 
-			mStorageMode = StorageMode::ALLOCATED;
+			if (bAllocate)
+				allocate();
 		}
 
-		void allocate(const uint32_t sizeX, const uint32_t sizeY) {
-			allocate(SizeType(sizeX, sizeY));
+		void init(const uint32_t sizeX, const uint32_t sizeY, bool bAllocate = true) {
+			init(SizeType(sizeX, sizeY), bAllocate);
 		}
 
 		struct CubemapUV {
@@ -637,7 +722,10 @@ namespace Morpheus {
 				throw std::invalid_argument("Texture has incorrect dimensions!");
 			}
 
-			std::vector<float> mData(OutputType::length() * (size_t)width() * (size_t)height());
+			std::vector<float> mData;
+			constexpr size_t element_length = getElementLength<OutputType>();
+			mData.resize(element_length * (size_t)width() * (size_t)height());
+
 			// Copy data
 			uint32_t width_ = width();
 			uint32_t height_ = height();
@@ -647,31 +735,29 @@ namespace Morpheus {
 
 				for (uint32_t y = 0; y < height_; ++y) {
 					for (uint32_t x = 0; x < width_; ++x) {
-						for (uint32_t i_component = 0; i_component < OutputType::length(); ++i_component)
-							mData[i_write++] = (*this)(x, y, i_side);
+						funcSampleCopyOutOf<OutputType>(&mData[i_write], &(*this)(x, y, i_side));
+						i_write += element_length;
 					}
 				}
 
 				GLenum format;
-				if constexpr (OutputType::length() == 1) {
+				if constexpr (element_length == 1) {
 					format = GL_RED;
 				}
-				else if constexpr (OutputType::length() == 2) {
+				else if constexpr (element_length == 2) {
 					format = GL_RG;
 				}
-				else if constexpr (OutputType::length() == 3) {
+				else if constexpr (element_length == 3) {
 					format = GL_RGB;
 				}
-				else if constexpr (OutputType::length() == 4) {
+				else if constexpr (element_length == 4) {
 					format = GL_RGBA;
 				}
 
 				// Copy data into texture
-				glGetError();
-				glBindTexture(GL_TEXTURE_CUBE_MAP, tex->id());
-				glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i_side, 0, 0, 0, tex->width(), tex->height(), format, GL_FLOAT, &mData[0]);
-				printError(glGetError());
+				writeCubemapSideBaseLevel(tex, i_side, format, mData);
 			}
+			tex->genMipmaps();
 		}
 
 		ref<Texture> toTextureUnmanaged(const GLenum format,
@@ -679,7 +765,8 @@ namespace Morpheus {
 			assert(mStorageMode == StorageMode::READ);
 			checkValidFormat<OutputType>(format);
 			ref<Texture> tex = factory->makeCubemapUnmanaged(width(), height(), format);
-			writeToTexture(tex);
+			GL_ASSERT;
+			writeToTexture(*tex);
 			return tex;
 		}
 
@@ -688,11 +775,50 @@ namespace Morpheus {
 			ContentFactory<Texture>* factory) {
 			assert(mStorageMode == StorageMode::READ);
 			checkValidFormat<OutputType>(format);
-			Node texNode = factory->makeCubemap(out, width(), height(), format);
-			writeToTexture(out);
+			ref<Texture> tex;
+			GL_ASSERT;
+			Node texNode = factory->makeCubemap(&tex, width(), height(), format);
+			GL_ASSERT;
+			writeToTexture(tex);
+			if (out)
+				*out = tex;
 			return texNode;
 		}
 
+		void fromTexture(ref<Texture> tex) {
+			assert(tex->type() == TextureType::CUBE_MAP);
+
+			init(tex->width(), tex->height(), true);
+			transition(StorageMode::WRITE);
+
+			uint32_t width_ = width();
+			uint32_t height_ = height();
+			size_t i_read = 0;
+			std::vector<float> mData;
+
+			constexpr uint32_t element_length = (uint32_t)getElementLength<OutputType>();
+
+			for (uint32_t i_side = 0; i_side < 6; ++i_side) {
+				size_t i_read = 0;
+
+				readCubemapSideBaseLevel(tex, i_side, element_length, &mData);
+
+				for (uint32_t y = 0; y < height_; ++y) {
+					for (uint32_t x = 0; x < width_; ++x) {
+						funcSampleCopyInto<OutputType>(&(*this)(x, y, i_side), &mData[i_read]);
+						i_read += element_length;
+					}
+				}
+			}
+
+			transition(StorageMode::READ);
+		}
+
+		void transform(const std::function<OutputType(const OutputType&)>& f) {
+			for (auto& sample : mCubemapData) {
+				sample = f(sample);
+			}
+		}
 
 		template <typename ReturnType>
 		friend void loadCubemapStorageFromPNGinternal(const std::string& filename, CubemapStorage<ReturnType>* out);
@@ -701,11 +827,13 @@ namespace Morpheus {
 	};
 
 	void loadRectSurfaceStorageFromPNG(const std::string& filename, RectSurfaceGridStorage<float>* out);
+	void loadRectSurfaceStorageFromPNG(const std::string& filename, RectSurfaceGridStorage<double>* out);
 	void loadRectSurfaceStorageFromPNG(const std::string& filename, RectSurfaceGridStorage<glm::vec2>* out);
 	void loadRectSurfaceStorageFromPNG(const std::string& filename, RectSurfaceGridStorage<glm::vec3>* out);
 	void loadRectSurfaceStorageFromPNG(const std::string& filename, RectSurfaceGridStorage<glm::vec4>* out);
 
 	void saveRectSurfaceStorageToPNG(const std::string& filename, const RectSurfaceGridStorage<float>& f);
+	void saveRectSurfaceStorageToPNG(const std::string& filename, const RectSurfaceGridStorage<double>& f);
 	void saveRectSurfaceStorageToPNG(const std::string& filename, const RectSurfaceGridStorage<glm::vec2>& f);
 	void saveRectSurfaceStorageToPNG(const std::string& filename, const RectSurfaceGridStorage<glm::vec3>& f);
 	void saveRectSurfaceStorageToPNG(const std::string& filename, const RectSurfaceGridStorage<glm::vec4>& f);
@@ -756,7 +884,17 @@ namespace Morpheus {
 
 		WrapType& wrap() { return mWrapType; }
 
-		void allocate(const SizeType& gridSize) {
+		void allocate() {
+			mGrid.resize((size_t)mGridSize.x * (size_t)mGridSize.y);
+			mStorageMode = StorageMode::ALLOCATED;
+		}
+
+		void deallocate() {
+			mGrid.clear();
+			mStorageMode = StorageMode::UNALLOCATED;
+		}
+
+		void init(const SizeType& gridSize, bool bAllocate = true) {
 			mGridSize = gridSize;
 			mScale.x = static_cast<decltype(mScale.x)>(1.0 / mGridSize.x);
 			mScale.y = static_cast<decltype(mScale.y)>(1.0 / mGridSize.y);
@@ -764,11 +902,13 @@ namespace Morpheus {
 			mScaleInv.y = static_cast<decltype(mScaleInv.y)>(mGridSize.y);
 			mClampBoundsLower = mScale / static_cast<decltype(mScale.x)>(2.0);
 			mClampBoundsUpper = InputType(1.0f, 1.0f) - mScale / static_cast <decltype(mScale.x)>(2.0);
-			mGrid.resize((size_t)gridSize.x * (size_t)gridSize.y);
+			
+			if (bAllocate)
+				allocate();
 		}
 
-		void allocate(const uint32_t sizeX, const uint32_t sizeY) {
-			allocate(SizeType(sizeX, sizeY));
+		void init(const uint32_t sizeX, const uint32_t sizeY, bool bAllocate = true) {
+			init(SizeType(sizeX, sizeY), bAllocate);
 		}
 
 		void transition(StorageMode mode) {
@@ -912,31 +1052,53 @@ namespace Morpheus {
 				throw std::invalid_argument("Texture has incorrect dimensions!");
 			}
 
-			std::vector<float> mData(OutputType::length() * width() * height());
+			constexpr size_t element_length = getElementLength<OutputType>();
+			std::vector<float> mData;
+			mData.resize(element_length * (size_t)width() * (size_t)height());
+			
 			// Copy data
-			for (size_t i_write = 0, i_read = 0; i_read < mGrid.size(); ++i_read)
-				for (uint32_t i_component = 0; i_component < OutputType::length(); ++i_component)
-					mData[i_write++] = mGrid[i_read][i_component];
+			for (size_t i_write = 0, i_read = 0; i_read < mGrid.size(); ++i_read, i_write += element_length) {
+				funcSampleCopyOutOf<OutputType>(&mData[i_write], &mGrid[i_read]);
+			}
 
 			GLenum format;
-			if constexpr (OutputType::length() == 1) {
+			if constexpr (element_length == 1) {
 				format = GL_RED;
 			}
-			else if constexpr (OutputType::length() == 2) {
+			else if constexpr (element_length == 2) {
 				format = GL_RG;
 			}
-			else if constexpr (OutputType::length() == 3) {
+			else if constexpr (element_length == 3) {
 				format = GL_RGB;
 			}
-			else if constexpr (OutputType::length() == 4) {
+			else if constexpr (element_length == 4) {
 				format = GL_RGBA;
 			}
 
 			// Copy data into texture
-			glGetError();
-			glBindTexture(GL_TEXTURE_2D, tex->id());
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex->width(), tex->height(), format, GL_FLOAT, &mData[0]);
-			printError(glGetError());
+			writeTextureBaseLevel(tex, format, mData);
+			tex->genMipmaps();
+		}
+
+		void fromTexture(ref<Texture> tex) {
+			assert(tex->type() == TextureType::CUBE_MAP);
+
+			init(tex->width(), tex->height(), true);
+			transition(StorageMode::WRITE);
+
+			uint32_t width_ = width();
+			uint32_t height_ = height();
+			size_t i_read = 0;
+
+			constexpr size_t element_length = getElementLength<OutputType>();
+			std::vector<float> mData;
+			readTextureBaseLevel(tex, (uint32_t)element_length, &mData);
+
+			for (size_t i_write = 0, i_read = 0; i_write < mGrid.size(); ++i_write, i_read += element_length) {
+				funcSampleCopyInto<OutputType>(&mGrid[i_write], &mData[i_read]);
+			}
+
+			transition(StorageMode::READ);
 		}
 
 		ref<Texture> toTextureUnmanaged(const GLenum format,
@@ -944,6 +1106,7 @@ namespace Morpheus {
 			assert(mStorageMode == StorageMode::READ);
 			checkValidFormat<OutputType>(format);
 			ref<Texture> tex = factory->makeTexture2DUnmanaged(width(), height(), format);
+			GL_ASSERT;
 			writeToTexture(tex);
 			return tex;
 		}
@@ -953,9 +1116,19 @@ namespace Morpheus {
 			ContentFactory<Texture>* factory) {
 			assert(mStorageMode == StorageMode::READ);
 			checkValidFormat<OutputType>(format);
-			Node texNode = factory->makeTexture2D(out, width(), height(), format);
-			writeToTexture(out);
+			ref<Texture> tex;
+			Node texNode = factory->makeTexture2D(&tex, width(), height(), format);
+			GL_ASSERT;
+			writeToTexture(tex);
+			if (out)
+				*out = tex;
 			return texNode;
+		}
+
+		void transform(const std::function<OutputType(const OutputType&)>& f) {
+			for (auto& sample : mGrid) {
+				sample = f(sample);
+			}
 		}
 
 		template <typename ReturnType>
@@ -965,41 +1138,41 @@ namespace Morpheus {
 	};
 
 	template <bool success>
-	struct AllocateStorageGate;
+	struct InitStorageGate;
 
 	template <>
-	struct AllocateStorageGate<false> {
+	struct InitStorageGate<false> {
 		template <typename StorageType>
-		inline static void allocate(StorageType* storage, const uint32_t sizeX) {
+		inline static void init(StorageType* storage, const uint32_t sizeX, bool bAllocate) {
 			throw std::exception("Storage does not support these dimensions!");
 		}
 
 		template <typename StorageType>
-		inline static void allocate(StorageType* storage, const uint32_t sizeX, const uint32_t sizeY) {
+		inline static void init(StorageType* storage, const uint32_t sizeX, const uint32_t sizeY, bool bAllocate) {
 			throw std::exception("Storage does not support these dimensions!");
 		}
 
 		template <typename StorageType>
-		inline static void allocate(StorageType* storage, const uint32_t sizeX, const uint32_t sizeY, const uint32_t sizeZ) {
+		inline static void init(StorageType* storage, const uint32_t sizeX, const uint32_t sizeY, const uint32_t sizeZ, bool bAllocate) {
 			throw std::exception("Storage does not support these dimensions!");
 		}
 	};
 
 	template <>
-	struct AllocateStorageGate<true> {
+	struct InitStorageGate<true> {
 		template <typename StorageType>
-		inline static void allocate(StorageType* storage, const uint32_t sizeX) {
-			storage->allocate(sizeX);
+		inline static void init(StorageType* storage, const uint32_t sizeX, bool bAllocate) {
+			storage->init(sizeX, bAllocate);
 		}
 
 		template <typename StorageType>
-		inline static void allocate(StorageType* storage, const uint32_t sizeX, const uint32_t sizeY) {
-			storage->allocate(sizeX, sizeY);
+		inline static void init(StorageType* storage, const uint32_t sizeX, const uint32_t sizeY, bool bAllocate) {
+			storage->init(sizeX, sizeY, bAllocate);
 		}
 
 		template <typename StorageType>
-		inline static void allocate(StorageType* storage, const uint32_t sizeX, const uint32_t sizeY, const uint32_t sizeZ) {
-			storage->allocate(sizeX, sizeY, sizeZ);
+		inline static void init(StorageType* storage, const uint32_t sizeX, const uint32_t sizeY, const uint32_t sizeZ, bool bAllocate) {
+			storage->init(sizeX, sizeY, sizeZ, bAllocate);
 		}
 	};
 
@@ -1083,23 +1256,31 @@ namespace Morpheus {
 			return mStorage;
 		}
 
-		inline void allocate(const typename StorageType::SizeType& size) {
-			mStorage.allocate(size);
+		inline void allocate() {
+			mStorage.allocate();
 		}
 
-		inline void allocate(const uint32_t sizeX) {
+		inline void deallocate() {
+			mStorage.deallocate();
+		}
+
+		inline void init(const typename StorageType::SizeType& size, bool bAllocate = true) {
+			mStorage.init(size, bAllocate);
+		}
+
+		inline void init1d(const uint32_t sizeX, bool bAllocate = true) {
 			constexpr bool same = StorageType::ALLOCATE_DIMENSION == 1;
-			AllocateStorageGate<same>::allocate(&mStorage, sizeX);
+			InitStorageGate<same>::init(&mStorage, sizeX, bAllocate);
 		}
 
-		inline void allocate(const uint32_t sizeX, const uint32_t sizeY) {
+		inline void init2d(const uint32_t sizeX, const uint32_t sizeY, bool bAllocate = true) {
 			constexpr bool same = StorageType::ALLOCATE_DIMENSION == 2;
-			AllocateStorageGate<same>::allocate(&mStorage, sizeX, sizeY);
+			InitStorageGate<same>::init(&mStorage, sizeX, sizeY, bAllocate);
 		}
 
-		inline void allocate(const uint32_t sizeX, const uint32_t sizeY, const uint32_t sizeZ) {
+		inline void init3d(const uint32_t sizeX, const uint32_t sizeY, const uint32_t sizeZ, bool bAllocate = true) {
 			constexpr bool same = StorageType::ALLOCATE_DIMENSION == 3;
-			AllocateStorageGate<same>::allocate(&mStorage, sizeX, sizeY, sizeZ);
+			InitStorageGate<same>::init(&mStorage, sizeX, sizeY, sizeZ, bAllocate);
 		}
 
 		template <typename VectorType>
@@ -1133,6 +1314,8 @@ namespace Morpheus {
 			static_assert(std::is_same_v<InputType, typename StorageType::InputType>,
 				"Function and function storage must accept and return the same types!");
 
+			assert(mStorage.getMode() == StorageMode::READ);
+
 			size_t size = mStorage.sampleCount();
 			out->resize(size, ReturnType::length());
 
@@ -1153,6 +1336,7 @@ namespace Morpheus {
 			size_t size = mStorage.sampleCount();
 
 			assert(in.rows() == size && in.cols() == ReturnType::length());
+			assert(mStorage.getMode() == StorageMode::WRITE);
 
 			for (size_t j = 0; j < ReturnType::length(); ++j) {
 				for (size_t i = 0; i < size; ++i) {
@@ -1161,15 +1345,43 @@ namespace Morpheus {
 			}
 		}
 
-		inline ref<Texture> toTextureUnmanaged(const GLenum format = GL_INVALID_ENUM, 
+		template <typename VectorType>
+		inline void fromSampleVector(const VectorType& in) {
+			static_assert(std::is_same_v<ReturnType, typename StorageType::OutputType>,
+				"Function and function storage must accept and return the same types!");
+			static_assert(std::is_same_v<InputType, typename StorageType::InputType>,
+				"Function and function storage must accept and return the same types!");
+
+			assert(mStorage.getMode() == StorageMode::WRITE);
+			
+			size_t size = mStorage.sampleCount();
+
+			assert(in.size() == size);
+			assert((std::is_same_v<ReturnType, float> || std::is_same_v<ReturnType, double>));
+
+			for (size_t i = 0; i < size; ++i) {
+				mStorage[i] = static_cast<decltype(mStorage[i])>(in(i));
+			}
+		}
+
+		inline void transform(const std::function<ReturnType(const ReturnType&)>& f) {
+			mStorage.transform(f);
+		}
+
+		inline ref<Texture> toTextureUnmanaged(
+			const GLenum format = defaultTextureFormatForFunctionOutput<ReturnType>(),
 			ContentFactory<Texture>* factory = content()->getFactory<Texture>()) {
 			return mStorage.toTextureUnmanaged(format, factory);
 		}
 
 		inline Node toTexture(ref<Texture>* out = nullptr,
-			const GLenum format = GL_INVALID_ENUM, 
+			const GLenum format = defaultTextureFormatForFunctionOutput<ReturnType>(),
 			ContentFactory<Texture>* factory = content()->getFactory<Texture>()) {
 			return mStorage.toTexture(out, format, factory);
+		}
+
+		inline void fromTexture(ref<Texture> texture) {
+			mStorage.fromTexture(texture);
 		}
 
 		inline void writeToTexture(ref<Texture> target) {

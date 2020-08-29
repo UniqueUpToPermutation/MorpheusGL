@@ -297,6 +297,11 @@ namespace Morpheus {
 		}	
 	}
 
+	void Texture::genMipmaps() {
+		glGenerateTextureMipmap(mId);
+		GL_ASSERT;
+	}
+
 	void ContentFactory<Texture>::unload(ref<void>& ref) {
 		auto tex = ref.reinterpretGet<Texture>();
 		glDeleteTextures(1, &tex->mId);
@@ -312,6 +317,7 @@ namespace Morpheus {
 		GLuint TextureName = 0;
 		glGenTextures(1, &TextureName);
 		glBindTexture(GL_TEXTURE_2D, TextureName);
+		GL_ASSERT;
 
 		GLsizei actual_mip_levels = 0;
 		if (miplevels >= 0) {
@@ -325,6 +331,7 @@ namespace Morpheus {
 		}
 
 		glTexStorage2D(GL_TEXTURE_2D, actual_mip_levels, format, width, height);
+		GL_ASSERT;
 
 		Texture* tex = new Texture();
 		tex->mWidth = width;
@@ -349,6 +356,7 @@ namespace Morpheus {
 		GLuint TextureName = 0;
 		glGenTextures(1, &TextureName);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, TextureName);
+		GL_ASSERT;
 
 		GLsizei actual_mip_levels = 0;
 		if (miplevels >= 0) {
@@ -362,6 +370,7 @@ namespace Morpheus {
 		}
 
 		glTexStorage2D(GL_TEXTURE_CUBE_MAP, actual_mip_levels, format, width, height);
+		GL_ASSERT;
 
 		Texture* tex = new Texture();
 		tex->mWidth = width;
