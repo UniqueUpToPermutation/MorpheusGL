@@ -2,26 +2,49 @@
 
 #include <glm/glm.hpp>
 
-#define C_0 0.28209479177
-#define C_1 0.4886025119
-#define C_2n2 1.09254843059
-#define C_2n1 C_2n2
-#define C_20 0.31539156525
-#define C_21 C_2n2
-#define C_22 0.54627421529
-#define C_3n3 0.59004358992
-#define C_3n2 2.89061144264
-#define C_3n1 0.45704579946
-#define C_30 0.37317633259
-#define C_31 C_3n1
-#define C_32 1.44530572132
-#define C_33 C_3n3
-
 namespace Morpheus {
-	template <typename scalar_t>
-	using func3 = scalar_t(*)(scalar_t, scalar_t, scalar_t);
+	template <typename VectorType>
+	void generateSphereSamplesInternal(const uint32_t count,
+		VectorType* outX,
+		VectorType* outY,
+		VectorType* outZ) {
 
-	template <typename VectorType, typename OutVectorType, typename scalar_t, func3<scalar_t> f>
+		outX->resize(count);
+		outY->resize(count);
+		outZ->resize(count);
+
+		auto t = (*outX)(0);
+		typedef decltype(t) scalar_t;
+		std::minstd_rand generator;
+		std::uniform_real_distribution<scalar_t> distribution(-1.0, 1.0);
+
+		for (uint32_t i = 0; i < count; ++i) {
+			scalar_t z = distribution(generator);
+			scalar_t phi = glm::pi<scalar_t>() * distribution(generator);
+			(*outZ)(i) = z;
+			scalar_t sinTheta = (scalar_t)std::sqrt(1.0 - z * z);
+			(*outX)(i) = std::cos(phi) * sinTheta;
+			(*outY)(i) = std::sin(phi) * sinTheta;
+		}
+	}
+
+	void SphericalHarmonics::generateSphereSamples(
+		const uint32_t count,
+		Eigen::VectorXf* outX,
+		Eigen::VectorXf* outY,
+		Eigen::VectorXf* outZ) {
+		generateSphereSamplesInternal(count, outX, outY, outZ);
+	}
+
+	void SphericalHarmonics::generateSphereSamples(
+		const uint32_t count,
+		Eigen::VectorXd* outX,
+		Eigen::VectorXd* outY,
+		Eigen::VectorXd* outZ) {
+		generateSphereSamplesInternal(count, outX, outY, outZ);
+	}
+
+	template <typename VectorType, typename OutVectorType, typename scalar_t, typename sh_struct>
 	void generateInternal(const VectorType& inX, const VectorType& inY, const VectorType& inZ, OutVectorType* out) {
 		assert(inX.size() == inY.size());
 		assert(inY.size() == inZ.size());
@@ -29,7 +52,7 @@ namespace Morpheus {
 		size_t size = inX.size();
 		Eigen::Vector3d vec;
 		for (size_t i = 0; i < size; ++i) {
-			(*out)(i) = f(inX(i), inY(i), inZ(i));
+			(*out)(i) = sh_struct::at(inX(i), inY(i), inZ(i));
 		}
 	}
 
@@ -38,155 +61,75 @@ namespace Morpheus {
 		const VectorType& inX, const VectorType& inY, const VectorType& inZ, OutVectorType* out) {
 		switch (l) {
 		case 0: {
-			struct stct {
-				static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-					return (scalar_t)C_0;
-				}
-			};
-			generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+			generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 0, 0>>(inX, inY, inZ, out);
 			return;
 		}	
 		case 1:
 			switch (m) {
 			case -1: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_1 * y);
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 1, -1>>(inX, inY, inZ, out);
 				return;
 			}
 			case 0: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_1 * z);
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 1, 0>>(inX, inY, inZ, out);
 				return;
 			}
 			case 1: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_1 * x);
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 1, 1>>(inX, inY, inZ, out);
 				return;
 			}
 			}
 		case 2:
 			switch (m) {
 			case -2: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_2n2 * x * y);
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 2, -2>>(inX, inY, inZ, out);
 				return;
 			}
 			case -1: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_2n1 * y * z);
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 2, -1>>(inX, inY, inZ, out);
 				return;
 			}
 			case 0: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_20 * (-x * x - y * y + 2.0 * z * z));
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 2, 0>>(inX, inY, inZ, out);
 				return;
 			}
 			case 1: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_21 * z * x);
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 2, 1>>(inX, inY, inZ, out);
 				return;
 			}
 			case 2: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_22 * (x * x - y * y));
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 2, 2>>(inX, inY, inZ, out);
 				return;
 			}
 			}
 		case 3:
 			switch (m) {
 			case -3: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_3n3 * (3 * x * x - y * y) * y);
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 3, -3>>(inX, inY, inZ, out);
 				return;
 			}
 			case -2: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_3n2 * x * y * z);
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 3, -2>>(inX, inY, inZ, out);
 				return;
 			}
 			case -1: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_3n1 * y * (4.0 * z * z - x * x - y * y));
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 3, -1>>(inX, inY, inZ, out);
 				return;
 			}
 			case 0: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_30 * z * (2.0 * z * z - 3.0 * x * x - 3.0 * y * y));
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 3, 0>>(inX, inY, inZ, out);
 				return;
 			}
 			case 1: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_31 * x * (4.0 * z * z - x * x - y * y));
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 3, 1>>(inX, inY, inZ, out);
 				return;
 			}
 			case 2: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_32 * (x * x - y * y) * z);
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 3, 2>>(inX, inY, inZ, out);
 				return;
 			}
 			case 3: {
-				struct stct {
-					static scalar_t f(scalar_t x, scalar_t y, scalar_t z) {
-						return (scalar_t)(C_33 * (x * x - 3.0 * y * y) * x);
-					}
-				};
-				generateInternal<VectorType, OutVectorType, scalar_t, &stct::f>(inX, inY, inZ, out);
+				generateInternal<VectorType, OutVectorType, scalar_t, sh<scalar_t, 3, 3>>(inX, inY, inZ, out);
 				return;
 			}
 			}
@@ -295,8 +238,9 @@ namespace Morpheus {
 		size_t n = (size_t)std::sqrt(primal.rows() / 6);
 		scalar_t h = (scalar_t)(2.0 / (scalar_t)n);
 		scalar_t h2 = (scalar_t)(h * h);
+		size_t cols = (size_t)primal.cols();
 
-		for (size_t i_col = 0; i_col < primal.cols(); ++i_col) {
+		for (size_t i_col = 0; i_col < cols; ++i_col) {
 			for (size_t i_face = 0, i = 0; i_face < 6; ++i_face) {
 				for (size_t i_x = 0; i_x < n; ++i_x) {
 					for (size_t i_y = 0; i_y < n; ++i_y) {

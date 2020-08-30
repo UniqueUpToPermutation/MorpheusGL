@@ -19,6 +19,41 @@ namespace Morpheus {
 	void readCubemapSideBaseLevel(ref<Texture> tex, size_t i_side, uint32_t element_length, std::vector<float>* mData);
 	void readTextureBaseLevel(ref<Texture> tex, uint32_t element_length, std::vector<float>* mData);
 
+	template <typename VecType>
+	struct get_scalar_t {
+		typedef typename VecType::value_type scalar_t;
+	};
+
+	template <>
+	struct get_scalar_t<Eigen::MatrixXd> {
+		typedef double scalar_t;
+	};
+
+	template <>
+	struct get_scalar_t<Eigen::MatrixXf> {
+		typedef float scalar_t;
+	};
+
+	template <>
+	struct get_scalar_t<Eigen::VectorXd> {
+		typedef double scalar_t;
+	};
+
+	template <>
+	struct get_scalar_t<Eigen::VectorXf> {
+		typedef float scalar_t;
+	};
+
+	template <>
+	struct get_scalar_t<float> {
+		typedef float scalar_t;
+	};
+
+	template <>
+	struct get_scalar_t<double> {
+		typedef double scalar_t;
+	};
+
 	template <typename OutputType>
 	constexpr size_t getElementLength() {
 		return OutputType::length();
@@ -399,8 +434,8 @@ namespace Morpheus {
 				// Bottom left
 				face_ptr[mGridSize.x * (mGridSize.y - 1)] =
 					(face_ptr[mGridSize.x * (mGridSize.y - 1) + 1] +
-						face_ptr[mGridSize.x * (mGridSize.y - 2)] +
-						face_ptr[mGridSize.x * (mGridSize.y - 2) + 1]) * norm_factor;
+					face_ptr[mGridSize.x * (mGridSize.y - 2)] +
+					face_ptr[mGridSize.x * (mGridSize.y - 2) + 1]) * norm_factor;
 				// Bottom right
 				face_ptr[mGridSize.x * mGridSize.y - 1] =
 					(face_ptr[mGridSize.x * mGridSize.y - 2] +
@@ -1264,6 +1299,18 @@ namespace Morpheus {
 			mStorage.deallocate();
 		}
 
+		inline uint32_t width() const {
+			return mStorage.width();
+		}
+
+		inline uint32_t height() const {
+			return mStorage.height();
+		}
+
+		inline uint32_t depth() const {
+			return mStorage.depth();
+		}
+
 		inline void init(const typename StorageType::SizeType& size, bool bAllocate = true) {
 			mStorage.init(size, bAllocate);
 		}
@@ -1317,9 +1364,10 @@ namespace Morpheus {
 			assert(mStorage.getMode() == StorageMode::READ);
 
 			size_t size = mStorage.sampleCount();
+			constexpr uint32_t element_length = (uint32_t)getElementLength<ReturnType>();
 			out->resize(size, ReturnType::length());
 
-			for (size_t j = 0; j < ReturnType::length(); ++j) {
+			for (uint32_t j = 0; j < element_length; ++j) {
 				for (size_t i = 0; i < size; ++i) {
 					(*out)(i, j) = mStorage[i][j];
 				}
@@ -1338,7 +1386,9 @@ namespace Morpheus {
 			assert(in.rows() == size && in.cols() == ReturnType::length());
 			assert(mStorage.getMode() == StorageMode::WRITE);
 
-			for (size_t j = 0; j < ReturnType::length(); ++j) {
+			constexpr uint32_t element_length = (uint32_t)getElementLength<ReturnType>();
+
+			for (uint32_t j = 0; j < element_length; ++j) {
 				for (size_t i = 0; i < size; ++i) {
 					mStorage[i][j] = in(i, j);
 				}
@@ -1480,7 +1530,7 @@ namespace Morpheus {
 	};
 
 	template <typename VectorType = glm::vec2>
-	class GaussianKernel2D {
+	class GaussianMonteCarloKernel2D {
 	private:
 		std::minstd_rand generator;
 		std::normal_distribution<decltype(VectorType::x)> distribution;
@@ -1490,7 +1540,7 @@ namespace Morpheus {
 		
 		typedef decltype(VectorType::x) ScalarType;
 
-		GaussianKernel2D(decltype(VectorType::x) sigma) : 
+		GaussianMonteCarloKernel2D(decltype(VectorType::x) sigma) : 
 			generator((unsigned int)std::chrono::system_clock::now().time_since_epoch().count()),
 			distribution(0.0, sigma) {
 		}
@@ -1504,7 +1554,7 @@ namespace Morpheus {
 
 		template <typename FuncType>
 		void apply(const FuncType& input, FuncType* output, uint32_t sampleCount = DEFAULT_KERNEL_SAMPLE_COUNT) {
-			KernelProc<GaussianKernel2D, FuncType>::apply(*this, input, output, sampleCount);
+			KernelProc<GaussianMonteCarloKernel2D, FuncType>::apply(*this, input, output, sampleCount);
 		}
 	};
 }

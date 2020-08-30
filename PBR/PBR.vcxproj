@@ -150,7 +150,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="compute_lambert.glsl" />
     <None Include="config.json" />
     <None Include="pbr.frag" />
     <None Include="cooktorrance.glsl" />

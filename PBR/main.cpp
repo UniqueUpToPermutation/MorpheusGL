@@ -15,6 +15,8 @@
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
 #include <iostream>
+#include <chrono>
+#include <iomanip>
 
 using namespace Morpheus;
 using namespace std;
@@ -97,21 +99,34 @@ int main() {
 		FunctionSphere<glm::vec3> light_field_func;
 		light_field_func.fromTexture(light_field);
 
-		Eigen::MatrixXd light_field_mat;
+		Eigen::MatrixXf light_field_mat;
 		light_field_func.toSampleMatrix(&light_field_mat);
 
-		Eigen::VectorXd X, Y, Z;
-		Eigen::VectorXd mode;
+		Eigen::VectorXf X, Y, Z;
+		Eigen::VectorXf mode;
 		light_field_func.createGrid(&X, &Y, &Z);
-		Eigen::MatrixXd modes;
-		Eigen::MatrixXd dual_modes;
+		Eigen::MatrixXf modes;
 
-		SphericalHarmonics::generateIrradianceModes(X, Y, Z, &modes, 2);
+		Eigen::MatrixXf coeffs;
+		SphericalHarmonics::generateIrradianceModes(X, Y, Z, &modes);
+
+		auto start = std::chrono::system_clock::now();
+		Eigen::MatrixXf dual_modes;
 		CubemapMetric::dual(modes, &dual_modes);
 
-		Eigen::MatrixXd coeffs = dual_modes.transpose() * light_field_mat;
-		std::cout << coeffs << std::endl;
-		Eigen::MatrixXd proj_light_field_mat = modes * coeffs;
+		Eigen::MatrixXf coeffs_gt = dual_modes.transpose() * light_field_mat;
+		auto end = std::chrono::system_clock::now();
+
+		std::cout << "Full Coeffs:" << std::endl;
+		std::cout << coeffs_gt << std::endl;
+		std::chrono::duration<double> duration = end - start;
+		std::cout << "Time Required: " << std::setprecision(4) << duration.count() << " s" << std::endl << std::endl;
+
+		LambertSphericalHarmonicsKernel kernel;
+		Eigen::MatrixXf lambert_coeffs_gt;
+		kernel.applySH(coeffs_gt, &lambert_coeffs_gt);
+
+		Eigen::MatrixXf proj_light_field_mat = modes * lambert_coeffs_gt;
 
 		light_field_func.transition(StorageMode::WRITE);
 		light_field_func.fromSampleMatrix(proj_light_field_mat);
