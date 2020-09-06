@@ -137,6 +137,9 @@
     <ClInclude Include="sphericalharmonics.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
+    <ClInclude Include="skybox.hpp">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="digraph.cpp">

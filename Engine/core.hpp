@@ -132,6 +132,7 @@ namespace Morpheus {
 		STATIC_OBJECT_MANAGER,
 		DYNAMIC_OBJECT_MANAGER,
 		NANOGUI_SCREEN,
+		SKYBOX,
 		SCENE_END,
 
 		// All nodes that are children of the content manager
@@ -213,6 +214,7 @@ namespace Morpheus {
 	SET_POOLED(CAMERA, false);
 	SET_POOLED(NANOGUI_SCREEN, false);
 	SET_POOLED(SCENE_ROOT, false);
+	SET_POOLED(SKYBOX, false);
 
 	SET_POOLED(CONTENT_MANAGER, false);
 	SET_POOLED(GEOMETRY, false);
@@ -237,6 +239,7 @@ namespace Morpheus {
 	SET_RENDERABLE(CAMERA, true);
 	SET_RENDERABLE(NANOGUI_SCREEN, true);
 	SET_RENDERABLE(SCENE_ROOT, true);
+	SET_RENDERABLE(SKYBOX, true);
 
 	SET_RENDERABLE(HALF_EDGE_GEOMETRY, false);
 	SET_RENDERABLE(CONTENT_MANAGER, false);
@@ -787,6 +790,13 @@ namespace Morpheus {
 		inline void cache(const glm::fmat4& parent) {
 			mCache = apply(parent);
 		}
+
+		static Node makeIdentity(Node parent, Node scene, ref<Transform>* pTransform = nullptr);
+		static Node makeIdentity(Node parent, ref<Scene> scene, ref<Transform>* pTransform = nullptr);
+		static Node makeTranslation(const glm::vec3& translation, Node parent, Node scene, ref<Transform>* pTransform = nullptr);
+		static Node makeTranslation(const glm::vec3& translation, Node parent, ref<Scene> scene, ref<Transform>* pTransform = nullptr);
+		static Node makeRotation(const glm::quat& rotate, Node parent, Node scene, ref<Transform>* pTransform = nullptr);
+		static Node makeRotation(const glm::quat& rotate, Node parent, ref<Scene> scene, ref<Transform>* pTransform = nullptr);
 	};
 
 	enum class ErrorCode {

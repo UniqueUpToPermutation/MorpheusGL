@@ -89,8 +89,7 @@ int main() {
 		controller->reset(distance);
 		controller->setPhi(-pi<double>() / 2.0);
 
-		auto transform = scene->makeIdentityTransform();
-		sceneNode.addChild(transform);
+		auto transform = Transform::makeIdentity(sceneNode, sceneNode);
 		transform.addChild(staticMeshNode);
 
 		// Process the light field into an irradiance map

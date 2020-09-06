@@ -7,6 +7,7 @@
 #include "geometry.hpp"
 #include "cameracontroller.hpp"
 #include "gui.hpp"
+#include "scene.hpp"
 #include "staticmesh.hpp"
 
 #include <iostream>
@@ -285,5 +286,44 @@ namespace Morpheus {
 	void prune(NodeHandle handle, bool bIgnoreContent) {
 		auto node = (*graph())[handle];
 		prune(node, bIgnoreContent);
+	}
+
+	Node Transform::makeIdentity(Node parent, Node scene, ref<Transform>* pTransform) {
+		auto data = desc(scene);
+		assert(data->type == NodeType::SCENE_ROOT);
+
+		return makeIdentity(parent, data->owner.reinterpret<Scene>(), pTransform);
+	}
+
+	Node Transform::makeIdentity(Node parent, ref<Scene> scene, ref<Transform>* pTransform) {
+		Node n = scene->makeIdentityTransform(pTransform);
+		parent.addChild(n);
+		return n;
+	}
+
+	Node Transform::makeTranslation(const glm::vec3& translation, Node parent, Node scene, ref<Transform>* pTransform) {
+		auto data = desc(scene);
+		assert(data->type == NodeType::SCENE_ROOT);
+
+		return makeTranslation(translation, parent, data->owner.reinterpret<Scene>(), pTransform);
+	}
+
+	Node Transform::makeTranslation(const glm::vec3& translation, Node parent, ref<Scene> scene, ref<Transform>* pTransform) {
+		Node n = scene->makeTranslation(translation, pTransform);
+		parent.addChild(n);
+		return n;
+	}
+
+	Node Transform::makeRotation(const glm::quat& rotate, Node parent, Node scene, ref<Transform>* pTransform) {
+		auto data = desc(scene);
+		assert(data->type == NodeType::SCENE_ROOT);
+
+		return makeRotation(rotate, parent, data->owner.reinterpret<Scene>(), pTransform);
+	}
+
+	Node Transform::makeRotation(const glm::quat& rotate, Node parent, ref<Scene> scene, ref<Transform>* pTransform) {
+		Node n = scene->makeRotation(rotate, pTransform);
+		parent.addChild(n);
+		return n;
 	}
 }

@@ -183,6 +183,7 @@
     <ClInclude Include="sampler.hpp" />
     <ClInclude Include="scene.hpp" />
     <ClInclude Include="shader.hpp" />
+    <ClInclude Include="skybox.hpp" />
     <ClInclude Include="sphericalharmonics.hpp" />
     <ClInclude Include="staticmanager.hpp" />
     <ClInclude Include="staticmesh.hpp" />
