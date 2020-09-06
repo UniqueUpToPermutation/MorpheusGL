@@ -51,5 +51,85 @@
     <None Include="textures\brick.ktx">
       <Filter>Content</Filter>
     </None>
+    <None Include="textures\skybox.ktx">
+      <Filter>Content</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="textures\bluecloud_bk.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\bluecloud_dn.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\bluecloud_ft.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\bluecloud_lf.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\bluecloud_rt.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\bluecloud_up.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\brick.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\negx.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\negy.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\negz.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\park_neg_x.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\park_neg_y.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\park_neg_z.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\park_pos_x.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\park_pos_y.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\park_pos_z.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\posx.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\posy.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\posz.jpg">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\yak_neg_x.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\yak_neg_y.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\yak_neg_z.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\yak_pos_x.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\yak_pos_y.png">
+      <Filter>Content</Filter>
+    </Image>
+    <Image Include="textures\yak_pos_z.png">
+      <Filter>Content</Filter>
+    </Image>
   </ItemGroup>
 </Project>

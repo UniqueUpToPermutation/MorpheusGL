@@ -159,11 +159,39 @@
     <None Include="pbrmat.json" />
     <None Include="spheremesh.json" />
     <None Include="textures\brick.ktx" />
+    <None Include="textures\skybox.ktx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Engine\Morpheus.vcxproj">
       <Project>{26fc6ade-b792-4ee8-a2fc-c4b6c9dc09a7}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="textures\bluecloud_bk.jpg" />
+    <Image Include="textures\bluecloud_dn.jpg" />
+    <Image Include="textures\bluecloud_ft.jpg" />
+    <Image Include="textures\bluecloud_lf.jpg" />
+    <Image Include="textures\bluecloud_rt.jpg" />
+    <Image Include="textures\bluecloud_up.jpg" />
+    <Image Include="textures\brick.jpg" />
+    <Image Include="textures\negx.jpg" />
+    <Image Include="textures\negy.jpg" />
+    <Image Include="textures\negz.jpg" />
+    <Image Include="textures\park_neg_x.png" />
+    <Image Include="textures\park_neg_y.png" />
+    <Image Include="textures\park_neg_z.png" />
+    <Image Include="textures\park_pos_x.png" />
+    <Image Include="textures\park_pos_y.png" />
+    <Image Include="textures\park_pos_z.png" />
+    <Image Include="textures\posx.jpg" />
+    <Image Include="textures\posy.jpg" />
+    <Image Include="textures\posz.jpg" />
+    <Image Include="textures\yak_neg_x.png" />
+    <Image Include="textures\yak_neg_y.png" />
+    <Image Include="textures\yak_neg_z.png" />
+    <Image Include="textures\yak_pos_x.png" />
+    <Image Include="textures\yak_pos_y.png" />
+    <Image Include="textures\yak_pos_z.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -19,6 +19,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{96c8063e-9173-4a3b-bb22-cf53504255d2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Meshes">
+      <UniqueIdentifier>{0df11c8e-b0be-4a7f-ad46-b6cbbb3f097c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -66,5 +69,16 @@
     <None Include="shaders\funcviz.vert">
       <Filter>Shaders</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="boundary.obj">
+      <Filter>Meshes</Filter>
+    </Object>
+    <Object Include="bunny.obj">
+      <Filter>Meshes</Filter>
+    </Object>
+    <Object Include="cube.obj">
+      <Filter>Meshes</Filter>
+    </Object>
   </ItemGroup>
 </Project>
