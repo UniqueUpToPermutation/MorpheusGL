@@ -9,7 +9,8 @@
 			"*.tcc": "cpp",
 			"algorithm": "cpp",
 			"memory_resource": "cpp",
-			"ostream": "cpp"
+			"ostream": "cpp",
+			"functional": "cpp"
 		}
 	}
 }

@@ -147,6 +147,7 @@ namespace Morpheus {
 			mTargets.erase(setIt);
 		}
 	}
+	
 	void Input::actuallyGrab(void* owner) {
 		auto it = mOwnerToTargetMap.find(owner);
 		if (it != mOwnerToTargetMap.end()) {
@@ -160,6 +161,7 @@ namespace Morpheus {
 			std::cout << "Failed to grab, could not find owner!" << std::endl;
 		}
 	}
+
 	void Input::grab(void* owner) {
 		if (bInEvent) {
 			mNewGrabers.push_back(owner);
@@ -168,6 +170,7 @@ namespace Morpheus {
 			actuallyGrab(owner);
 		}
 	}
+
 	void Input::resolveGrabs() {
 		for (auto g : mNewGrabers)
 			actuallyGrab(g);
@@ -176,6 +179,7 @@ namespace Morpheus {
 		mNewGrabers.clear();
 		mUngrabers.clear();
 	}
+
 	void Input::actuallyUngrab(void* owner) {
 		auto it = mOwnerToTargetMap.find(owner);
 		if (it != mOwnerToTargetMap.end()) {
