@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "*.tcc": "cpp",
+        "algorithm": "cpp",
+        "memory_resource": "cpp",
+        "ostream": "cpp"
+    },
+    "python.pythonPath": "/home/philip/anaconda3/bin/python"
+}

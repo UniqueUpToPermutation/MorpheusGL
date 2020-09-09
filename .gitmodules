@@ -13,3 +13,9 @@
 [submodule "Engine/lodepng"]
 	path = Engine/lodepng
 	url = https://github.com/lvandeve/lodepng.git
+[submodule "assimp"]
+	path = assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "engine/lodepng"]
+	path = engine/lodepng
+	url = https://github.com/lvandeve/lodepng.git
