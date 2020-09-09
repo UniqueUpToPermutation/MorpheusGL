@@ -97,25 +97,29 @@ namespace Morpheus {
 	void Input::glfwRegister() {
 		auto window = engine()->window();
 
-		glfwSetCursorPosCallback(window, &cursorPosHandler);
-		glfwSetMouseButtonCallback(window, &mouseButtonHandler);
-		glfwSetKeyCallback(window, &keyHandler);
-		glfwSetCharCallback(window, &charHandler);
-		glfwSetDropCallback(window, &dropHandler);
-		glfwSetScrollCallback(window, &scrollHandler);
-		glfwSetFramebufferSizeCallback(window, &framebufferSizeHandler);
+		if (window) {
+			glfwSetCursorPosCallback(window, &cursorPosHandler);
+			glfwSetMouseButtonCallback(window, &mouseButtonHandler);
+			glfwSetKeyCallback(window, &keyHandler);
+			glfwSetCharCallback(window, &charHandler);
+			glfwSetDropCallback(window, &dropHandler);
+			glfwSetScrollCallback(window, &scrollHandler);
+			glfwSetFramebufferSizeCallback(window, &framebufferSizeHandler);
+		}
 	}
 
 	void Input::glfwUnregster() {
 		auto window = engine()->window();
 
-		glfwSetCursorPosCallback(window, nullptr);
-		glfwSetMouseButtonCallback(window, nullptr);
-		glfwSetKeyCallback(window, nullptr);
-		glfwSetCharCallback(window, nullptr);
-		glfwSetDropCallback(window, nullptr);
-		glfwSetScrollCallback(window, nullptr);
-		glfwSetFramebufferSizeCallback(window, nullptr);
+		if (window) {
+			glfwSetCursorPosCallback(window, nullptr);
+			glfwSetMouseButtonCallback(window, nullptr);
+			glfwSetKeyCallback(window, nullptr);
+			glfwSetCharCallback(window, nullptr);
+			glfwSetDropCallback(window, nullptr);
+			glfwSetScrollCallback(window, nullptr);
+			glfwSetFramebufferSizeCallback(window, nullptr);
+		}
 	}
 
 	// Target registration

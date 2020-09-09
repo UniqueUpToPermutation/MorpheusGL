@@ -50,6 +50,12 @@ Currently, I have the following dependencies:
 
 The build system is cmake, and it hopefully shouldn't be hard to build if you recursively clone the github repo, as all the dependencies are already included as git submodules.
 
+One thing to note is if you are building with the cmake extension for VSCode, it is useful to have different output directories for different build configurations:
+
+```json
+"cmake.buildDirectory" : "${workspaceRoot}/build/${buildType}"
+```
+
 ### Running in VSCode under Linux
 
 I use VSCode as my development environment, and I prefer to work on Linux.
