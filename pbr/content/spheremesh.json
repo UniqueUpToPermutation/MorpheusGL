@@ -1,4 +1,4 @@
 {
-  "geometry": "sphere.obj",
-  "material": "pbrmat.json"
+  "geometry": "content/sphere.obj",
+  "material": "content/pbrmat.json"
 }

@@ -1,6 +1,6 @@
 {
-  "vertex_shader": "pbr.vert",
-  "fragment_shader": "pbr.frag",
+  "vertex_shader": "content/pbr.vert",
+  "fragment_shader": "content/pbr.frag",
 
   "editor_uniforms": [
   ],
