@@ -660,7 +660,7 @@ namespace Morpheus {
 				result.z = -1.0;
 				break;
 			default:
-				throw std::exception("pos.z is an invalid face!");
+				throw std::runtime_error("pos.z is an invalid face!");
 				break;
 			}
 

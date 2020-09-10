@@ -11,3 +11,4 @@
 #include <engine/sampler.hpp>
 #include <engine/halfedge.hpp>
 #include <engine/material.hpp>
+#include <engine/scene.hpp>

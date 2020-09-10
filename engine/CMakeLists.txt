@@ -19,6 +19,7 @@ add_library(engine
     src/input.cpp
     src/lambert.cpp
     src/material.cpp
+    src/meshlap.cpp
     src/samplefunction.cpp
     src/sampler.cpp
     src/scene.cpp
@@ -61,6 +62,7 @@ set(${PROJECT_NAME}_INCLUDE_DIRS
     ../nanogui/include
     ../nanogui/ext/glad/include
     ../nanogui/ext/eigen
+    ../nanogui/ext/nanovg/src
     CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE
 )
 

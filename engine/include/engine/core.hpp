@@ -46,7 +46,7 @@
 #define SET_BASE_TYPE(SubType, BaseType) template<> struct BASE_TYPE_<SubType> \
 	{ typedef BaseType RESULT; }
 
-#define NODE_ENUM(OwnerType) NODE_TYPE_<typename BASE_TYPE_<OwnerType>::RESULT>::RESULT
+#define NODE_ENUM(OwnerType) Morpheus::NODE_TYPE_<typename BASE_TYPE_<OwnerType>::RESULT>::RESULT
 
 #define DEF_PROXY(InstanceType, NodeType_) template<> struct PROXY_TO_PROTOTYPE_<NodeType::InstanceType> \
 	{ static constexpr NodeType RESULT = NodeType::NodeType_; }; \
