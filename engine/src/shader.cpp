@@ -213,10 +213,16 @@ namespace Morpheus {
 	}
 
 	void loadSamplerDefaults(const nlohmann::json& j, const Shader* shad, ShaderSamplerAssignments* out,
-		ContentManager* content, Node parent) {
+		ContentManager* content, Node parent, const std::string& parentSrc) {
 		out->mBindings.clear();
 
 		GLint current_bind_target = 0;
+
+		string prefix_include_path = "";
+
+		auto extract_ptr = parentSrc.find_last_of("\\/");
+		if (extract_ptr != string::npos)
+			prefix_include_path = parentSrc.substr(0, extract_ptr + 1);
 
 		for (auto& unif : j.items()) {
 			std::string name = unif.key();
@@ -242,6 +248,9 @@ namespace Morpheus {
 						unif.value()["sampler"].get_to(samplerSrc);
 					unif.value()["texture"].get_to(textureSrc);
 					ShaderSamplerAssignment assignment;
+
+					textureSrc = prefix_include_path + textureSrc;
+
 					content->load<Texture>(textureSrc, parent, &assignment.mTexture);
 					content->load<Sampler>(samplerSrc, parent, &assignment.mSampler);
 					assignment.mUniformLocation = a;
@@ -295,7 +304,8 @@ namespace Morpheus {
 		}
 	}
 
-	void ContentFactory<Shader>::readJsonMetadata(const nlohmann::json& j, Shader* shad, Node& loadInto) {
+	void ContentFactory<Shader>::readJsonMetadata(const nlohmann::json& j, Shader* shad, Node& loadInto,
+		const std::string& parentSrc) {
 		
 		shad->mRenderView.init();
 
@@ -313,7 +323,8 @@ namespace Morpheus {
 		}
 		if (j.contains("sampler_defaults")) {
 			auto jsonUnifSamplers = j["sampler_defaults"];
-			loadSamplerDefaults(jsonUnifSamplers, shad, &shad->mDefaultSamplerAssignments, content(), loadInto);
+			loadSamplerDefaults(jsonUnifSamplers, shad, &shad->mDefaultSamplerAssignments, 
+			content(), loadInto, parentSrc);
 		}
 	}
 
@@ -410,7 +421,7 @@ namespace Morpheus {
 
 		// Set the shader ID!
 		shader->mId = id;
-		readJsonMetadata(j, shader, loadInto);
+		readJsonMetadata(j, shader, loadInto, source);
 
 		ref<void> r(shader);
 		return r;

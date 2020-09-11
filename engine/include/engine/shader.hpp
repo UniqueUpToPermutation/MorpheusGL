@@ -554,7 +554,8 @@ namespace Morpheus {
 	template <>
 	class ContentFactory<Shader> : public IContentFactory {
 	private:
-		void readJsonMetadata(const nlohmann::json& j, Shader* shad, Node& loadInto);
+		void readJsonMetadata(const nlohmann::json& j, Shader* shad, Node& loadInto,
+			const std::string& parentSrc = "");
 
 	public:
 		ContentFactory();
@@ -571,5 +572,6 @@ namespace Morpheus {
 		ShaderUniformAssignments* out);
 	void loadSamplerDefaults(const nlohmann::json& j, const Shader* shad, 
 		ShaderSamplerAssignments* out,
-		ContentManager* content, Node parent);
+		ContentManager* content, Node parent,
+		const std::string& parentSrc = "");
 }

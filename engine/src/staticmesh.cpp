@@ -68,6 +68,15 @@ namespace Morpheus {
 		j["material"].get_to(materialSrc);
 		j["geometry"].get_to(geometrySrc);
 
+		string prefix_include_path = "";
+
+		auto extract_ptr = source.find_last_of("\\/");
+		if (extract_ptr != string::npos)
+			prefix_include_path = source.substr(0, extract_ptr + 1);
+
+		materialSrc = prefix_include_path + materialSrc;
+		geometrySrc = prefix_include_path + geometrySrc;
+
 		// Load material and geometry
 		Node materialNode = content()->load<Material>(materialSrc);
 		Node geometryNode = content()->load<Geometry>(geometrySrc);

@@ -1,12 +1,12 @@
 {
-  "shader": "content/pbr.json",
+  "shader": "pbr.json",
 
   "samplers": {
     "albedo": {
-      "texture": "content/textures/brick.ktx"
+      "texture": "textures/brick.ktx"
     },
     "skybox": {
-      "texture": "content/textures/skybox.ktx"
+      "texture": "textures/skybox.ktx"
     }
   }
 }

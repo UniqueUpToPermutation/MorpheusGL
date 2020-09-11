@@ -64,6 +64,14 @@ namespace Morpheus {
         string shaderSrc;
         j["shader"].get_to(shaderSrc);
 
+        string prefix_include_path = "";
+
+		auto extract_ptr = source.find_last_of("\\/");
+		if (extract_ptr != string::npos)
+			prefix_include_path = source.substr(0, extract_ptr + 1);
+
+        shaderSrc = prefix_include_path + shaderSrc;
+
         // Load the shader through the content manager
         ref<Shader> shaderRef;
         auto shaderNode = content()->load<Shader>(shaderSrc, &shaderRef);
@@ -89,7 +97,7 @@ namespace Morpheus {
         // Perform an override of shader sampler assignments
         if (j.contains("samplers")) {
             loadSamplerDefaults(j["samplers"], shaderRef.get(), &mat->mSamplerAssignments,
-                content(), loadInto);
+                content(), loadInto, source);
         }
         else
             // Carry over default assingments
