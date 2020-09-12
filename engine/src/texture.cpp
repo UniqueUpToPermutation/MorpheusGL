@@ -354,12 +354,30 @@ namespace Morpheus {
 		return ref<Texture>(tex);
 	}
 
-	Node ContentFactory<Texture>::makeTexture2D(ref<Texture>* out, const uint32_t width, const uint32_t height,
+	Node ContentFactory<Texture>::makeTexture2DUnparented(ref<Texture>* out, const uint32_t width, const uint32_t height,
 		const GLenum format, const int miplevels) {
 		ref<Texture> texRef = makeTexture2DUnmanaged(width, height, format, miplevels);
 		if (out)
 			*out = texRef;
 		return content()->createContentNode(texRef);
+	}
+
+	Node ContentFactory<Texture>::makeTexture2D(ref<Texture>* out, Node parent, 
+		const uint32_t width, const uint32_t height, 
+		const GLenum format, const int miplevels) {
+		ref<Texture> texRef = makeTexture2DUnmanaged(width, height, format, miplevels);
+		if (out)
+			*out = texRef;
+		return content()->createContentNode(texRef, parent);
+	}
+
+	Node ContentFactory<Texture>::makeTexture2D(ref<Texture>* out, NodeHandle parent, 
+		const uint32_t width, const uint32_t height, 
+		const GLenum format, const int miplevels) {
+		ref<Texture> texRef = makeTexture2DUnmanaged(width, height, format, miplevels);
+		if (out)
+			*out = texRef;
+		return content()->createContentNode(texRef, parent);
 	}
 
 	ref<Texture> ContentFactory<Texture>::makeCubemapUnmanaged(const uint32_t width, const uint32_t height,
@@ -394,12 +412,30 @@ namespace Morpheus {
 		return ref<Texture>(tex);
 	}
 
-	Node ContentFactory<Texture>::makeCubemap(ref<Texture>* out, const uint32_t width, const uint32_t height,
+	Node ContentFactory<Texture>::makeCubemapUnparented(ref<Texture>* out, const uint32_t width, const uint32_t height,
 		const GLenum format, const int miplevels) {
 		ref<Texture> texRef = makeCubemapUnmanaged(width, height, format, miplevels);
 		if (out)
 			*out = texRef;
 		return content()->createContentNode(texRef);
+	}
+
+	Node ContentFactory<Texture>::makeCubemap(ref<Texture>* out, Node parent,
+		const uint32_t width, const uint32_t height, 
+		const GLenum format, const int miplevels) {
+		ref<Texture> texRef = makeCubemapUnmanaged(width, height, format, miplevels);
+		if (out)
+			*out = texRef;
+		return content()->createContentNode(texRef, parent);
+	}
+
+	Node ContentFactory<Texture>::makeCubemap(ref<Texture>* out, NodeHandle parent, 
+		const uint32_t width, const uint32_t height, 
+		const GLenum format, const int miplevels) {
+		ref<Texture> texRef = makeCubemapUnmanaged(width, height, format, miplevels);
+		if (out)
+			*out = texRef;
+		return content()->createContentNode(texRef, parent);
 	}
 
 	std::string ContentFactory<Texture>::getContentTypeString() const {

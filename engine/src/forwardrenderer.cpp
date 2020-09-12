@@ -259,9 +259,25 @@ namespace Morpheus {
 			const glm::vec2& upper) {
 		glDisable(GL_DEPTH_TEST);
 
+		int width;
+		int height;
+		glfwGetFramebufferSize(window(), &width, &height);
+
+		glm::vec2 lower_normalized = lower;
+		glm::vec2 upper_normalized = upper;
+		glm::vec2 origin(-1.0f, -1.0f);
+		glm::vec2 scale(2.0f / (float)width, 2.0f / (float)height);
+		lower_normalized *= scale;
+		upper_normalized *= scale;
+		lower_normalized += origin;
+		upper_normalized += origin;
+
+		lower_normalized.y *= -1.0;
+		upper_normalized.y *= -1.0;
+
 		glUseProgram(mTextureBlitShader->id());
-		mTextureBlitShaderView.mLower.set(lower);
-		mTextureBlitShaderView.mUpper.set(upper);
+		mTextureBlitShaderView.mLower.set(lower_normalized);
+		mTextureBlitShaderView.mUpper.set(upper_normalized);
 		mTextureBlitShaderView.mBlitTexture.set(texture, mDebugBlitSampler);
 
 		glBindVertexArray(mBlitGeometry->vertexArray());

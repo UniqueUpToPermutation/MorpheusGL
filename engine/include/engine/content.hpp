@@ -122,6 +122,17 @@ namespace Morpheus {
 			return newNode;
 		}
 
+		// Create a node for a content object and transfer ownership of node to content manager.
+		// ContentType: The type of the content.
+		// content: A reference to the content.
+		// parent: The parent of this node (i.e., scene, user, etc.), so that it does not get
+		// deallocated upon garbage collection
+		// returns: A child node of the content manager with the content as an owner. 
+		template <typename ContentType>
+		Node createContentNode(ref<ContentType>& content, NodeHandle parent) {
+			return createContentNode<ContentType>(content, find(parent));
+		}
+
 		// Get a content factory by content type.
 		// ContentType: The type of content to get a factory for
 		// returns: The content factory. 

@@ -11,6 +11,7 @@ option(BUILD_SIMPLE_APP "Enable building simple app" ON)
 option(BUILD_PBR "Enable building PBR demo" ON)
 option(BUILD_LAPVIEWER "Enable builing Laplacian Eigenvector viewer" ON)
 option(BUILD_BLITTEST "Enable building blit test" ON)
+option(BUILD_COMPUTETEST "Enable building compute test" ON)
 
 if (BUILD_NANOGUI)
     add_subdirectory(nanogui)
@@ -38,6 +39,10 @@ endif()
 
 if(BUILD_BLITTEST)
     add_subdirectory(blit-test)
+endif()
+
+if (BUILD_COMPUTETEST)
+    add_subdirectory(compute-test)
 endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

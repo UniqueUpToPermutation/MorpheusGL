@@ -208,8 +208,8 @@ namespace Morpheus {
 		virtual void setClearColor(float r, float g, float b) = 0;
 
 		// Perform a blit of a texture to screen for debugging purposes
-		// lower: the lower bounds of the blit rectangle (in the range [-1.0, 1.0])
-		// upper: the upper bounds of the blit rectangle (in the range [-1.0, 1.0])
+		// lower: the lower bounds of the blit rectangle (in pixels)
+		// upper: the upper bounds of the blit rectangle (in pixels)
 		virtual void debugBlit(ref<Texture> texture, 
 			const glm::vec2& lower,
 			const glm::vec2& upper) = 0;

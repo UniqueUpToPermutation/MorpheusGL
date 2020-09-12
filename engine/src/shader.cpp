@@ -326,7 +326,7 @@ namespace Morpheus {
 		}
 	}
 
-	void printProgramCompilerOutput(GLint program) {
+	void printProgramLinkerOutput(GLint program) {
 		GLint len;
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &len);
 		if (len > 1)
@@ -424,7 +424,7 @@ namespace Morpheus {
 		}
 
 		glLinkProgram(id);
-		printProgramCompilerOutput(id);
+		printProgramLinkerOutput(id);
 
 		// Shader no longer needed
 		glDetachShader(id, vertex_id);

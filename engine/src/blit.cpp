@@ -32,7 +32,7 @@ namespace Morpheus {
         glAttachShader(program, vShader);
         glAttachShader(program, fShader);
         glLinkProgram(program);
-        printProgramCompilerOutput(program);
+        printProgramLinkerOutput(program);
         GL_ASSERT;
 
         return program;
@@ -73,7 +73,7 @@ namespace Morpheus {
             1.0f, 1.0f
         };
 
-        unsigned short idx[] = { 0, 1, 2, 2, 1, 3 };
+        unsigned short idx[] = { 0, 2, 1, 1, 2, 3 };
 
         GLuint vbo;
         glCreateBuffers(1, &vbo);

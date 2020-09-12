@@ -812,7 +812,7 @@ namespace Morpheus {
 			checkValidFormat<OutputType>(format);
 			ref<Texture> tex;
 			GL_ASSERT;
-			Node texNode = factory->makeCubemap(&tex, width(), height(), format);
+			Node texNode = factory->makeCubemapUnparented(&tex, width(), height(), format);
 			GL_ASSERT;
 			writeToTexture(tex);
 			if (out)

@@ -59,9 +59,13 @@ namespace Morpheus {
 		void dispose() override;
 
 		ref<Texture> makeTexture2DUnmanaged(const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
-		Node makeTexture2D(ref<Texture>* out, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeTexture2DUnparented(ref<Texture>* out, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeTexture2D(ref<Texture>* out, Node parent, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeTexture2D(ref<Texture>* out, NodeHandle parent, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
 		ref<Texture> makeCubemapUnmanaged(const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
-		Node makeCubemap(ref<Texture>* out, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeCubemapUnparented(ref<Texture>* out, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeCubemap(ref<Texture>* out, Node parent, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeCubemap(ref<Texture>* out, NodeHandle parent, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
 	
 		std::string getContentTypeString() const override;
 	};

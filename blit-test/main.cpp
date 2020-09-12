@@ -6,7 +6,6 @@
 using namespace Morpheus;
 
 int main() {
-
     Engine en;
     if (en.startup("config.json").isSuccess()) {
         auto sceneNode = en.makeScene();
@@ -30,7 +29,7 @@ int main() {
         while (en.valid()) {
             en.update();
             en.render(sceneHandle);
-            en.renderer()->debugBlit(texture, glm::vec2(-0.5, -0.5), glm::vec2(0.5, 0.5));
+            en.renderer()->debugBlit(texture, glm::vec2(0.0, 0.0), glm::vec2(256.0, 256.0));
             en.present();
         }
     }

@@ -599,6 +599,6 @@ namespace Morpheus {
 		const std::string& parentSrc = "");
 
 	GLuint compileShader(const std::string& code, const ShaderType type);
-	void printProgramCompilerOutput(GLint program);
+	void printProgramLinkerOutput(GLint program);
 	void printShaderCompilerOutput(GLint shader);
 }
