@@ -124,6 +124,10 @@ namespace Morpheus {
 		mRenderer->draw(scene);
 	}
 
+	void Engine::render(NodeHandle sceneHandle) {
+		mRenderer->draw(sceneHandle);
+	}
+
 	void Engine::present() {
 		glfwSwapBuffers(mWindow);
 	}

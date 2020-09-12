@@ -24,10 +24,11 @@ int main() {
 
         // Create a scene
         auto sceneNode = en.makeScene();
+        auto sceneHandle = issueHandle(sceneNode);
 
         while (en.valid()) {
             en.update();
-            en.render(sceneNode);
+            en.render(sceneHandle);
             en.present();
         }
     }

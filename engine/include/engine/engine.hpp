@@ -111,10 +111,11 @@ namespace Morpheus {
 		// returns: A flag determining if the engine is valid.
 		bool valid() const;
 		
-		/// Tells the renderer to render this scene.
-		
+		// Tells the renderer to render this scene.
 		void render(Node scene);
-		/// Swaps the back and front buffers.
+		// Tells the renderer to render this scene.
+		void render(NodeHandle sceneHandle);
+		// Swaps the back and front buffers.
 		void present();
 		// Creates a new scene as a child of the engine.
 		Node makeScene(ref<Scene>* sceneOut = nullptr);
@@ -177,6 +178,22 @@ namespace Morpheus {
 		return desc((*graph())[name]);
 	}
 
+	inline NodeHandle issueHandle(const Node& n) {
+		return graph()->issueHandle(n);
+	}
+
+	inline Node find(const NodeHandle h) {
+		return graph()->find(h);
+	}
+
+	inline Node find(const std::string& name) {
+		return graph()->find(name);
+	}
+
+	inline void recallHandle(const NodeHandle handle) {
+		graph()->recallHandle(handle);
+	}
+
 	class IRenderer : public IDisposable, public IInitializable {
 	public:
 		// Posts all necessary requests to glfw when creating a context
@@ -202,6 +219,10 @@ namespace Morpheus {
 		// Set the clear color of this renderer
 		void setClearColor(const glm::vec3& color) {
 			setClearColor(color.x, color.y, color.z);
+		}
+
+		inline void draw(NodeHandle scene) {
+			draw(graph()->find(scene));
 		}
 	};
 }
