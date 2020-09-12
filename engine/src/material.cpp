@@ -8,6 +8,10 @@ using namespace nlohmann;
 using namespace std;
 
 namespace Morpheus {
+	std::string ContentFactory<Material>::getContentTypeString() const {
+		return MORPHEUS_STRINGIFY(Material);
+	}
+
     template <>
     ref<Material> duplicateRef<Material>(const ref<Material>& a)
     {

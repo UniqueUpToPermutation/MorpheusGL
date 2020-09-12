@@ -631,4 +631,8 @@ namespace Morpheus {
 			binding.mSampler->bind(binding.mBindTarget);
 		}
 	}
+
+	std::string ContentFactory<Shader>::getContentTypeString() const {
+		return MORPHEUS_STRINGIFY(Shader);
+	}
 }

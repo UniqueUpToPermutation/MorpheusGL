@@ -96,6 +96,10 @@ namespace Morpheus {
 	void ContentFactory<StaticMesh>::dispose() {
 		delete this;
 	}
+	
+	std::string ContentFactory<StaticMesh>::getContentTypeString() const {
+		return MORPHEUS_STRINGIFY(StaticMesh);
+	}
 
 	Node ContentFactory<StaticMesh>::makeStaticMesh(const Node& material, 
 		const Node& geometry, ref<StaticMesh>* refOut)

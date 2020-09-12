@@ -43,9 +43,11 @@ namespace Morpheus {
 
 		std::string src;
 		if (mSources.tryFind(node, &src))
-			std::cout << "Unloading " << src << "..." << std::endl;
+			std::cout << "Unloading " << src << " (" << 
+				factory->getContentTypeString() << ")..." << std::endl;
 		else
-			std::cout << "Unloading [UNNAMED]..." << std::endl;
+			std::cout << "Unloading [UNNAMED] (" << 
+				factory->getContentTypeString()  << ")..." << std::endl;
 
 		mSources.remove(node);
 	}

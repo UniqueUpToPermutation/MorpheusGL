@@ -99,4 +99,8 @@ namespace Morpheus {
 	Node ContentFactory<Sampler>::makeUnmanaged(SamplerPrototype prototype, ref<Sampler>* samplerOut) {
 		return makeUnmanaged(makeSamplerParams(prototype), samplerOut);
 	}
+
+	std::string ContentFactory<Sampler>::getContentTypeString() const {
+		return MORPHEUS_STRINGIFY(Sampler);
+	}
 }

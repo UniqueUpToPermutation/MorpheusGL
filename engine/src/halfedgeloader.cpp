@@ -349,4 +349,8 @@ namespace Morpheus {
 		delete mImporter;
 		delete this;
 	}
+
+	std::string ContentFactory<HalfEdgeGeometry>::getContentTypeString() const {
+		return MORPHEUS_STRINGIFY(HalfEdgeGeometry);
+	}
 }

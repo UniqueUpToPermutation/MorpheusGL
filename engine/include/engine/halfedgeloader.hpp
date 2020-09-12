@@ -30,6 +30,8 @@ namespace Morpheus {
 		void unload(ref<void>& ref) override;
 		void dispose() override;
 
+		std::string getContentTypeString() const override;
+
 		ContentFactory();
 	};
 }

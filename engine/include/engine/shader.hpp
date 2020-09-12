@@ -583,6 +583,8 @@ namespace Morpheus {
 		ref<Shader> makeFromGL(GLint shaderProgram);
 		void unload(ref<void>& ref) override;
 		void dispose() override;
+
+		std::string getContentTypeString() const override;
 	};
 
 	void readEditorUniforms(const nlohmann::json& j, const Shader* shad, 

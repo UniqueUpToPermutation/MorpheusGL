@@ -104,5 +104,7 @@ namespace Morpheus {
 			const std::string& source,
 			ref<Geometry>* refOut) const;
 		Node makeBox(const glm::vec3& center, const glm::vec3& radius, const bool bInverted) const;
+
+		std::string getContentTypeString() const override;
 	};
 }

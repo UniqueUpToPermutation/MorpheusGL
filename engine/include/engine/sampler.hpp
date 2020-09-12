@@ -65,5 +65,7 @@ namespace Morpheus {
 
 		Node makeUnmanaged(const SamplerParameters& params, ref<Sampler>* samplerOut = nullptr);
 		Node makeUnmanaged(const SamplerPrototype prototype, ref<Sampler>* samplerOut = nullptr);
+	
+		std::string getContentTypeString() const override;
 	};
 }

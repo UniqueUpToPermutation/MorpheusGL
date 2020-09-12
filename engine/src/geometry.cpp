@@ -419,6 +419,10 @@ namespace Morpheus {
 		return makeGeometry(geo, HalfEdgeAttributes::defaults(), "", refOut);
 	}
 
+	std::string ContentFactory<Geometry>::getContentTypeString() const {
+		return MORPHEUS_STRINGIFY(Geometry);
+	}
+
 	Node ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
 		const HalfEdgeAttributes& attrib,
 		const std::string& source,

@@ -401,4 +401,8 @@ namespace Morpheus {
 			*out = texRef;
 		return content()->createContentNode(texRef);
 	}
+
+	std::string ContentFactory<Texture>::getContentTypeString() const {
+		return MORPHEUS_STRINGIFY(Texture);
+	}
 }

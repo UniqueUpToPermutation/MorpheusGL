@@ -53,6 +53,8 @@
 	template<> struct PROTOTYPE_TO_PROXY_<NodeType::NodeType_> \
 	{ static constexpr NodeType RESULT = NodeType::InstanceType; } ;
 
+#define MORPHEUS_STRINGIFY(a) #a
+
 struct GLFWwindow;
 
 namespace Morpheus {
