@@ -17,6 +17,7 @@
 namespace Morpheus {
 
 	class Scene;
+	class Texture;
 
 	struct DisplayParameters {
 		int32_t mFramebufferWidth;
@@ -178,13 +179,27 @@ namespace Morpheus {
 
 	class IRenderer : public IDisposable, public IInitializable {
 	public:
+		// Posts all necessary requests to glfw when creating a context
 		virtual void postGlfwRequests() = 0;
+		// Draw the given scene
 		virtual void draw(Node scene) = 0;
+		// Get the handle of this renderer
 		virtual NodeHandle handle() const = 0;
+		// Get the type of this renderer
 		virtual RendererType getType() const = 0;
+		// Set the clear color of this renderer
 		virtual void setClearColor(float r, float g, float b) = 0;
-		inline Node node() const { return (*graph())[handle()]; }
 
+		// Perform a blit of a texture to screen for debugging purposes
+		// lower: the lower bounds of the blit rectangle (in the range [-1.0, 1.0])
+		// upper: the upper bounds of the blit rectangle (in the range [-1.0, 1.0])
+		virtual void debugBlit(ref<Texture> texture, 
+			const glm::vec2& lower,
+			const glm::vec2& upper) = 0;
+
+		// Get the node of this renderer
+		inline Node node() const { return (*graph())[handle()]; }
+		// Set the clear color of this renderer
 		void setClearColor(const glm::vec3& color) {
 			setClearColor(color.x, color.y, color.z);
 		}

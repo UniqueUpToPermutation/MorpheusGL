@@ -32,6 +32,7 @@ namespace Morpheus {
 
 	ref<Texture> ContentFactory<Texture>::loadgli(const std::string& source) {
 		TextureType type;
+		GLenum gltype;
 		gli::texture tex = gli::load(source);
 		if (tex.empty()) {
 			std::cout << "Failed to load texture " << source << "!" << std::endl;
@@ -83,24 +84,31 @@ namespace Morpheus {
 		switch (tex.target()) {
 		case gli::TARGET_1D:
 			type = TextureType::TEXTURE_1D;
+			gltype = GL_TEXTURE_1D;
 			break;
 		case gli::TARGET_1D_ARRAY:
 			type = TextureType::TEXTURE_1D_ARRAY;
+			gltype = GL_TEXTURE_1D_ARRAY;
 			break;
 		case gli::TARGET_2D:
 			type = TextureType::TEXTURE_2D;
+			gltype = GL_TEXTURE_2D;
 			break;
 		case gli::TARGET_CUBE:
 			type = TextureType::CUBE_MAP;
+			gltype = GL_TEXTURE_CUBE_MAP;
 			break;
 		case gli::TARGET_2D_ARRAY:
 			type = TextureType::TEXTURE_2D_ARRAY;
+			gltype = GL_TEXTURE_2D_ARRAY;
 			break;
 		case gli::TARGET_3D:
 			type = TextureType::TEXTURE_3D;
+			gltype = GL_TEXTURE_3D;
 			break;
 		case gli::TARGET_CUBE_ARRAY:
 			type = TextureType::CUBE_MAP_ARRAY;
+			gltype = GL_TEXTURE_CUBE_MAP_ARRAY;
 			break;
 		}
 
@@ -177,6 +185,7 @@ namespace Morpheus {
 		Morpheus::Texture* tex_ptr = new Morpheus::Texture();
 		tex_ptr->mId = TextureName;
 		tex_ptr->mType = type;
+		tex_ptr->mGLTarget = gltype;
 		tex_ptr->mWidth = Extent.x;
 		tex_ptr->mHeight = Extent.y;
 		tex_ptr->mDepth = Extent.z;
@@ -204,6 +213,7 @@ namespace Morpheus {
 			Texture* tex = new Texture();
 			tex->mId = TextureName;
 			tex->mType = TextureType::TEXTURE_2D;
+			tex->mGLTarget = GL_TEXTURE_2D;
 			tex->mWidth = width;
 			tex->mHeight = height;
 			tex->mDepth = 1;
@@ -216,7 +226,7 @@ namespace Morpheus {
 		}
 	}
 
-	void Texture::savepngcubemap(const std::string& path) {
+	void Texture::savepngcubemap(const std::string& path) const {
 		size_t pos = path.rfind('.');
 		std::string base_path;
 		std::map<GLint, std::string> face_paths;
@@ -267,7 +277,7 @@ namespace Morpheus {
 		do_save(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
 	}
 
-	void Texture::savepngtex2d(const std::string& path) {
+	void Texture::savepngtex2d(const std::string& path) const {
 		GLsizei memSize = 4 * mWidth * mHeight;
 		std::vector<uint8_t> data(memSize);
 		std::vector<uint8_t> png;
@@ -282,7 +292,7 @@ namespace Morpheus {
 		}
 	}
 
-	void Texture::savepng(const std::string& path) {
+	void Texture::savepng(const std::string& path) const {
 		switch (mType) {
 		case TextureType::TEXTURE_2D:
 			savepngtex2d(path);
@@ -337,6 +347,7 @@ namespace Morpheus {
 		tex->mWidth = width;
 		tex->mHeight = height;
 		tex->mType = TextureType::TEXTURE_2D;
+		tex->mGLTarget = GL_TEXTURE_2D;
 		tex->mId = TextureName;
 		tex->mDepth = 1;
 		tex->mFormat = format;
@@ -376,6 +387,7 @@ namespace Morpheus {
 		tex->mWidth = width;
 		tex->mHeight = height;
 		tex->mType = TextureType::CUBE_MAP;
+		tex->mGLTarget = GL_TEXTURE_CUBE_MAP;
 		tex->mId = TextureName;
 		tex->mDepth = 1;
 		tex->mFormat = format;

@@ -40,6 +40,13 @@ namespace Morpheus {
 		if (factory)
 			factory->unload(desc->owner);
 		graph()->deleteVertex(node);
+
+		std::string src;
+		if (mSources.tryFind(node, &src))
+			std::cout << "Unloading " << src << "..." << std::endl;
+		else
+			std::cout << "Unloading [UNNAMED]..." << std::endl;
+
 		mSources.remove(node);
 	}
 

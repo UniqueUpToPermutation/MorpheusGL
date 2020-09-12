@@ -28,6 +28,7 @@ add_library(engine
     src/staticmesh.cpp
     src/texture.cpp
     src/updater.cpp
+    src/blit.cpp
     lodepng/lodepng.cpp
     ../nanogui/ext/glad/src/glad.c)
 

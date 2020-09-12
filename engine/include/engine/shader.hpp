@@ -450,6 +450,26 @@ namespace Morpheus {
 		}
 	};
 
+	template <>
+	struct ShaderUniform<Sampler> {
+		GLint mLoc;
+		inline void set(const ref<Texture>& texture, const ref<Sampler>& sampler) const {
+			sampler->bind(mLoc);
+			texture->bind(GL_TEXTURE0 + mLoc);
+		}
+
+		inline void set(const Texture* texture, const Sampler* sampler) const {
+			sampler->bind(mLoc);
+			texture->bind(GL_TEXTURE0 + mLoc);
+		}
+
+		inline void set(const GLenum texture_target, const GLint texture, const GLint sampler) const {
+			glActiveTexture(GL_TEXTURE0 + mLoc);
+			glBindTexture(texture_target, texture);
+			glBindSampler(mLoc, sampler);
+		}
+	};
+
 	enum class ShaderParameterType {
 		UNIFORM,
 		SAMPLER
@@ -560,6 +580,7 @@ namespace Morpheus {
 	public:
 		ContentFactory();
 		ref<void> load(const std::string& source, Node& loadInto) override;
+		ref<Shader> makeFromGL(GLint shaderProgram);
 		void unload(ref<void>& ref) override;
 		void dispose() override;
 	};
@@ -574,4 +595,8 @@ namespace Morpheus {
 		ShaderSamplerAssignments* out,
 		ContentManager* content, Node parent,
 		const std::string& parentSrc = "");
+
+	GLuint compileShader(const std::string& code, const ShaderType type);
+	void printProgramCompilerOutput(GLint program);
+	void printShaderCompilerOutput(GLint shader);
 }

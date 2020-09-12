@@ -560,6 +560,9 @@ namespace Morpheus {
 		inline NodeData* desc(const std::string& s) {
 			return &(mDescs[mNames[s]]);
 		}
+		inline NodeData* desc(const NodeHandle h) {
+			return &(mDescs[mHandles[h]]);
+		}
 		inline NodeHandleLookupView handles() const {
 			return mHandles;
 		}
@@ -570,6 +573,12 @@ namespace Morpheus {
 			return mHandles[handle];
 		}
 		inline Node operator[](const std::string& name) {
+			return mNames[name];
+		}
+		inline Node find(const NodeHandle handle) {
+			return mHandles[handle];
+		}
+		inline Node find(const std::string& name) {
 			return mNames[name];
 		}
 		template <typename OwnerType>

@@ -4,6 +4,7 @@
 #include <engine/camera.hpp>
 #include <engine/scene.hpp>
 #include <engine/staticmesh.hpp>
+#include <engine/blit.hpp>
 
 #include <stack>
 #include <iostream>
@@ -117,6 +118,13 @@ namespace Morpheus {
 		assert(mIsStaticStack.empty());
 	}
 
+	void ForwardRenderer::makeDebugObjects() {
+		// Create the texture blit shader
+		makeBlitGeometry(mHandle, &mBlitGeometry);
+		makeBlitShader(mHandle, &mTextureBlitShader, &mTextureBlitShaderView);
+		content()->load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, mHandle, &mDebugBlitSampler);
+	}
+
 	void ForwardRenderer::draw(const ForwardRenderQueue* queue, const ForwardRenderDrawParams& params)
 	{
 		int width;
@@ -202,6 +210,7 @@ namespace Morpheus {
 		drawParams.mRenderCamera = collectParams.mRenderCamera;
 		draw(&mQueues, drawParams);
 	}
+
 	void ForwardRenderer::postGlfwRequests() {
 		auto& glConfig = (*config())["opengl"];
 
@@ -224,6 +233,7 @@ namespace Morpheus {
 		glfwWindowHint(GLFW_DEPTH_BITS, 24);
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	}
+
 	void ForwardRenderer::init(Node n)
 	{
 		// Set VSync on
@@ -231,6 +241,8 @@ namespace Morpheus {
 		glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
 
 		mHandle = graph()->issueHandle(n);
+
+		makeDebugObjects();
 	}
 
 	void ForwardRenderer::dispose() {
@@ -240,5 +252,20 @@ namespace Morpheus {
 
 	void ForwardRenderer::setClearColor(float r, float g, float b) {
 		glClearColor(r, g, b, 1.0f);
+	}
+
+	void ForwardRenderer::debugBlit(ref<Texture> texture, 
+			const glm::vec2& lower,
+			const glm::vec2& upper) {
+		glDisable(GL_DEPTH_TEST);
+
+		glUseProgram(mTextureBlitShader->id());
+		mTextureBlitShaderView.mLower.set(lower);
+		mTextureBlitShaderView.mUpper.set(upper);
+		mTextureBlitShaderView.mBlitTexture.set(texture, mDebugBlitSampler);
+
+		glBindVertexArray(mBlitGeometry->vertexArray());
+		glDrawElements(mBlitGeometry->elementType(), mBlitGeometry->elementCount(),
+				mBlitGeometry->indexType(), nullptr);
 	}
 }

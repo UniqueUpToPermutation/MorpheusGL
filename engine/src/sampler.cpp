@@ -55,12 +55,12 @@ namespace Morpheus {
 	}
 
 	ContentFactory<Sampler>::ContentFactory() {
-		mStringToPrototypeMap["TRILINEAR_CLAMP_SAMPLER"] = SamplerPrototype::TRILINEAR_CLAMP;
-		mStringToPrototypeMap["TRILINEAR_TILE_SAMPLER"] = SamplerPrototype::TRILINEAR_TILE;
-		mStringToPrototypeMap["BILINEAR_CLAMP_SAMPLER"] = SamplerPrototype::BILINEAR_CLAMP;
-		mStringToPrototypeMap["BILINEAR_TILE_SAMPLER"] = SamplerPrototype::BILINEAR_TILE;
-		mStringToPrototypeMap["POINT_CLAMP_SAMPLER"] = SamplerPrototype::POINT_CLAMP;
-		mStringToPrototypeMap["POINT_TILE_SAMPLER"] = SamplerPrototype::POINT_TILE;
+		mStringToPrototypeMap[TRILINEAR_CLAMP_SAMPLER_SRC] = SamplerPrototype::TRILINEAR_CLAMP;
+		mStringToPrototypeMap[TRILINEAR_TILE_SAMPLER_SRC] = SamplerPrototype::TRILINEAR_TILE;
+		mStringToPrototypeMap[BILINEAR_CLAMP_SAMPLER_SRC] = SamplerPrototype::BILINEAR_CLAMP;
+		mStringToPrototypeMap[BILINEAR_TILE_SAMPLER_SRC] = SamplerPrototype::BILINEAR_TILE;
+		mStringToPrototypeMap[POINT_CLAMP_SAMPLER_SRC] = SamplerPrototype::POINT_CLAMP;
+		mStringToPrototypeMap[POINT_TILE_SAMPLER_SRC] = SamplerPrototype::POINT_TILE;
 	}
 
 	void ContentFactory<Sampler>::unload(ref<void>& ref)

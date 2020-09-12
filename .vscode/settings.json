@@ -5,5 +5,9 @@
         "memory_resource": "cpp",
         "ostream": "cpp"
     },
-    "python.pythonPath": "/home/philip/anaconda3/bin/python"
+    "python.pythonPath": "/home/philip/anaconda3/bin/python",
+    "C_Cpp.errorSquiggles": "Enabled",
+    "cmake.debugConfig": {
+        "cwd": "${command:cmake.launchTargetDirectory}"
+    }
 }

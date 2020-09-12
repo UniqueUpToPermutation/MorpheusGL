@@ -106,6 +106,21 @@ namespace Morpheus {
 			return newNode;
 		}
 
+		// Create a node for a content object and transfer ownership of node to content manager.
+		// ContentType: The type of the content.
+		// content: A reference to the content.
+		// parent: The parent of this node (i.e., scene, user, etc.), so that it does not get
+		// deallocated upon garbage collection
+		// returns: A child node of the content manager with the content as an owner. 
+		template <typename ContentType>
+		Node createContentNode(ref<ContentType>& content, Node parent) {
+			auto newNode = graph()->addNode(content);
+			addContentNode(newNode);
+			if (parent.valid())
+				graph()->createEdge(parent, newNode);
+			return newNode;
+		}
+
 		// Get a content factory by content type.
 		// ContentType: The type of content to get a factory for
 		// returns: The content factory. 
@@ -187,7 +202,7 @@ namespace Morpheus {
 		// returns: A node containing the asset. 
 		template <typename ContentType>
 		inline Node load(const std::string& source, const NodeHandle parentHandle, ref<ContentType>* refOut = nullptr) {
-			Node v = graph()[parentHandle];
+			Node v = graph()->find(parentHandle);
 			return load<ContentType>(source, v, refOut);
 		}
 

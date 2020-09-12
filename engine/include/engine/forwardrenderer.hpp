@@ -10,7 +10,7 @@
 #include <engine/engine.hpp>
 #include <engine/material.hpp>
 #include <engine/gui.hpp>
-
+#include <engine/blit.hpp>
 namespace Morpheus {
 	
 	class Camera;
@@ -51,9 +51,16 @@ namespace Morpheus {
 		std::stack<ref<Transform>> mTransformStack;
 		std::stack<ref<Material>> mMaterialStack;
 
+		// Debug texture blitting
+		ref<Shader> mTextureBlitShader;
+		ref<Geometry> mBlitGeometry;
+		ref<Sampler> mDebugBlitSampler;
+		BlitShaderView mTextureBlitShaderView;
+
 		void collectRecursive(Node& current, ForwardRenderCollectParams& params);
 		void collect(Node& start, ForwardRenderCollectParams& params);
 		void draw(const ForwardRenderQueue* queue, const ForwardRenderDrawParams& params);
+		void makeDebugObjects();
 
 	public:
 		NodeHandle handle() const override;
@@ -63,6 +70,10 @@ namespace Morpheus {
 		void draw(Node scene) override;
 		void dispose() override;
 		void setClearColor(float r, float g, float b) override;
+
+		void debugBlit(ref<Texture> texture, 
+			const glm::vec2& lower,
+			const glm::vec2& upper) override;
 
 		friend class Engine;
 	};

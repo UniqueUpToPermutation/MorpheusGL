@@ -98,8 +98,6 @@ namespace Morpheus {
 	ContentFactory<Shader>::ContentFactory() {
 	}
 
-	GLuint compileShader(const std::string& code, const ShaderType type);
-
 	void preprocessor(const string& path, vector<string>& paths, stringstream& builder) {
 
 		if (std::count(paths.begin(), paths.end(), path) > 0) {
@@ -328,6 +326,30 @@ namespace Morpheus {
 		}
 	}
 
+	void printProgramCompilerOutput(GLint program) {
+		GLint len;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &len);
+		if (len > 1)
+		{
+			GLchar* compiler_log = new GLchar[len];
+			glGetProgramInfoLog(program, len, &len, compiler_log);
+			cout << compiler_log << endl;
+			delete[] compiler_log;
+		}
+	}
+
+	void printShaderCompilerOutput(GLint shader) {
+		GLint len;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
+		if (len > 1)
+		{
+			GLchar* compiler_log = new GLchar[len];
+			glGetShaderInfoLog(shader, len, &len, compiler_log);
+			cout << compiler_log << endl;
+			delete[] compiler_log;
+		}
+	}
+
 	ref<void> ContentFactory<Shader>::load(const std::string& source, Node& loadInto) {
 		json j;
 		ifstream f(source);
@@ -400,17 +422,9 @@ namespace Morpheus {
 		else {
 			glAttachShader(id, comp_id);
 		}
-		glLinkProgram(id);
 
-		GLint len;
-		glGetProgramiv(id, GL_INFO_LOG_LENGTH, &len);
-		if (len > 1)
-		{
-			GLchar* compiler_log = new GLchar[len];
-			glGetProgramInfoLog(id, len, &len, compiler_log);
-			cout << compiler_log << endl;
-			delete[] compiler_log;
-		}
+		glLinkProgram(id);
+		printProgramCompilerOutput(id);
 
 		// Shader no longer needed
 		glDetachShader(id, vertex_id);
@@ -425,6 +439,13 @@ namespace Morpheus {
 
 		ref<void> r(shader);
 		return r;
+	}
+
+	ref<Shader> ContentFactory<Shader>::makeFromGL(GLint shaderProgram) {
+		Shader* shad = new Shader();
+		shad->mId = shaderProgram;
+		shad->mRenderView.init();
+		return ref<Shader>(shad);
 	}
 
 	void ContentFactory<Shader>::unload(ref<void>& ref) {
@@ -461,16 +482,8 @@ namespace Morpheus {
 		const GLchar* ptr = code.c_str();
 		glShaderSource(id, 1, &ptr, nullptr);
 		glCompileShader(id);
-
-		GLint len;
-		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &len);
-		if (len > 1)
-		{
-			GLchar* compiler_log = new GLchar[len];
-			glGetShaderInfoLog(id, len, &len, compiler_log);
-			cout << compiler_log << endl;
-			delete[] compiler_log;
-		}
+		printShaderCompilerOutput(id);
+		
 		return id;
 	}
 
@@ -614,31 +627,8 @@ namespace Morpheus {
 	void ShaderSamplerAssignments::assign() const
 	{
 		for (auto& binding : mBindings) {
-			glActiveTexture(GL_TEXTURE0 + binding.mBindTarget);
-			switch (binding.mTexture->type()) {
-			case TextureType::TEXTURE_1D:
-				glBindTexture(GL_TEXTURE_1D, binding.mTexture->id());
-				break;
-			case TextureType::TEXTURE_1D_ARRAY:
-				glBindTexture(GL_TEXTURE_1D_ARRAY, binding.mTexture->id());
-				break;
-			case TextureType::TEXTURE_2D:
-				glBindTexture(GL_TEXTURE_2D, binding.mTexture->id());
-				break;
-			case TextureType::TEXTURE_2D_ARRAY:
-				glBindTexture(GL_TEXTURE_2D_ARRAY, binding.mTexture->id());
-				break;
-			case TextureType::TEXTURE_3D:
-				glBindTexture(GL_TEXTURE_3D, binding.mTexture->id());
-				break;
-			case TextureType::CUBE_MAP:
-				glBindTexture(GL_TEXTURE_CUBE_MAP, binding.mTexture->id());
-				break;
-			case TextureType::CUBE_MAP_ARRAY:
-				glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, binding.mTexture->id());
-				break;
-			}
-			glBindSampler(binding.mBindTarget, binding.mSampler->id());
+			binding.mTexture->bind(GL_TEXTURE0 + binding.mBindTarget);
+			binding.mSampler->bind(binding.mBindTarget);
 		}
 	}
 }

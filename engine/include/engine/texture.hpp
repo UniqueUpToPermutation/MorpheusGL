@@ -23,19 +23,26 @@ namespace Morpheus {
 		uint32_t mHeight;
 		uint32_t mDepth;
 		GLenum mFormat;
+		GLenum mGLTarget;
 
-		void savepngtex2d(const std::string& path);
-		void savepngcubemap(const std::string& path);
+		void savepngtex2d(const std::string& path) const;
+		void savepngcubemap(const std::string& path) const;
 
 	public:
 		inline GLuint id() const { return mId; }
 		inline TextureType type() const { return mType; }
+		inline GLenum target() const { return mGLTarget; }
 		inline uint32_t width() const { return mWidth; }
 		inline uint32_t height() const { return mHeight; }
 		inline uint32_t depth() const { return mDepth; }
 		inline GLenum format() const { return mFormat; }
 
-		void savepng(const std::string& path);
+		inline void bind(GLenum activeTexture) const {
+			glActiveTexture(activeTexture);
+			glBindTexture(mGLTarget, mId);
+		}
+
+		void savepng(const std::string& path) const;
 		void genMipmaps();
 
 		friend class ContentFactory<Texture>;
