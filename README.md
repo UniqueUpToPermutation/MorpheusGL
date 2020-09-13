@@ -2,6 +2,8 @@
 
 Morpheus is an open source physically-based cross-platform renderer built using OpenGL. It runs on Linux and Windows currently, and MacOS should be comming soon.
 
+![lapviewer2](images/lapviewer2.png)
+
 It is mostly intended as an academic hobby project of a bored PhD student.
 
 ## Current Features
