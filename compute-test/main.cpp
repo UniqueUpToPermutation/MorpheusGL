@@ -44,22 +44,34 @@ int main() {
             return false;
         };
 
+        GLuint local_size_x = 32;
+        GLuint local_size_y = 32;
+
         ShaderUniform<float> timeUniform;
         timeUniform.mLoc = glGetUniformLocation(computeShader->id(), "Time");
 
         en.input()->bindFramebufferSizeEvent(&en, &resizeHandler);
+        en.renderer()->setClearColor(0.0, 0.0, 0.0);
 
         while (en.valid()) {
             glfwGetFramebufferSize(en.window(), &width, &height);
 
             if (bRefresh) {
+                GLuint target_texture_size_x = (width / local_size_x + 1) * local_size_x;
+                GLuint target_texture_size_y = (height / local_size_y + 1) * local_size_y;
+
                 // Resize if necessary
-                if (output_texture->width() != width ||
-                    output_texture->height() != height) {
-                    output_texture->resize(width, height);
+                if (output_texture->width() < target_texture_size_x ||
+                    output_texture->height() < target_texture_size_y ||
+                    output_texture->width() > target_texture_size_x + 2 * local_size_x ||
+                    output_texture->height() > target_texture_size_y + 2 * local_size_y) {
+                    output_texture->resize(target_texture_size_x, target_texture_size_y);
                 }
                 bRefresh = false;
             }
+
+            GLuint compute_groups_x = output_texture->width() / local_size_x;
+            GLuint compute_groups_y = output_texture->height() / local_size_y;
 
             // Perform computation
             glActiveTexture(GL_TEXTURE0);
@@ -68,15 +80,14 @@ int main() {
                 GL_WRITE_ONLY, GL_RGBA32F);
             glUseProgram(computeShader->id());
             timeUniform.set(glfwGetTime());
-            glDispatchCompute((GLuint)width, (GLuint)height, 1);
+            glDispatchCompute(compute_groups_x, compute_groups_y, 1);
+            GL_ASSERT;
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
             en.update();
             en.render(sceneHandle);
             // Display texture
-            en.renderer()->debugBlit(output_texture, 
-                glm::vec2(0.0, 0.0), 
-                glm::vec2(width, height));
+            en.renderer()->debugBlit(output_texture);
             en.present();
         }
     }

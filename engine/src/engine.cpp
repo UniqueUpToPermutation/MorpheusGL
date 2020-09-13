@@ -166,4 +166,13 @@ namespace Morpheus {
 	{
 		bValid = false;
 	}
+
+	void IRenderer::debugBlit(ref<Texture> texture,
+		const glm::vec2& position) {
+		debugBlit(texture, position, position + glm::vec2(texture->width(), texture->height()));
+	}
+
+	void IRenderer::debugBlit(ref<Texture> texture) {
+		debugBlit(texture, glm::vec2(0.0, 0.0), glm::vec2(texture->width(), texture->height()));
+	}
 }

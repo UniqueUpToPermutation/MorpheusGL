@@ -283,6 +283,11 @@ namespace Morpheus {
 			const glm::vec2& lower,
 			const glm::vec2& upper) = 0;
 
+		void debugBlit(ref<Texture> texture,
+			const glm::vec2& position);
+		
+		void debugBlit(ref<Texture> texture);
+
 		// Get the node of this renderer
 		inline Node node() const { return (*graph())[handle()]; }
 		// Set the clear color of this renderer
