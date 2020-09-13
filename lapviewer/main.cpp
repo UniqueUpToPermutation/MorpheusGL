@@ -162,38 +162,38 @@ void computeModes() {
 
 void loadGeo(const string& source) {
 	Node subSceneNode;
-	if (graph()->names().tryFind("__sub_scene__", &subSceneNode)) {
+	if (tryFind("__sub_scene__", &subSceneNode)) {
 		prune(subSceneNode);
 		subSceneNode = Node::invalid();
 	}
 
 	// Collect unnused data hanging around
-	content()->collectGarbage();
+	collectGarbage();
 
 	// Create a sub scene
-	subSceneNode = graph()->addNode(new Scene(), "__scene__");
-	graph()->setName(subSceneNode, "__sub_scene__");
+	subSceneNode = addNode(new Scene(), "__scene__");
+	setName(subSceneNode, "__sub_scene__");
 
 	// Load and add color to the a bunny
 	Morpheus::ref<HalfEdgeGeometry> rawGeo;
-	auto rawGeoNode = content()->load<HalfEdgeGeometry>(source, &rawGeo);
+	auto rawGeoNode = load<HalfEdgeGeometry>(source, &rawGeo);
 	rawGeo->createColors(vec3(1.0f, 1.0f, 1.0f));
-	graph()->setName(rawGeoNode, "__raw_geo__");
+	setName(rawGeoNode, "__raw_geo__");
 
 	// Compute the laplacian minor of the interior of the object
 	laplacianInteriorMinor(*rawGeo.get(), &lap, &lifter);
 	lifter = lifter.transpose();
 
 	// Load material node if necessary
-	Node matNode = content()->load<Material>("content/funcvizmaterial.json");
+	Node matNode = load<Material>("content/funcvizmaterial.json");
 
 	// Convert half edge into renderable geometry
 	Morpheus::ref<Geometry> geo;
-	Node geoNode = content()->getFactory<Geometry>()->makeGeometry(rawGeo.get(), "__geo__", &geo);
-	graph()->setName(geoNode, "__geo__");
+	Node geoNode = getFactory<Geometry>()->makeGeometry(rawGeo.get(), "__geo__", &geo);
+	setName(geoNode, "__geo__");
 
 	auto scene = desc("__scene__")->owner.reinterpretGet<Scene>();
-	auto meshNode = content()->getFactory<StaticMesh>()->makeStaticMesh(matNode, geoNode, "__static_mesh__");
+	auto meshNode = getFactory<StaticMesh>()->makeStaticMesh(matNode, geoNode, "__static_mesh__");
 
 	Node transformNode = scene->makeTranslation(vec3(0.0f, 0.0f, 0.0f));
 	subSceneNode.addChild(transformNode);
@@ -217,26 +217,26 @@ int main() {
 	if (en.startup("config.json").isSuccess()) {
 
 		// Load default cook-torrance material
-		Node matNode = content()->load<Material>("content/funcvizmaterial.json");
+		Node matNode = load<Material>("content/funcvizmaterial.json");
 
 		// Create a scene
-		auto sceneNode = graph()->addNode(new Scene(), engine()->handle());
-		graph()->setName(sceneNode, "__scene__");
-		auto sceneHandle = graph()->issueHandle(sceneNode);
+		auto sceneNode = addNode(new Scene(), engine()->handle());
+		setName(sceneNode, "__scene__");
+		auto sceneHandle = issueHandle(sceneNode);
 
 		// Create our GUI
-		auto guiNode = graph()->addNode(new LaplacianGui(), sceneNode);
-		graph()->setName(guiNode, "__gui__");
+		auto guiNode = addNode(new LaplacianGui(), sceneNode);
+		setName(guiNode, "__gui__");
 
 		// Make sure the material node is not unloaded
 		sceneNode.addChild(matNode);
 	
 		// Create camera and camera controller
 		auto camera = new Camera();
-		auto cameraNode = graph()->addNode(camera, sceneNode);
-		auto cameraController = graph()->addNode(new LookAtCameraController(0.0), cameraNode);
+		auto cameraNode = addNode(camera, sceneNode);
+		auto cameraController = addNode(new LookAtCameraController(0.0), cameraNode);
 
-		graph()->setName(cameraController, "__camera_controller__");
+		setName(cameraController, "__camera_controller__");
 
 		f_key_capture_t keyHandler = [](GLFWwindow*, int key, int scancode, int action, int modifiers) {
 			if (key == GLFW_KEY_ESCAPE) {
@@ -251,13 +251,13 @@ int main() {
 		init(sceneNode);
 
 		// Load the bunny!
-		loadGeo("content/bunny.obj");
+		loadGeo("content/meshes/bunny.obj");
 
 		// Game loop
 		while (en.valid()) {
 			en.update();
 			en.renderer()->setClearColor(clr.r(), clr.g(), clr.b());
-			en.renderer()->draw((*graph())[sceneHandle]);
+			en.render(sceneHandle);
 			glfwSwapBuffers(en.window());
 		}
 	}

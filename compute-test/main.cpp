@@ -27,14 +27,14 @@ int main() {
 
         // Load shader program
         ref<Shader> computeShader;
-        content()->load<Shader>("content/test.comp", sceneHandle, &computeShader);
+        load<Shader>("content/test.comp", sceneHandle, &computeShader);
 
         // Make output texture
         int width;
         int height;
         glfwGetFramebufferSize(en.window(), &width, &height);
         ref<Texture> output_texture;
-        content()->getFactory<Texture>()->makeTexture2D(&output_texture, 
+        getFactory<Texture>()->makeTexture2D(&output_texture, 
             sceneHandle, width, height, GL_RGBA32F);
 
         // Resizing the window causes a texture resize

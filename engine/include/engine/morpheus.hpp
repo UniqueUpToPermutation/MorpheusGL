@@ -9,6 +9,6 @@
 #include <engine/shader.hpp>
 #include <engine/texture.hpp>
 #include <engine/sampler.hpp>
-#include <engine/halfedge.hpp>
+#include <engine/halfedgeloader.hpp>
 #include <engine/material.hpp>
 #include <engine/scene.hpp>

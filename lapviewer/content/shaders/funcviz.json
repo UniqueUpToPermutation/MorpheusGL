@@ -1,6 +1,6 @@
 {
-  "vertex_shader": "content/shaders/funcviz.vert",
-  "fragment_shader": "content/shaders/funcviz.frag",
+  "vertex_shader": "funcviz.vert",
+  "fragment_shader": "funcviz.frag",
 
   "editor_uniforms": [
     "specularColor",

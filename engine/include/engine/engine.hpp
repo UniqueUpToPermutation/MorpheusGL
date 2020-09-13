@@ -154,13 +154,12 @@ namespace Morpheus {
 	inline GLFWwindow* window() {
 		return engine()->window();
 	}
-	
+
 	// A reference to the global updater
 	// returns: The global updater. 
 	inline Updater* updater() {
 		return engine()->updater();
 	}
-
 	// A reference to the global input module.
 	// returns: The global input module. 
 	inline Input* input() {
@@ -173,25 +172,95 @@ namespace Morpheus {
 	inline NodeData* desc(const Node& n) {
 		return graph()->desc(n);
 	}
-
 	inline NodeData* desc(const std::string& name) {
 		return desc((*graph())[name]);
 	}
-
 	inline NodeHandle issueHandle(const Node& n) {
 		return graph()->issueHandle(n);
 	}
-
+	inline void setName(const Node& n, const std::string& name) {
+		graph()->setName(n, name);
+	}
+	inline void recallName(const std::string& name) {
+		graph()->recallName(name);
+	}
 	inline Node find(const NodeHandle h) {
 		return graph()->find(h);
 	}
-
 	inline Node find(const std::string& name) {
 		return graph()->find(name);
 	}
-
+	inline bool tryFind(const std::string& name, Node* out) {
+		return graph()->tryFind(name, out);
+	}
 	inline void recallHandle(const NodeHandle handle) {
 		graph()->recallHandle(handle);
+	}
+	template <typename OwnerType>
+	inline Node addNode(OwnerType* owner, NodeType type) {
+		return graph()->addNode<OwnerType>(owner, type);
+	}
+	template <typename OwnerType>
+	inline Node addNode(OwnerType* owner, NodeType type, Node& parent) {
+		return graph()->addNode<OwnerType>(owner, type, parent);
+	}
+	template <typename OwnerType>
+	inline Node addNode(OwnerType* owner, NodeType type, NodeHandle parentHandle) {
+		return graph()->addNode<OwnerType>(owner, type, parentHandle);
+	}
+	template <typename OwnerType>
+	inline Node addNode(OwnerType* owner, NodeType type, const std::string& parentName) {
+		return graph()->addNode<OwnerType>(owner, type, parentName);
+	}
+	template <typename OwnerType>
+	inline Node addNode(OwnerType* owner, Node& parent) {
+		return graph()->addNode<OwnerType>(owner, parent);
+	}
+	template <typename OwnerType>
+	inline Node addNode(OwnerType* owner, NodeHandle parentHandle) {
+		return graph()->addNode<OwnerType>(owner, parentHandle);
+	}
+	template <typename OwnerType>
+	inline Node addNode(OwnerType* owner, const std::string& parentName) {
+		return graph()->addNode<OwnerType>(owner, parentName);
+	}
+	inline Node addNode(ref<void> owner, NodeType type) {
+		return graph()->addNode(owner, type);
+	}
+	inline Node addNode(ref<void> owner, NodeType type, Node& parent) {
+		return graph()->addNode(owner, type, parent);
+	}
+	inline Node addNode(ref<void> owner, NodeType type, NodeHandle parentHandle) {
+		return graph()->addNode(owner, type, parentHandle);
+	}
+	inline Node addNode(ref<void> owner, NodeType type, const std::string& parentName) {
+		return graph()->addNode(owner, type, parentName);
+	}
+	template <typename OwnerType>
+	inline Node addNode(ref<void> owner, Node& parent) {
+		return graph()->addNode<OwnerType>(owner, parent);
+	}
+	template <typename OwnerType>
+	inline Node addNode(ref<void> owner, NodeHandle parentHandle) {
+		return graph()->addNode<OwnerType>(owner, parentHandle);
+	}
+	template <typename OwnerType>
+	inline Node addNode(ref<void> owner, const std::string& parentName) {
+		return graph()->addNode<OwnerType>(owner, parentName);
+	}
+	inline Node makeProxy(const Node& base) {
+		return graph()->makeProxy(base);
+	}
+	inline Node makeContentProxy(const Node& base) {
+		return graph()->makeContentProxy(base);
+	}
+	template <typename T> 
+	inline Node addNode(T* owner) {
+		return graph()->addNode<T>(owner);
+	}
+	template <typename T> 
+	inline Node addNode(const ref<T>& owner) {
+		return graph()->addNode<T>(owner);
 	}
 
 	class IRenderer : public IDisposable, public IInitializable {

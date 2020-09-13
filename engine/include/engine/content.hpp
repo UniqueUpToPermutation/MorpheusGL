@@ -250,4 +250,114 @@ namespace Morpheus {
 
 		friend class Engine;
 	};
+
+	// Transfer ownership of an already existing node to the content manager.
+	// content: The node for which to transfer ownership.
+	inline void addContentNode(Node& contentNode) {
+		return content()->addContentNode(contentNode);
+	}
+
+	// Create a node for a content object and transfer ownership of node to content manager.
+	// ContentType: The type of the content.
+	// content: A reference to the content.
+	// returns: A child node of the content manager with the content as an owner. 
+	template <typename ContentType>
+	inline Node createContentNode(ref<ContentType>& contentNode) {
+		return content()->createContentNode<ContentType>(contentNode);
+	}
+
+	// Create a node for a content object and transfer ownership of node to content manager.
+	// ContentType: The type of the content.
+	// content: A reference to the content.
+	// parent: The parent of this node (i.e., scene, user, etc.), so that it does not get
+	// deallocated upon garbage collection
+	// returns: A child node of the content manager with the content as an owner. 
+	template <typename ContentType>
+	inline Node createContentNode(ref<ContentType>& contentNode, Node parent) {
+		return content()->createContentNode<ContentType>(contentNode, parent);
+	}
+
+	// Create a node for a content object and transfer ownership of node to content manager.
+	// ContentType: The type of the content.
+	// content: A reference to the content.
+	// parent: The parent of this node (i.e., scene, user, etc.), so that it does not get
+	// deallocated upon garbage collection
+	// returns: A child node of the content manager with the content as an owner. 
+	template <typename ContentType>
+	inline Node createContentNode(ref<ContentType>& contentNode, NodeHandle parent) {
+		return content()->createContentNode<ContentType>(contentNode, parent);
+	}
+
+	// Get a content factory by content type.
+	// ContentType: The type of content to get a factory for
+	// returns: The content factory. 
+	template <typename ContentType> 
+	inline ContentFactory<ContentType>* getFactory() {
+		return content()->getFactory<ContentType>();
+	}
+
+	// Transfer ownership of an already existing node to the content manager.
+	// Also adds the content to the source lookup so that it can be retrieved with
+	// ContentManager::load.
+	// content: The node for which to transfer ownership.
+	// sourceName: The name of the content so it can be looked up with ContentManager::load.
+	inline void addContentNode(Node& contentNode, const std::string& sourceName) {
+		content()->addContentNode(contentNode, sourceName);
+	}
+
+	// Loads an asset for a parent node.
+	// ContentType: Specifies the type of content. This determines which content factory is used.
+	// source: The source (i.e., file path) to load from.
+	// parent: Set a parent of the newly created node.
+	// refOut: If this is not null, a ref to the loaded asset will be written to it.
+	// returns: A node containing the asset. 
+	template <typename ContentType>
+	inline Node load(const std::string& source, const Node& parent, ref<ContentType>* refOut = nullptr) {
+		return content()->load<ContentType>(source, parent, refOut);
+	}
+
+	// Loads an asset for a parent node.
+	// ContentType: Specifies the type of content. This determines which content factory is used.
+	// source: The source (i.e., file path) to load from.
+	// parentHandle: Set a parent of the newly created node.
+	// refOut: If this is not null, a ref to the loaded asset will be written to it.
+	// returns: A node containing the asset. 
+	template <typename ContentType>
+	inline Node load(const std::string& source, const NodeHandle parentHandle, ref<ContentType>* refOut = nullptr) {
+		return content()->load<ContentType>(source, parentHandle, refOut);
+	}
+
+	// Loads an asset.
+	// ContentType: Specifies the type of content. This determines which content factory is used.
+	// source: The source (i.e., file path) to load from.
+	// refOut: If this is not null, a ref to the loaded asset will be written to it.
+	// returns: A node containing the asset. 
+	template <typename ContentType> 
+	inline Node load(const std::string& source, ref<ContentType>* refOut = nullptr) {
+		return content()->load<ContentType>(source, refOut);
+	}
+
+	// Perform garbage collection for all descendents that are no longer
+	// in use.
+	inline void collectGarbage() {
+		content()->collectGarbage();
+	}
+
+	// Unload a node via its content factory and then remove it from the scene graph.
+	// node: The node to unload
+	inline void unload(Node& node) {
+		content()->unload(node);
+	}
+
+	// Unload all children.
+	inline void unloadAll() {
+		content()->unloadAll();
+	}
+
+	// Sets the source string of a content node.
+	// node: The node which to set.
+	// source: The content tag to set.
+	inline void setSource(const Node& node, const std::string& source) {
+		content()->setSource(node, source);
+	}
 }

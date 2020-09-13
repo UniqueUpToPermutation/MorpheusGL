@@ -55,21 +55,21 @@ int main() {
 
 		// Create a scene
 		auto scene = new Scene();
-		auto sceneNode = graph()->addNode(scene, engine()->handle());
-		graph()->setName(sceneNode, "__scene__");
-		auto sceneHandle = graph()->issueHandle(sceneNode);
+		auto sceneNode = addNode(scene, engine()->handle());
+		setName(sceneNode, "__scene__");
+		auto sceneHandle = issueHandle(sceneNode);
 
 		// Create our GUI
-		auto guiNode = graph()->addNode(new MaterialGui(), sceneNode);
-		graph()->setName(guiNode, "__gui__");
+		auto guiNode = addNode(new MaterialGui(), sceneNode);
+		setName(guiNode, "__gui__");
 
 		// Create camera and camera controller
 		auto camera = new Camera();
-		auto cameraNode = graph()->addNode(camera, sceneNode);
+		auto cameraNode = addNode(camera, sceneNode);
 		auto controller = new LookAtCameraController();
-		auto cameraControllerNode = graph()->addNode(controller, cameraNode);
+		auto cameraControllerNode = addNode(controller, cameraNode);
 
-		graph()->setName(cameraControllerNode, "__camera_controller__");
+		setName(cameraControllerNode, "__camera_controller__");
 
 		f_key_capture_t keyHandler = [](GLFWwindow*, int key, int scancode, int action, int modifiers) {
 			if (key == GLFW_KEY_ESCAPE) {
@@ -80,7 +80,7 @@ int main() {
 		input()->registerTarget(&en, InputPriority::CRITICAL);
 		input()->bindKeyEvent(&en, &keyHandler);
 
-		auto staticMeshNode = content()->load<StaticMesh>("content/spheremesh.json");
+		auto staticMeshNode = load<StaticMesh>("content/spheremesh.json");
 		auto geo = StaticMesh::getGeometry(staticMeshNode);
 
 		auto aabb = geo->boundingBox();
@@ -142,8 +142,8 @@ int main() {
 		// Game loop
 		while (en.valid()) {
 			en.update();
-			en.renderer()->draw((*graph())[sceneHandle]);
-			glfwSwapBuffers(en.window());
+			en.render(sceneHandle);
+			en.present();
 		}
 	}
 

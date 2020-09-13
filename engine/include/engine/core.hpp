@@ -583,6 +583,9 @@ namespace Morpheus {
 		inline Node find(const std::string& name) {
 			return mNames[name];
 		}
+		inline bool tryFind(const std::string& name, Node* out) {
+			return mNames.tryFind(name, out);
+		}
 		template <typename OwnerType>
 		inline Node addNode(OwnerType* owner, NodeType type) {
 			assert(type != NodeType::END);
@@ -676,7 +679,7 @@ namespace Morpheus {
 
 		
 		// Make an proxy of the node type. To automatically add the prototype 
-		// as a child of the instance, use makeContentInstance instead.
+		// as a child of the instance, use makeContentProxy instead.
 		// base: The prototype of the proxy.
 		// returns: A proxy node of the prototype. 
 		Node makeProxy(const Node& base) {

@@ -1,6 +1,6 @@
 {
-  "vertex_shader": "content/shaders/cooktorrance.vert",
-  "fragment_shader": "content/shaders/cooktorrance.frag",
+  "vertex_shader": "cooktorrance.vert",
+  "fragment_shader": "cooktorrance.frag",
 
   "editor_uniforms": [
     "specularColor",
