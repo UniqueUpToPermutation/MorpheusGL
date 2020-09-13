@@ -25,48 +25,58 @@ int main() {
         en.input()->registerTarget(&en);
         en.input()->bindKeyEvent(&en, &keyHandler);
 
-        std::ifstream f("content/test.comp");
-        std::string code;
-        if (f.is_open()) {
-            f.seekg(0, std::ios::end);
-            code.reserve((size_t)f.tellg());
-            f.seekg(0, std::ios::beg);
-
-            code.assign((std::istreambuf_iterator<char>(f)),
-                std::istreambuf_iterator<char>());
-            f.close();
-        }
-        else {
-            throw std::ios_base::failure("Could not find compute shader!");
-        }
-
-        // Compile and link shader program
-        GLuint shader = compileShader(code, ShaderType::COMPUTE);
-        GLuint computeProgram = glCreateProgram();
-        glAttachShader(computeProgram, shader);
-        glLinkProgram(computeProgram);
-        printProgramLinkerOutput(computeProgram);
+        // Load shader program
+        ref<Shader> computeShader;
+        content()->load<Shader>("content/test.comp", en.handle(), &computeShader);
 
         // Make output texture
-        uint32_t width = 512;
-        uint32_t height = 512;
+        int width;
+        int height;
+        glfwGetFramebufferSize(en.window(), &width, &height);
         ref<Texture> output_texture;
         content()->getFactory<Texture>()->makeTexture2D(&output_texture, 
             en.handle(), width, height, GL_RGBA32F);
 
-        // Perform computation
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, output_texture->id());
-        glBindImageTexture(0, output_texture->id(), 0, false, 0, 
-            GL_WRITE_ONLY, GL_RGBA32F);
-        glUseProgram(computeProgram);
-        glDispatchCompute((GLuint)width, (GLuint)height, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        // Resizing the window causes a texture resize
+        bool bRefresh = true;
+        f_framebuffer_size_capture_t resizeHandler = [&bRefresh](GLFWwindow*, int, int) {
+            bRefresh = true;
+            return false;
+        };
+
+        ShaderUniform<float> timeUniform;
+        timeUniform.mLoc = glGetUniformLocation(computeShader->id(), "Time");
+
+        en.input()->bindFramebufferSizeEvent(&en, &resizeHandler);
 
         while (en.valid()) {
+            glfwGetFramebufferSize(en.window(), &width, &height);
+
+            if (bRefresh) {
+                // Resize if necessary
+                if (output_texture->width() != width ||
+                    output_texture->height() != height) {
+                    output_texture->resize(width, height);
+                }
+            }
+
+            // Perform computation
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, output_texture->id());
+            glBindImageTexture(0, output_texture->id(), 0, false, 0, 
+                GL_WRITE_ONLY, GL_RGBA32F);
+            glUseProgram(computeShader->id());
+            timeUniform.set(glfwGetTime());
+            glDispatchCompute((GLuint)width, (GLuint)height, 1);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            bRefresh = false;
+
             en.update();
             en.render(sceneHandle);
-            en.renderer()->debugBlit(output_texture, glm::vec2(0.0, 0.0), glm::vec2(width, height));
+            // Display texture
+            en.renderer()->debugBlit(output_texture, 
+                glm::vec2(0.0, 0.0), 
+                glm::vec2(width, height));
             en.present();
         }
     }

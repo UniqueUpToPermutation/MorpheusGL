@@ -577,6 +577,9 @@ namespace Morpheus {
 		void readJsonMetadata(const nlohmann::json& j, Shader* shad, Node& loadInto,
 			const std::string& parentSrc = "");
 
+		ref<Shader> loadJson(const std::string& source, Node& loadInto);
+		ref<Shader> loadComp(const std::string& source, Node& loadInto);
+
 	public:
 		ContentFactory();
 		ref<void> load(const std::string& source, Node& loadInto) override;

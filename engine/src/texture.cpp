@@ -189,6 +189,7 @@ namespace Morpheus {
 		tex_ptr->mWidth = Extent.x;
 		tex_ptr->mHeight = Extent.y;
 		tex_ptr->mDepth = Extent.z;
+		tex_ptr->mLevels = tex.levels();
 		tex_ptr->mFormat = Format.Internal;
 		return ref<Texture>(tex_ptr);
 	}
@@ -207,8 +208,12 @@ namespace Morpheus {
 			GLuint TextureName = 0;
 			glGenTextures(1, &TextureName);
 			glBindTexture(GL_TEXTURE_2D, TextureName);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
+			GL_ASSERT;
 			glGenerateTextureMipmap(TextureName);
+			GL_ASSERT;
+
+			uint32_t numLevels = 1 + std::floor(std::log2(std::max(width, height)));
 
 			Texture* tex = new Texture();
 			tex->mId = TextureName;
@@ -217,6 +222,7 @@ namespace Morpheus {
 			tex->mWidth = width;
 			tex->mHeight = height;
 			tex->mDepth = 1;
+			tex->mLevels = numLevels;
 			tex->mFormat = GL_RGBA8;
 
 			return ref<Texture>(tex);
@@ -307,6 +313,43 @@ namespace Morpheus {
 		}	
 	}
 
+	void Texture::resize(uint32_t width, uint32_t height, uint32_t depth) {
+		mWidth = width;
+		mHeight = height;
+		mDepth = depth;
+		uint32_t numLevels = 1 + std::floor(std::log2(std::max(width, height)));
+		mLevels = numLevels;
+
+		glDeleteTextures(1, &mId);
+		glCreateTextures(mGLTarget, 1, &mId);
+		switch (mGLTarget) {
+			case GL_TEXTURE_1D:
+				glTextureStorage1D(mId, mLevels, mFormat, mWidth);
+				assert(height == 1);
+				assert(depth == 1);
+				break;
+			case GL_TEXTURE_1D_ARRAY:
+				throw std::runtime_error("Resizing texture array not allowed!");
+				break;
+			case GL_TEXTURE_2D:
+				glTextureStorage2D(mId, mLevels, mFormat, mWidth, mHeight);
+				assert(depth == 1);
+				break;
+			case GL_TEXTURE_2D_ARRAY:
+				throw std::runtime_error("Resizing texture array not allowed!");
+				break;
+			case GL_TEXTURE_CUBE_MAP:
+				glTextureStorage2D(mId, mLevels, mFormat, mWidth, mHeight);
+				assert(depth == 1);
+				break;
+			case GL_TEXTURE_CUBE_MAP_ARRAY:
+				throw std::runtime_error("Resizing texture array not allowed!");
+				break;
+			case GL_TEXTURE_3D:
+				glTextureStorage3D(mId, mLevels, mFormat, mWidth, mHeight, mDepth);
+		}
+	}
+
 	void Texture::genMipmaps() {
 		glGenerateTextureMipmap(mId);
 		GL_ASSERT;
@@ -334,10 +377,7 @@ namespace Morpheus {
 			actual_mip_levels = miplevels;
 		}
 		else {
-			uint32_t pow = 0;
-			uint32_t size = std::min(width, height);
-			while (size) { size /= 2; ++pow; }
-			actual_mip_levels = pow;
+			actual_mip_levels = 1 + std::floor(std::log2(std::max(width, height)));
 		}
 
 		glTexStorage2D(GL_TEXTURE_2D, actual_mip_levels, format, width, height);
@@ -351,6 +391,7 @@ namespace Morpheus {
 		tex->mId = TextureName;
 		tex->mDepth = 1;
 		tex->mFormat = format;
+		tex->mLevels = actual_mip_levels;
 		return ref<Texture>(tex);
 	}
 
@@ -392,10 +433,7 @@ namespace Morpheus {
 			actual_mip_levels = miplevels;
 		}
 		else {
-			uint32_t pow = 0;
-			uint32_t size = std::min(width, height);
-			while (size) { size /= 2; ++pow; }
-			actual_mip_levels = pow;
+			actual_mip_levels = 1 + std::floor(std::log2(std::max(width, height)));
 		}
 
 		glTexStorage2D(GL_TEXTURE_CUBE_MAP, actual_mip_levels, format, width, height);
@@ -409,6 +447,7 @@ namespace Morpheus {
 		tex->mId = TextureName;
 		tex->mDepth = 1;
 		tex->mFormat = format;
+		tex->mLevels = actual_mip_levels;
 		return ref<Texture>(tex);
 	}
 

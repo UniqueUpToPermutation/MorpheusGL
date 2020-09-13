@@ -350,7 +350,7 @@ namespace Morpheus {
 		}
 	}
 
-	ref<void> ContentFactory<Shader>::load(const std::string& source, Node& loadInto) {
+	ref<Shader> ContentFactory<Shader>::loadJson(const std::string& source, Node& loadInto) {
 		json j;
 		ifstream f(source);
 
@@ -358,7 +358,7 @@ namespace Morpheus {
 
 		if (!f.is_open()) {
 			cout << "Failed to open " << source << "!" << endl;
-			ref<void> r(nullptr);
+			ref<Shader> r(nullptr);
 			return r;
 		}
 
@@ -427,18 +427,66 @@ namespace Morpheus {
 		printProgramLinkerOutput(id);
 
 		// Shader no longer needed
-		glDetachShader(id, vertex_id);
-		glDetachShader(id, frag_id);
+		if (!bIsComputeShader) {
+			glDetachShader(id, vertex_id);
+			glDetachShader(id, frag_id);
 
-		glDeleteShader(vertex_id);
-		glDeleteShader(frag_id);
+			glDeleteShader(vertex_id);
+			glDeleteShader(frag_id);
+		}
+		else {
+			glDetachShader(id, comp_id);
+			glDeleteShader(comp_id);
+		}
 
 		// Set the shader ID!
 		shader->mId = id;
 		readJsonMetadata(j, shader, loadInto, source);
 
-		ref<void> r(shader);
+		ref<Shader> r(shader);
 		return r;
+	}
+
+	ref<Shader> ContentFactory<Shader>::loadComp(const std::string& source, Node& loadInto) {
+		Shader* shader = new Shader();
+
+		vector<string> paths;
+		stringstream comp_ss;
+
+		preprocessor(source, paths, comp_ss);
+
+		cout << "Compiling compute shader: " << source << endl;
+		GLint comp_id = compileShader(comp_ss.str(), ShaderType::COMPUTE);
+
+		GLuint id = glCreateProgram();
+		glAttachShader(id, comp_id);
+		glLinkProgram(id);
+		printProgramLinkerOutput(id);
+
+		glDetachShader(id, comp_id);
+		glDeleteShader(comp_id);
+
+		shader->mId = id;
+		ref<Shader> r(shader);
+		return r;
+	}
+
+	ref<void> ContentFactory<Shader>::load(const std::string& source, Node& loadInto) {
+		size_t loc = source.rfind('.');
+		if (loc != std::string::npos) {
+			auto ext = source.substr(loc);
+			if (ext == ".json") {
+				return loadJson(source, loadInto);
+			}
+			else if (ext == ".comp") {
+				return loadComp(source, loadInto);
+			}
+			else {
+				std::runtime_error("Shader format not supported!");
+			}
+		}
+		std::runtime_error("Shader has no extension!");
+		return ref<void>(nullptr);
 	}
 
 	ref<Shader> ContentFactory<Shader>::makeFromGL(GLint shaderProgram) {
