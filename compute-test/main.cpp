@@ -27,7 +27,7 @@ int main() {
 
         // Load shader program
         ref<Shader> computeShader;
-        content()->load<Shader>("content/test.comp", en.handle(), &computeShader);
+        content()->load<Shader>("content/test.comp", sceneHandle, &computeShader);
 
         // Make output texture
         int width;
@@ -35,7 +35,7 @@ int main() {
         glfwGetFramebufferSize(en.window(), &width, &height);
         ref<Texture> output_texture;
         content()->getFactory<Texture>()->makeTexture2D(&output_texture, 
-            en.handle(), width, height, GL_RGBA32F);
+            sceneHandle, width, height, GL_RGBA32F);
 
         // Resizing the window causes a texture resize
         bool bRefresh = true;
@@ -58,6 +58,7 @@ int main() {
                     output_texture->height() != height) {
                     output_texture->resize(width, height);
                 }
+                bRefresh = false;
             }
 
             // Perform computation
@@ -69,7 +70,6 @@ int main() {
             timeUniform.set(glfwGetTime());
             glDispatchCompute((GLuint)width, (GLuint)height, 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-            bRefresh = false;
 
             en.update();
             en.render(sceneHandle);
