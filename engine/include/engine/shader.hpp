@@ -448,6 +448,13 @@ namespace Morpheus {
 		inline void set(const T& v) const {
 			GL_TYPE_<UNIF_TYPE>::setUniform(mLoc, v);
 		}
+
+		inline void find(const ref<Shader>& shader, const std::string& identifier);
+
+		inline ShaderUniform() : mLoc(-1) {
+		}
+
+		inline ShaderUniform(const ref<Shader>& shader, const std::string& identifier);
 	};
 
 	template <>
@@ -468,6 +475,13 @@ namespace Morpheus {
 			glBindTexture(texture_target, texture);
 			glBindSampler(mLoc, sampler);
 		}
+
+		inline void find(const ref<Shader>& shader, const std::string& identifier);
+
+		inline ShaderUniform() : mLoc(-1) {
+		}
+
+		inline ShaderUniform(const ref<Shader>& shader, const std::string& identifier);
 	};
 
 	enum class ShaderParameterType {
@@ -604,4 +618,22 @@ namespace Morpheus {
 	GLuint compileShader(const std::string& code, const ShaderType type);
 	void printProgramLinkerOutput(GLint program);
 	void printShaderCompilerOutput(GLint shader);
+
+	inline void ShaderUniform<Sampler>::find(const ref<Shader>& shader, const std::string& identifier) {
+		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());
+	}
+
+	inline ShaderUniform<Sampler>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) :
+		mLoc(glGetUniformLocation(shader->id(), identifier.c_str())) {
+	}
+
+	template <typename T>
+	inline void ShaderUniform<T>::find(const ref<Shader>& shader, const std::string& identifier) {
+		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());
+	}
+
+	template <typename T>
+	inline ShaderUniform<T>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) :
+		mLoc(glGetUniformLocation(shader->id(), identifier.c_str())) {
+	}
 }

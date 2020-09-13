@@ -80,3 +80,35 @@ This will force VSCode to open its terminal as a login terminal, and run your .b
 ## Documentation
 
 Currently, there's not much. I'll make some if I ever get around to it.
+
+# Current Examples
+
+## lapviewer
+
+An example that displays both nanogui and assimp integration as well as the mesh laplacian functionality of the engine. You can load a mesh using assimp, and display that mesh. Afterwards, you can compute the first k eigenmodes of the mesh laplacian. These modes will then be displayed on the mesh.
+
+![lapviwer](images/lapviewer.png)
+
+![lapviewer2](images/lapviewer2.png)
+
+![lapviewer3](images/lapviewer3.png)
+
+## compute-test
+
+Shows how to load a compute shader with the content manager, write the result of the compute shader into a texture, and then blit that texture to screen. Displays and animation of the Mandelbrot fractal.
+
+![compute-test](images/compute-test.png)
+
+![compute-test2](images/compute-test2.png)
+
+## blit-test
+
+Shows how to load a texture and blit the result to screen using the renderer's debug functionality.
+
+![blit-test](images/blit-test.png)
+
+## simple-app
+
+An easy hello world for the engine. Creates an empty scene and uses the renderer to display it.
+
+![simple-app](images/simple-app.png)

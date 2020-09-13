@@ -47,8 +47,7 @@ int main() {
         GLuint local_size_x = 32;
         GLuint local_size_y = 32;
 
-        ShaderUniform<float> timeUniform;
-        timeUniform.mLoc = glGetUniformLocation(computeShader->id(), "Time");
+        ShaderUniform<float> timeUniform(computeShader, "Time");
 
         en.input()->bindFramebufferSizeEvent(&en, &resizeHandler);
         en.renderer()->setClearColor(0.0, 0.0, 0.0);

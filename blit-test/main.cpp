@@ -29,7 +29,9 @@ int main() {
         while (en.valid()) {
             en.update();
             en.render(sceneHandle);
-            en.renderer()->debugBlit(texture, glm::vec2(0.0, 0.0), glm::vec2(256.0, 256.0));
+            en.renderer()->debugBlit(texture, 
+                glm::vec2(0.0, 0.0), 
+                glm::vec2(512.0, 512.0));
             en.present();
         }
     }
