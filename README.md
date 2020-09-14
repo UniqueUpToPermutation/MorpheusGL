@@ -1,6 +1,6 @@
 # The Morpheus Graphics Engine
 
-Morpheus is an open source physically-based cross-platform renderer built using OpenGL. It runs on Linux and Windows currently, and MacOS should be comming soon.
+Morpheus is an open source physically-based cross-platform renderer built using OpenGL. It runs on Linux, MacOS X, and Windows (in that order of precedence).
 
 ![lapviewer2](images/lapviewer2.png)
 
@@ -49,9 +49,23 @@ Currently, I have the following dependencies. They are all included a recursive 
 - **spectra** (_optional_): If you want to build the Laplacian eigenvector stuff, you'll need this to compute eigenvectors.
 - **cmake**: Used as the build system.
 
-### Building
+## Building
 
 The build system is cmake, and it hopefully shouldn't be hard to build if you recursively clone the github repo, as all the dependencies are already included as git submodules.
+
+### Linux
+
+On Linux, please use **gcc** as your compiler. I've only tested under Ubuntu, so I'm not sure if it will compile under other distros.
+
+### MacOS X
+
+On MacOS X, please use **clang** as your compiler. There is some Mac specific UI stuff that won't compile correctly using gcc.
+
+### Windows
+
+I don't really like Windows. But I assume that it will compile fine with **msvc**, probably.
+
+### Instructions
 
 First clone the repo, i.e.,
 

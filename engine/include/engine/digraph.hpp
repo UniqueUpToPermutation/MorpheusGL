@@ -1284,6 +1284,8 @@ namespace Morpheus {
 		case DigraphDataType::EDGE:
 			mEdgeDatas.erase(view.name());
 			break;
+		default:
+			break;
 		}
 		delete view.mPtr;
 	}

@@ -166,6 +166,8 @@ namespace Morpheus {
 			case CameraMoveMode::ZOOM:
 				endZoom(window);
 				break;
+			default:
+				break;
 			}
 
 			switch (newMode) {
@@ -180,6 +182,8 @@ namespace Morpheus {
 				break;
 			case CameraMoveMode::ZOOM:
 				beginZoom(window);
+				break;
+			default:
 				break;
 			}
 		}
@@ -251,6 +255,8 @@ namespace Morpheus {
 							break;
 						case CameraMoveMode::ROTATE:
 							doRotate(dx, dy);
+							break;
+						default:
 							break;
 						}
 					}
