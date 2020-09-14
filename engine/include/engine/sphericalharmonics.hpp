@@ -51,7 +51,7 @@ namespace Morpheus {
 	template <typename scalar_t, int l, int m>
 	struct sh {
 		inline static scalar_t at(scalar_t x, scalar_t y, scalar_t z) {
-			throw std::exception("Spherical harmonics not implemented for desired (l, m)!");
+			throw std::runtime_error("Spherical harmonics not implemented for desired (l, m)!");
 		}
 	};
 

@@ -518,7 +518,7 @@ namespace Morpheus {
 	class ShaderUniformAssignments {
 	public:
 		std::vector<ShaderUniformAssignment> mBindings;
-		std::shared_ptr<uint8_t[]> mData;
+		std::vector<uint8_t> mData;
 		uint32_t mTotalSize;
 
 		uint32_t computeSize() const;

@@ -588,6 +588,8 @@ namespace Morpheus {
 			case StorageMode::READ:
 				transitionToRead();
 				break;
+			default:
+				break;
 			}
 
 			mStorageMode = mode;
@@ -1179,17 +1181,17 @@ namespace Morpheus {
 	struct InitStorageGate<false> {
 		template <typename StorageType>
 		inline static void init(StorageType* storage, const uint32_t sizeX, bool bAllocate) {
-			throw std::exception("Storage does not support these dimensions!");
+			throw std::runtime_error("Storage does not support these dimensions!");
 		}
 
 		template <typename StorageType>
 		inline static void init(StorageType* storage, const uint32_t sizeX, const uint32_t sizeY, bool bAllocate) {
-			throw std::exception("Storage does not support these dimensions!");
+			throw std::runtime_error("Storage does not support these dimensions!");
 		}
 
 		template <typename StorageType>
 		inline static void init(StorageType* storage, const uint32_t sizeX, const uint32_t sizeY, const uint32_t sizeZ, bool bAllocate) {
-			throw std::exception("Storage does not support these dimensions!");
+			throw std::runtime_error("Storage does not support these dimensions!");
 		}
 	};
 
@@ -1218,17 +1220,17 @@ namespace Morpheus {
 	struct CreateGridGate<false> {
 		template <typename StorageType, typename VectorType>
 		inline static void createGrid(const StorageType* storage, VectorType* outX) {
-			throw std::exception("Storage does not support these dimensions!");
+			throw std::runtime_error("Storage does not support these dimensions!");
 		}
 
 		template <typename StorageType, typename VectorType>
 		inline static void createGrid(const StorageType* storage, VectorType* outX, VectorType* outY) {
-			throw std::exception("Storage does not support these dimensions!");
+			throw std::runtime_error("Storage does not support these dimensions!");
 		}
 
 		template <typename StorageType, typename VectorType>
 		inline static void createGrid(const StorageType* storage, VectorType* outX, VectorType* outY, VectorType* outZ) {
-			throw std::exception("Storage does not support these dimensions!");
+			throw std::runtime_error("Storage does not support these dimensions!");
 		}
 	};
 
@@ -1257,7 +1259,7 @@ namespace Morpheus {
 	struct CreatePolarGridGate<false> {
 		template <typename StorageType, typename VectorType>
 		inline static void createPolarGrid(const StorageType* storage, VectorType* outPhi, VectorType* outTheta) {
-			throw std::exception("Storage does not support polar coordinates!");
+			throw std::runtime_error("Storage does not support polar coordinates!");
 		}
 	};
 

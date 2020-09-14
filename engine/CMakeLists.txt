@@ -53,7 +53,6 @@ target_include_directories(engine PRIVATE
     ../assimp/include
     ../gli
     ../engine
-    ../nanogui/ext/glfw/include
 )
 
 set(${PROJECT_NAME}_INCLUDE_DIRS
@@ -67,12 +66,34 @@ set(${PROJECT_NAME}_INCLUDE_DIRS
     CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE
 )
 
-set(${PROJECT_NAME}_LINK_LIBRARIES
-    ${PROJECT_NAME}
-    nanogui
-    assimp
-    ${OPENGL_LIBRARIES}
-    CACHE INTERNAL "${PROJECT_NAME}: Link Libraries" FORCE)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    message("Compiling for Darwin!")
+    set(${PROJECT_NAME}_LINK_LIBRARIES
+        ${PROJECT_NAME}
+        nanogui
+        assimp
+        glfw3
+        ${OPENGL_LIBRARIES}
+        "-framework Cocoa"
+        "-framework IOKit"
+        CACHE INTERNAL "${PROJECT_NAME}: Link Libraries" FORCE)
+
+    target_link_libraries(engine 
+        ${OPENGL_LIBRARIES}
+        glfw3
+        "-framework Cocoa"
+        "-framework IOKit"
+        assimp
+        nanogui)
+else()
+    set(${PROJECT_NAME}_LINK_LIBRARIES
+        ${PROJECT_NAME}
+        nanogui
+        assimp
+        glfw3
+        ${OPENGL_LIBRARIES}
+        CACHE INTERNAL "${PROJECT_NAME}: Link Libraries" FORCE)
+endif()
 
 target_include_directories(engine PUBLIC
     ${${PROJECT_NAME}_INCLUDE_DIRS}

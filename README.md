@@ -34,10 +34,11 @@ It is mostly intended as an academic hobby project of a bored PhD student.
 
 ## Dependencies
 
-Currently, I have the following dependencies:
+Currently, I have the following dependencies. They are all included a recursive git clone, except for the first two.
 
+- **OpenGL**: Used to render stuff. I'm targeting version 4.5. _Please install seperately_
+- **GLFW**: Used to handle windowing and swapping of front and back buffers. _Please install seperately_
 - **GLAD**: Used to load all OpenGL functions and extensions.
-- **GLFW**: Used to handle windowing and swapping of front and back buffers.
 - **nanogui**: A very nice gui library to handle user interaction.
 - **assimp**: Used to load geometry into the engine.
 - **Eigen**: Used for large matrix calculations. Currently the indirect lighting and spherical harmonics code uses it.
@@ -51,6 +52,36 @@ Currently, I have the following dependencies:
 ### Building
 
 The build system is cmake, and it hopefully shouldn't be hard to build if you recursively clone the github repo, as all the dependencies are already included as git submodules.
+
+First clone the repo, i.e.,
+
+```bash
+git clone --recursive [url]
+```
+
+Then change directory into Morpheus,
+
+```
+cd Morpheus
+```
+
+Note that you will need to do an in-source build of assimp first to get the engine to work. This is because assimp's build process writes a config.h file to the include/ directory that the engine uses.
+
+```bash
+cd assimp
+cmake .
+make
+cd ..
+```
+
+Now, create a build directory and build the entire engine and all dependencies,
+
+```bash
+mkdir build
+cd build
+cmake ..
+make all
+```
 
 One thing to note is if you are building with the cmake extension for VSCode, it is useful to have different output directories for different build configurations:
 

@@ -18,7 +18,7 @@ using namespace std;
 }
 #define ASSIGN_CASE(type, loc, ptr) case type: \
 { \
-	GL_TYPE_<type>::C_TYPE_* ptr_cast = static_cast<GL_TYPE_<type>::C_TYPE_*>(ptr); \
+	const GL_TYPE_<type>::C_TYPE_* ptr_cast = static_cast<const GL_TYPE_<type>::C_TYPE_*>(ptr); \
 	GL_TYPE_<type>::setUniform(loc, *ptr_cast); \
 	break; \
 }
@@ -198,7 +198,7 @@ namespace Morpheus {
 
 		// Allocate memory block
 		out->mTotalSize = out->computeSize();
-		out->mData.reset(new uint8_t[out->mTotalSize]);
+		out->mData.resize(out->mTotalSize);
 
 		for (uint32_t i = 0; i < names.size(); ++i) {
 			auto& name = names[i];
@@ -556,7 +556,7 @@ namespace Morpheus {
 	void ShaderUniformAssignments::assign() const
 	{
 		for (auto& binding : mBindings) {
-			void* ptr = &mData[binding.mOffset];
+			const void* ptr = &mData[binding.mOffset];
 			switch (binding.mUniformType) {
 				ASSIGN_CASE(GL_INT, binding.mUniformLocation, ptr);
 				ASSIGN_CASE(GL_UNSIGNED_INT, binding.mUniformLocation, ptr);
@@ -631,7 +631,7 @@ namespace Morpheus {
 		}
 
 		result.mTotalSize = result.computeSize();
-		result.mData.reset(new uint8_t[result.mTotalSize]);
+		result.mData.resize(result.mTotalSize);
 		std::memcpy(&result.mData[0], &mData[0], offset);
 
 		for (size_t i = mBindings.size(); i < result.mBindings.size(); ++i) {
