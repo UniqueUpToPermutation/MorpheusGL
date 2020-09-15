@@ -12,6 +12,7 @@ option(BUILD_PBR "Enable building PBR demo" ON)
 option(BUILD_LAPVIEWER "Enable builing Laplacian Eigenvector viewer" ON)
 option(BUILD_BLITTEST "Enable building blit test" ON)
 option(BUILD_COMPUTETEST "Enable building compute test" ON)
+option(BUILD_COMPUTE_SH "Enable building compute sh test" ON)
 
 if (BUILD_NANOGUI)
     add_subdirectory(nanogui)
@@ -43,6 +44,10 @@ endif()
 
 if (BUILD_COMPUTETEST)
     add_subdirectory(compute-test)
+endif()
+
+if (BUILD_COMPUTE_SH)
+    add_subdirectory(compute-sh-coeffs)
 endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
