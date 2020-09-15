@@ -65,7 +65,7 @@ namespace Morpheus {
 			resize(0);
 		}
 
-		Pool(const uint32_t initialSize, const double rescaleFactor = 2.0d) :
+		Pool(const uint32_t initialSize, const double rescaleFactor = 2.0) :
 			mFreeBlockStart(0), mRescaleFactor(rescaleFactor) 
 		{
 			resize(initialSize);

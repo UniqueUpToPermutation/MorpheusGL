@@ -53,11 +53,13 @@ namespace Morpheus {
 			// Is this transform is static, then it has already been cached
 			// Otherwise, cache (evaluate and save) this transform using the
 			// last transform on the stack
-			if (!params.mIsStaticStack->top())
-				if (params.mTransformStack->empty())
+			if (!params.mIsStaticStack->top()) {
+				if (params.mTransformStack->empty()) {
 					newTransform->cache(identity<mat4>());
-				else
+				} else {
 					newTransform->cache(params.mTransformStack->top()->mCache);
+				}
+			} 
 			// Set the current transform to the one we just found.
 			params.mTransformStack->push(newTransform);
 			break;
@@ -83,6 +85,8 @@ namespace Morpheus {
 				params.mRenderCamera = getOwner<Camera>(*desc);
 			break;
 		}
+		default:
+			break;
 		}
 
 		// If the node is a child of a scene, recursively continue the collection
@@ -96,6 +100,8 @@ namespace Morpheus {
 		case NodeType::TRANSFORM:
 			// Pop the transformation from the stack
 			params.mTransformStack->pop();
+			break;
+		default:
 			break;
 		}
 	}

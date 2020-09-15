@@ -110,6 +110,9 @@ namespace Morpheus {
 			type = TextureType::CUBE_MAP_ARRAY;
 			gltype = GL_TEXTURE_CUBE_MAP_ARRAY;
 			break;
+		default:
+			throw std::runtime_error("Unsupported gli format!");
+			break;
 		}
 
 		for (std::size_t Layer = 0; Layer < tex.layers(); ++Layer) {

@@ -14,6 +14,11 @@ option(BUILD_BLITTEST "Enable building blit test" ON)
 option(BUILD_COMPUTETEST "Enable building compute test" ON)
 option(BUILD_COMPUTE_SH "Enable building compute sh test" ON)
 
+# Silence OpenGL Deprecation warnings on MacOSX
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    add_definitions(-DGL_SILENCE_DEPRECATION)
+endif()
+
 if (BUILD_NANOGUI)
     add_subdirectory(nanogui)
 endif()

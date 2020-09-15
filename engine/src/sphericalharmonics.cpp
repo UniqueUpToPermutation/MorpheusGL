@@ -205,7 +205,8 @@ namespace Morpheus {
 
 		out->resize(primal.size());
 
-		for (size_t i_face = 0, i = 0; i_face < 6; ++i_face) {
+		for (size_t i_face = 0; i_face < 6; ++i_face) {
+			size_t i = 0;
 			for (size_t i_x = 0; i_x < n; ++i_x) {
 				for (size_t i_y = 0; i_y < n; ++i_y) {
 					scalar_t x = (scalar_t)((i_x + 0.5) * h - 1.0);
@@ -214,7 +215,8 @@ namespace Morpheus {
 					scalar_t mag = std::sqrt(mag2);
 					scalar_t jacobian = (scalar_t)1.0 / (mag2 * mag);
 					scalar_t metricWeight = jacobian * h2;
-					(*out)(i++) = primal(i) * metricWeight;
+					(*out)(i) = primal(i) * metricWeight;
+					++i;
 				}
 			}
 		}
@@ -241,7 +243,8 @@ namespace Morpheus {
 		size_t cols = (size_t)primal.cols();
 
 		for (size_t i_col = 0; i_col < cols; ++i_col) {
-			for (size_t i_face = 0, i = 0; i_face < 6; ++i_face) {
+			for (size_t i_face = 0; i_face < 6; ++i_face) {
+				size_t i = 0;
 				for (size_t i_x = 0; i_x < n; ++i_x) {
 					for (size_t i_y = 0; i_y < n; ++i_y) {
 						scalar_t x = (scalar_t)((i_x + 0.5) * h - 1.0);
@@ -250,7 +253,8 @@ namespace Morpheus {
 						scalar_t mag = std::sqrt(mag2);
 						scalar_t jacobian = (scalar_t)1.0 / (mag2 * mag);
 						scalar_t metricWeight = jacobian * h2;
-						(*out)(i++, i_col) = primal(i, i_col) * metricWeight;
+						(*out)(i, i_col) = primal(i, i_col) * metricWeight;
+						++i;
 					}
 				}
 			}
