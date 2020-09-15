@@ -1,0 +1,27 @@
+#version 450
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 0) buffer workBuffer
+{
+    uint work[];
+};
+
+uniform uint data_in_length;
+
+void main() {
+    uint indx = gl_GlobalInvocationID.x;
+
+    uint work_length = data_in_length;
+
+    while (work_length > 1) {
+        
+        uint half_work_length = work_length / 2;
+        if (indx <= work_length) {
+            work[indx] += work[indx + half_work_length];  
+        }
+        work_length = half_work_length;
+
+        barrier();
+    }
+}
