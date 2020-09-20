@@ -8,6 +8,7 @@ target_compile_features(lapviewer PRIVATE cxx_std_17)
 
 include_directories(${engine_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${engine_LINK_LIBRARIES})
+add_definitions(${engine_DEFINES})
 
 include_directories(../spectra/include/)
 

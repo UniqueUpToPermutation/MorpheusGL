@@ -63,7 +63,7 @@ namespace Morpheus {
 		mStringToPrototypeMap[POINT_TILE_SAMPLER_SRC] = SamplerPrototype::POINT_TILE;
 	}
 
-	void ContentFactory<Sampler>::unload(ref<void>& ref)
+	void ContentFactory<Sampler>::unload(ref<void> ref)
 	{
 		auto sampler = ref.reinterpretGet<Sampler>();
 		glDeleteSamplers(1, &sampler->mId);

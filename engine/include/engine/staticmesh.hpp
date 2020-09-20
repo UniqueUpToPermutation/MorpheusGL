@@ -19,7 +19,7 @@ namespace Morpheus {
 	class ContentFactory<StaticMesh> : public IContentFactory {
 	public:
 		ref<void> load(const std::string& source, Node& loadInto) override;
-		void unload(ref<void>& ref) override;
+		void unload(ref<void> ref) override;
 		void dispose() override;
 
 		std::string getContentTypeString() const override;

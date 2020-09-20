@@ -340,7 +340,7 @@ namespace Morpheus {
 		return ref<void>(loadUnmanaged(source));
 	}
 
-	void ContentFactory<HalfEdgeGeometry>::unload(ref<void>& ref) {
+	void ContentFactory<HalfEdgeGeometry>::unload(ref<void> ref) {
 		delete ref.reinterpretGet<HalfEdgeGeometry>();
 	}
 

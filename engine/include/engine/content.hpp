@@ -33,7 +33,7 @@ namespace Morpheus {
 	class IContentFactory {
 	public:
 		virtual ref<void> load(const std::string& source, Node& loadInto) = 0;
-		virtual void unload(ref<void>& ref) = 0;
+		virtual void unload(ref<void> ref) = 0;
 		virtual void dispose() = 0;
 		virtual std::string getContentTypeString() const = 0;
 

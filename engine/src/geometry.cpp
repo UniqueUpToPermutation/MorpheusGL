@@ -147,7 +147,7 @@ namespace Morpheus {
 
 		return ref<void>(geo);
 	}
-	void ContentFactory<Geometry>::unload(ref<void>& ref) {
+	void ContentFactory<Geometry>::unload(ref<void> ref) {
 		auto r = ref.reinterpretGet<Geometry>();
 		GLuint bufs[2] = { r->mVbo, r->mIbo };
 		GLuint vao = r->mVao;

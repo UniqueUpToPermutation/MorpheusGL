@@ -35,14 +35,25 @@ add_library(engine
 # Preprocessor definitions
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message("-- engine building in debug mode.")
-    add_definitions(-D_DEBUG)
-endif()
+    add_definitions()
 
-add_definitions(
+    set(${PROJECT_NAME}_DEFINES
+        -D_DEBUG
+        -DNANOGUI_USE_OPENGL
+        -DNANOGUI_GLAD
+        -DNANOGUI_SHARED
+        -DGLAD_GLAPI_EXPORT
+        CACHE INTERNAL "${PROJECT_NAME}: Preprocessor Defines" FORCE)
+else()
+    set(${PROJECT_NAME}_DEFINES
     -DNANOGUI_USE_OPENGL
     -DNANOGUI_GLAD
     -DNANOGUI_SHARED
-    -DGLAD_GLAPI_EXPORT)
+    -DGLAD_GLAPI_EXPORT
+    CACHE INTERNAL "${PROJECT_NAME}: Preprocessor Defines" FORCE)
+endif()
+
+add_definitions(${${PROJECT_NAME}_DEFINES})
 
 # Set to C++17 standard
 target_compile_features(engine PRIVATE cxx_std_17)

@@ -47,6 +47,12 @@ namespace Morpheus {
 			glBindTexture(mGLTarget, mId);
 		}
 
+		inline void bindImage(GLuint unit, GLenum access) const {
+			glActiveTexture(GL_TEXTURE0 + unit);
+			glBindTexture(mGLTarget, mId);
+			glBindImageTexture(unit, mId, 0, false, 0, access, mFormat);
+		}
+
 		void savepng(const std::string& path) const;
 		void genMipmaps();
 
@@ -56,21 +62,48 @@ namespace Morpheus {
 
 	template <>
 	class ContentFactory<Texture> : public IContentFactory {
+	private:
+		template <bool overrideFormat>
+		ref<Texture> loadGliInternal(const std::string& source,
+			GLenum internalFormat);
+		template <bool overrideFormat>
+		ref<Texture> loadPngInternal(const std::string& source,
+			GLenum internalFormat);
+		template <bool overrideFormat>
+		ref<Texture> loadInternal(const std::string& source,
+			GLenum internalFormat);
+
 	public:
 		ref<void> load(const std::string& source, Node& loadInto) override;
-		ref<Texture> loadgli(const std::string& source);
-		ref<Texture> loadpng(const std::string& source);
-		void unload(ref<void>& ref) override;
+		ref<Texture> loadGliUnmanaged(const std::string& source);
+		ref<Texture> loadPngUnmanaged(const std::string& source);
+		ref<Texture> loadGliUnmanaged(const std::string& source,
+			GLenum internalFormat);
+		ref<Texture> loadPngUnmanaged(const std::string& source,
+			GLenum internalFormat);
+		void unload(ref<void> ref) override;
 		void dispose() override;
 
-		ref<Texture> makeTexture2DUnmanaged(const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
-		Node makeTexture2DUnparented(ref<Texture>* out, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
-		Node makeTexture2D(ref<Texture>* out, Node parent, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
-		Node makeTexture2D(ref<Texture>* out, NodeHandle parent, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
-		ref<Texture> makeCubemapUnmanaged(const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
-		Node makeCubemapUnparented(ref<Texture>* out, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
-		Node makeCubemap(ref<Texture>* out, Node parent, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
-		Node makeCubemap(ref<Texture>* out, NodeHandle parent, const uint32_t width, const uint32_t height, const GLenum format, const int miplevels = -1);
+		ref<Texture> loadTextureUnmanaged(const std::string& source);
+		ref<Texture> loadTextureUnmanaged(const std::string& source, 
+			GLenum internalFormat);
+
+		ref<Texture> makeTexture2DUnmanaged(const uint32_t width, const uint32_t height, 
+			const GLenum format, const int miplevels = -1);
+		Node makeTexture2DUnparented(ref<Texture>* out, const uint32_t width, 
+			const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeTexture2D(ref<Texture>* out, Node parent, const uint32_t width, 
+			const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeTexture2D(ref<Texture>* out, NodeHandle parent, const uint32_t width, 
+			const uint32_t height, const GLenum format, const int miplevels = -1);
+		ref<Texture> makeCubemapUnmanaged(const uint32_t width, const uint32_t height, 
+			const GLenum format, const int miplevels = -1);
+		Node makeCubemapUnparented(ref<Texture>* out, const uint32_t width, 
+			const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeCubemap(ref<Texture>* out, Node parent, const uint32_t width, 
+			const uint32_t height, const GLenum format, const int miplevels = -1);
+		Node makeCubemap(ref<Texture>* out, NodeHandle parent, const uint32_t width,
+			const uint32_t height, const GLenum format, const int miplevels = -1);
 	
 		std::string getContentTypeString() const override;
 	};

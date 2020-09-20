@@ -47,11 +47,11 @@ if(BUILD_BLITTEST)
     add_subdirectory(blit-test)
 endif()
 
-if (BUILD_COMPUTETEST)
+if(BUILD_COMPUTETEST)
     add_subdirectory(compute-test)
 endif()
 
-if (BUILD_COMPUTE_SH)
+if(BUILD_COMPUTE_SH)
     add_subdirectory(compute-sh-coeffs)
 endif()
 

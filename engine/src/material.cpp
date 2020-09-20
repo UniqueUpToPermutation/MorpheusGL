@@ -113,9 +113,11 @@ namespace Morpheus {
         // Return the material
         return ref<void>(mat);
     }
-    void ContentFactory<Material>::unload(ref<void>& ref) {
+
+    void ContentFactory<Material>::unload(ref<void> ref) {
         delete ref.reinterpretGet<Material>();
     }
+    
     void ContentFactory<Material>::dispose() {
         delete this;
     }

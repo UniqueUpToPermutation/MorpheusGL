@@ -75,7 +75,7 @@ namespace Morpheus {
 		ContentFactory();
 
 		ref<void> load(const std::string& source, Node& loadInto) override;
-		void unload(ref<void>& ref) override;
+		void unload(ref<void> ref) override;
 		void dispose() override;
 
 		ref<Geometry> makeGeometryUnmanaged(GLuint vao, GLuint vbo, GLuint ibo,

@@ -458,6 +458,25 @@ namespace Morpheus {
 	};
 
 	template <>
+	struct ShaderUniform<Texture> {
+		GLint mLoc;
+		inline void set(const ref<Texture>& texture, const GLenum access) const {
+			texture->bindImage(mLoc, access);
+		}
+
+		inline void set(const Texture* texture, const GLenum access) const {
+			texture->bindImage(mLoc, access);
+		}
+
+		inline void find(const ref<Shader>& shader, const std::string& identifier);
+
+		inline ShaderUniform() : mLoc(-1) {
+		}
+
+		inline ShaderUniform(const ref<Shader>& shader, const std::string& identifier);
+	};
+
+	template <>
 	struct ShaderUniform<Sampler> {
 		GLint mLoc;
 		inline void set(const ref<Texture>& texture, const ref<Sampler>& sampler) const {
@@ -598,7 +617,7 @@ namespace Morpheus {
 		ContentFactory();
 		ref<void> load(const std::string& source, Node& loadInto) override;
 		ref<Shader> makeFromGL(GLint shaderProgram);
-		void unload(ref<void>& ref) override;
+		void unload(ref<void> ref) override;
 		void dispose() override;
 
 		std::string getContentTypeString() const override;
@@ -635,5 +654,14 @@ namespace Morpheus {
 	template <typename T>
 	inline ShaderUniform<T>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) :
 		mLoc(glGetUniformLocation(shader->id(), identifier.c_str())) {
+	}
+
+	inline void ShaderUniform<Texture>::find(const ref<Shader>& shader, const std::string& identifier) {
+		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());
+	}
+
+	inline ShaderUniform<Texture>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) :
+		mLoc(glGetUniformLocation(shader->id(), identifier.c_str())) {
+
 	}
 }

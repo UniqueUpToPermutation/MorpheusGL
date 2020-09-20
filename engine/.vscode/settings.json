@@ -1,6 +1,7 @@
 {
     "C_Cpp.default.includePath": [
         "${default}",
-        "${workspaceFolder}/glm"
+        "${workspaceFolder}/glm",
+        "{workspaceFolder}/include"
     ]
 }

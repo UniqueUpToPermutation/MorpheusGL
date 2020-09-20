@@ -7,30 +7,12 @@
 
 namespace Morpheus {
 	ref<void> ContentFactory<Texture>::load(const std::string& source, Node& loadInto) {
-		std::cout << "Loading texture " << source;
-		size_t loc = source.rfind('.');
-		if (loc != std::string::npos) {
-			auto ext = source.substr(loc);
-			if (ext == ".png") {
-				std::cout << " (using lodepng)..." << std::endl;
-				return loadpng(source);
-			}
-			else if (ext == ".ktx" || ext == ".dds" || ext == ".kmg") {
-				std::cout << " (using gli)..." << std::endl;
-				return loadgli(source);
-			}
-			else {
-				std::cout << "\nFormat not recognized!" << std::endl;
-				return ref<void>(nullptr);
-			}
-		}
-		else {
-			std::cout << std::endl << source << " missing file extension!" << std::endl;
-			return ref<void>(nullptr);
-		}
+		return loadInternal<false>(source, 0);
 	}
 
-	ref<Texture> ContentFactory<Texture>::loadgli(const std::string& source) {
+	template <bool overrideFormat>
+	ref<Texture> ContentFactory<Texture>::loadGliInternal(const std::string& source,
+		GLenum internalFormat) {
 		TextureType type;
 		GLenum gltype;
 		gli::texture tex = gli::load(source);
@@ -56,24 +38,29 @@ namespace Morpheus {
 		glm::tvec3<GLsizei> const Extent(tex.extent());
 		GLsizei const FaceTotal = static_cast<GLsizei>(tex.layers() * tex.faces());
 
+		GLenum internalFormatToUse = Format.Internal;
+		if constexpr (overrideFormat) {
+			internalFormatToUse = internalFormat;
+		}
+
 		switch (tex.target()) {
 		case gli::TARGET_1D:
 			glTexStorage1D(
-				Target, static_cast<GLint>(tex.levels()), Format.Internal,
+				Target, static_cast<GLint>(tex.levels()), internalFormatToUse,
 				Extent.x);
 			break;
 		case gli::TARGET_1D_ARRAY:
 		case gli::TARGET_2D:
 		case gli::TARGET_CUBE:
 			glTexStorage2D(
-				Target, static_cast<GLint>(tex.levels()), Format.Internal,
+				Target, static_cast<GLint>(tex.levels()), internalFormatToUse,
 				Extent.x, Extent.y);
 			break;
 		case gli::TARGET_2D_ARRAY:
 		case gli::TARGET_3D:
 		case gli::TARGET_CUBE_ARRAY:
 			glTexStorage3D(
-				Target, static_cast<GLint>(tex.levels()), Format.Internal,
+				Target, static_cast<GLint>(tex.levels()), internalFormatToUse,
 				Extent.x, Extent.y, Extent.z);
 			break;
 		default:
@@ -193,14 +180,21 @@ namespace Morpheus {
 		tex_ptr->mHeight = Extent.y;
 		tex_ptr->mDepth = Extent.z;
 		tex_ptr->mLevels = tex.levels();
-		tex_ptr->mFormat = Format.Internal;
+		tex_ptr->mFormat = internalFormatToUse;
 		return ref<Texture>(tex_ptr);
 	}
 
-	ref<Texture> ContentFactory<Texture>::loadpng(const std::string& source) {
+	template <bool overrideFormat>
+	ref<Texture> ContentFactory<Texture>::loadPngInternal(const std::string& source,
+		GLenum internalFormat) {
 		std::vector<uint8_t> image;
 		uint32_t width, height;
 		uint32_t error = lodepng::decode(image, width, height, source);
+
+		GLenum internalFormatToUse = GL_RGBA8;
+		if constexpr (overrideFormat) {
+			internalFormatToUse = internalFormat;
+		}
 
 		//if there's an error, display it
 		if (error) std::cout << "Decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
@@ -211,7 +205,7 @@ namespace Morpheus {
 			GLuint TextureName = 0;
 			glGenTextures(1, &TextureName);
 			glBindTexture(GL_TEXTURE_2D, TextureName);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
+			glTexImage2D(GL_TEXTURE_2D, 0, internalFormatToUse, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
 			GL_ASSERT;
 			glGenerateTextureMipmap(TextureName);
 			GL_ASSERT;
@@ -226,13 +220,66 @@ namespace Morpheus {
 			tex->mHeight = height;
 			tex->mDepth = 1;
 			tex->mLevels = numLevels;
-			tex->mFormat = GL_RGBA8;
+			tex->mFormat = internalFormatToUse;
 
 			return ref<Texture>(tex);
 		}
 		else {
 			return ref<Texture>(nullptr);
 		}
+	}
+
+	template <bool overrideFormat>
+	ref<Texture> ContentFactory<Texture>::loadInternal(const std::string& source,
+		GLenum internalFormat) {
+		std::cout << "Loading texture " << source;
+		size_t loc = source.rfind('.');
+		if (loc != std::string::npos) {
+			auto ext = source.substr(loc);
+			if (ext == ".png") {
+				std::cout << " (using lodepng)..." << std::endl;
+				return loadPngInternal<overrideFormat>(source, internalFormat);
+			}
+			else if (ext == ".ktx" || ext == ".dds" || ext == ".kmg") {
+				std::cout << " (using gli)..." << std::endl;
+				return loadGliInternal<overrideFormat>(source, internalFormat);
+			}
+			else {
+				std::cout << "\nFormat not recognized!" << std::endl;
+				return ref<Texture>(nullptr);
+			}
+		}
+		else {
+			std::cout << std::endl << source << " missing file extension!" << std::endl;
+			return ref<Texture>(nullptr);
+		}
+	}
+
+	ref<Texture> ContentFactory<Texture>::loadGliUnmanaged(const std::string& source) {
+		return loadGliInternal<false>(source, 0);
+	}
+
+	ref<Texture> ContentFactory<Texture>::loadPngUnmanaged(const std::string& source) {
+		return loadPngInternal<false>(source, 0);
+	}
+
+	ref<Texture> ContentFactory<Texture>::loadTextureUnmanaged(const std::string& source) {
+		return loadInternal<false>(source, 0);
+	}
+
+	ref<Texture> ContentFactory<Texture>::loadTextureUnmanaged(const std::string& source, 
+		GLenum internalFormat) {
+		return loadInternal<true>(source, internalFormat);
+	}
+
+	ref<Texture> ContentFactory<Texture>::loadGliUnmanaged(const std::string& source,
+		GLenum internalFormat) {
+		return loadGliInternal<true>(source, internalFormat);
+	}
+
+	ref<Texture> ContentFactory<Texture>::loadPngUnmanaged(const std::string& source,
+		GLenum internalFormat) {
+		return loadPngInternal<true>(source, internalFormat);
 	}
 
 	void Texture::savepngcubemap(const std::string& path) const {
@@ -358,7 +405,7 @@ namespace Morpheus {
 		GL_ASSERT;
 	}
 
-	void ContentFactory<Texture>::unload(ref<void>& ref) {
+	void ContentFactory<Texture>::unload(ref<void> ref) {
 		auto tex = ref.reinterpretGet<Texture>();
 		glDeleteTextures(1, &tex->mId);
 		delete tex;

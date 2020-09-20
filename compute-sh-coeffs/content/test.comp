@@ -1,27 +1,135 @@
 #version 450
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+#define SH_C_0 0.28209479177
+#define SH_C_1 0.4886025119
+#define SH_C_2n2 1.09254843059
+#define SH_C_2n1 SH_C_2n2
+#define SH_C_20 0.31539156525
+#define SH_C_21 SH_C_2n2
+#define SH_C_22 0.54627421529
 
-layout(std430, binding = 0) buffer workBuffer
-{
-    uint work[];
+#define FACE_POSITIVE_X 0
+#define FACE_NEGATIVE_X 1
+#define FACE_POSITIVE_Y 2
+#define FACE_NEGATIVE_Y 3
+#define FACE_POSITIVE_Z 4
+#define FACE_NEGATIVE_Z 5
+
+#define SH_COEFFS 9
+
+precision highp int;
+precision highp float;
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+layout(rgba8, binding = 0) uniform readonly imageCube img_input;
+
+layout(std430, binding = 0) writeonly buffer out_buffer {
+    vec4 out_array[];
 };
 
-uniform uint data_in_length;
+uniform uint outputIndex = 0;
+
+float jacobian(vec2 surfacePosition) {
+    float mag2 = dot(surfacePosition, surfacePosition) + 1.0;
+    float mag = sqrt(mag2);
+    return 1.0 / (mag2 * mag);
+}
+
+vec3 getDirection(vec2 surfacePosition, uint face) {
+    vec3 result;
+    switch (face) {
+        case FACE_POSITIVE_X:
+            result.x = 1.0;
+            result.z = -surfacePosition.x;
+            result.y = -surfacePosition.y;
+            break;
+        case FACE_NEGATIVE_X:
+            result.x = -1.0;
+            result.z = surfacePosition.x;
+            result.y = -surfacePosition.y;
+            break;
+        case FACE_POSITIVE_Y:
+            result.x = surfacePosition.x;
+            result.y = 1.0;
+            result.z = surfacePosition.y;
+            break;
+        case FACE_NEGATIVE_Y:
+            result.x = surfacePosition.x;
+            result.y = -1.0;
+            result.z = -surfacePosition.y;
+            break;
+        case FACE_POSITIVE_Z:
+            result.x = surfacePosition.x;
+            result.y = -surfacePosition.y;
+            result.z = 1.0;
+            break;
+        case FACE_NEGATIVE_Z:
+            result.x = -surfacePosition.x;
+            result.y = -surfacePosition.y;
+            result.z = -1.0;
+            break;
+    }
+    return normalize(result);
+}
+
+shared vec4 sum_array[gl_WorkGroupSize.x * SH_COEFFS];
 
 void main() {
-    uint indx = gl_GlobalInvocationID.x;
+    uint y_indx = gl_GlobalInvocationID.x;
 
-    uint work_length = data_in_length;
+    vec4 result[SH_COEFFS];
 
-    while (work_length > 1) {
-        
-        uint half_work_length = work_length / 2;
-        if (indx <= work_length) {
-            work[indx] += work[indx + half_work_length];  
+    // Clear SH_COEFFS
+    for (uint i = 0; i < SH_COEFFS; ++i) {
+        result[i] = vec4(0.0, 0.0, 0.0, 0.0);
+    }
+
+    ivec2 size = imageSize(img_input);
+
+    float h2 = 4.0 / float(size.x) / float(size.y);
+    vec2 uv = vec2(-1.0, -1.0 + 2.0 * (float(y_indx) + 0.5) / float(size.y));
+
+    for (uint z_indx = 0; z_indx < 6; ++z_indx) {
+        for (uint x_indx = 0; x_indx < size.x; ++x_indx) {
+            uv.x = -1.0 + 2.0 * (float(x_indx) + 0.5) / float(size.x);
+
+            vec4 pix = imageLoad(img_input, ivec3(x_indx, y_indx, z_indx));
+            vec3 position = getDirection(uv, z_indx);
+            float jac = jacobian(uv);
+
+            // Integrate with the spherical harmonics
+            float sh[SH_COEFFS];
+            sh[0] = SH_C_0;
+            sh[1] = SH_C_1 * position.y;
+            sh[2] = SH_C_1 * position.z;
+            sh[3] = SH_C_1 * position.x;
+            sh[4] = SH_C_2n2 * position.x * position.y;
+            sh[5] = SH_C_2n1 * position.y * position.z;
+            sh[6] = SH_C_20 * (-position.x * position.x - 
+                position.y * position.y + 2.0 * position.z * position.z);
+            sh[7] = SH_C_21 * position.z * position.x;
+            sh[8] = SH_C_22 * (position.x * position.x - 
+                position.y * position.y);
+
+            for (uint i = 0; i < SH_COEFFS; ++i) {
+                result[i] += pix * sh[i] * jac * h2;
+            }
         }
-        work_length = half_work_length;
+    }
 
-        barrier();
+    for (uint i = 0; i < SH_COEFFS; ++i) {
+        sum_array[SH_COEFFS * gl_LocalInvocationIndex + i] = result[i];
+    }
+
+    memoryBarrierShared();
+    barrier();
+
+    if (gl_LocalInvocationIndex < SH_COEFFS) {
+        uint sh = gl_LocalInvocationIndex;
+        vec4 final_result = vec4(0.0, 0.0, 0.0, 0.0);
+        for (uint i = 0; i < gl_WorkGroupSize.x; ++i) {
+            final_result += sum_array[i * SH_COEFFS + sh];
+        }
+        out_array[gl_WorkGroupID.x * SH_COEFFS + sh] = final_result;
     }
 }

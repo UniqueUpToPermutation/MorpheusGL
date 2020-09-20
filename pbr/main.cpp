@@ -134,7 +134,7 @@ int main() {
 		Morpheus::ref<Texture> tex;
 		auto texNode = light_field_func.toTexture(&tex);
 		sceneNode.addChild(texNode); // Make sure the garbage collector doesn't come
-		auto mat = StaticMesh::getMaterial(staticMeshNode)->samplerAssignments().mBindings[0].mTexture = tex;
+		StaticMesh::getMaterial(staticMeshNode)->samplerAssignments().mBindings[0].mTexture = tex;
 
 		// Initialize the scene graph
 		init(sceneNode);

@@ -89,7 +89,7 @@ namespace Morpheus {
 		return ref<void>(new StaticMesh());
 	}
 
-	void ContentFactory<StaticMesh>::unload(ref<void>& ref) {
+	void ContentFactory<StaticMesh>::unload(ref<void> ref) {
 		delete ref.reinterpret<StaticMesh>().get();
 	}
 

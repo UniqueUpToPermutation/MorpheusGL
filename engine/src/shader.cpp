@@ -496,7 +496,7 @@ namespace Morpheus {
 		return ref<Shader>(shad);
 	}
 
-	void ContentFactory<Shader>::unload(ref<void>& ref) {
+	void ContentFactory<Shader>::unload(ref<void> ref) {
 		Shader* shad = ref.reinterpretGet<Shader>();
 		glDeleteProgram(shad->mId);
 		delete shad;
