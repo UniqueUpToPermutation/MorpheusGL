@@ -16,10 +16,15 @@ using namespace std;
 	GL_TYPE_<type>::readJson(j, ptr_cast); \
 	break; \
 }
-#define ASSIGN_CASE(type, loc, ptr) case type: \
+#define ASSIGN_CASE(type, loc, ptr, len) case type: \
 { \
-	const GL_TYPE_<type>::C_TYPE_* ptr_cast = static_cast<const GL_TYPE_<type>::C_TYPE_*>(ptr); \
-	GL_TYPE_<type>::setUniform(loc, *ptr_cast); \
+	if constexpr (GL_TYPE_<type>::IS_ARRAY_ENABLED) { \
+		const GL_TYPE_<type>::C_ARRAY_TYPE_* ptr_cast = static_cast<const GL_TYPE_<type>::C_ARRAY_TYPE_*>(ptr); \
+		GL_TYPE_<type>::setUniformArray(loc, ptr_cast, len); \
+	} else { \
+		const GL_TYPE_<type>::C_TYPE_* ptr_cast = static_cast<const GL_TYPE_<type>::C_TYPE_*>(ptr); \
+		GL_TYPE_<type>::setUniform(loc, *ptr_cast); \
+	} \
 	break; \
 }
 
@@ -187,7 +192,8 @@ namespace Morpheus {
 				assign.mUniformLocation = a;
 				assign.mUniformType = type;
 				assign.mOffset = offset;
-				offset += GLTypeMetadata::sizeOf(type);
+				assign.mArrayLength = 1;
+				offset += GLTypeMetadata::sizeOf(type) * assign.mArrayLength;
 
 				out->mBindings.push_back(assign);
 				names.push_back(name);
@@ -213,8 +219,6 @@ namespace Morpheus {
 	void loadSamplerDefaults(const nlohmann::json& j, const Shader* shad, ShaderSamplerAssignments* out,
 		ContentManager* content, Node parent, const std::string& parentSrc) {
 		out->mBindings.clear();
-
-		GLint current_bind_target = 0;
 
 		string prefix_include_path = "";
 
@@ -252,7 +256,7 @@ namespace Morpheus {
 					content->load<Texture>(textureSrc, parent, &assignment.mTexture);
 					content->load<Sampler>(samplerSrc, parent, &assignment.mSampler);
 					assignment.mUniformLocation = a;
-					assignment.mBindTarget = current_bind_target++;
+					glGetUniformiv(shad->id(), a, &assignment.mTextureUnit); // Read the texture unit we should bind to
 					out->mBindings.emplace_back(assignment);
 				}
 				else {
@@ -281,6 +285,8 @@ namespace Morpheus {
 					out->mView.mLoc = a;
 				else if (name == "projection") 
 					out->mProjection.mLoc = a;
+				else if (name == "diffuse_irradiance_sh")
+					out->mDiffuseIrradianceSH.mLoc = a;
 				else 
 					cout << "Warning: renderer uniform binding " << name << " not recognized!" << endl;
 				
@@ -304,9 +310,6 @@ namespace Morpheus {
 
 	void ContentFactory<Shader>::readJsonMetadata(const nlohmann::json& j, Shader* shad, Node& loadInto,
 		const std::string& parentSrc) {
-		
-		shad->mRenderView.init();
-
 		if (j.contains("editor_uniforms")) {
 			auto jsonEdUnif = j["editor_uniforms"];
 			readEditorUniforms(jsonEdUnif, shad, &shad->mEditorView);
@@ -492,7 +495,6 @@ namespace Morpheus {
 	ref<Shader> ContentFactory<Shader>::makeFromGL(GLint shaderProgram) {
 		Shader* shad = new Shader();
 		shad->mId = shaderProgram;
-		shad->mRenderView.init();
 		return ref<Shader>(shad);
 	}
 
@@ -504,6 +506,26 @@ namespace Morpheus {
 
 	void ContentFactory<Shader>::dispose() {
 
+	}
+
+	GLuint compileComputeKernel(const std::string& code) {
+		auto id = compileShader(code, ShaderType::COMPUTE);
+
+		auto program = glCreateProgram();
+		glAttachShader(program, id);
+		glLinkProgram(program);
+		printProgramLinkerOutput(program);
+
+		GLint len;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &len);
+
+		glDeleteShader(id);
+		if (len > 0) {
+			glDeleteProgram(program);
+			return 0;
+		} else {
+			return program;
+		}
 	}
 
 	GLuint compileShader(const std::string& code, const ShaderType type) {
@@ -535,20 +557,11 @@ namespace Morpheus {
 		return id;
 	}
 
-	void RendererShaderView::init()
-	{
-		mWorld.mLoc = -1;
-		mView.mLoc = -1;
-		mProjection.mLoc = -1;
-		mWorldInverseTranspose.mLoc = -1;
-		mEyePosition.mLoc = -1;
-	}
-
-	uint32_t Morpheus::ShaderUniformAssignments::computeSize() const
+	uint32_t ShaderUniformAssignments::computeSize() const
 	{
 		uint32_t size = 0u;
 		for (auto& binding : mBindings) {
-			size += static_cast<uint32_t>(GLTypeMetadata::sizeOf(binding.mUniformType));
+			size += static_cast<uint32_t>(GLTypeMetadata::sizeOf(binding.mUniformType)) * binding.mArrayLength;
 		}
 		return size;
 	}
@@ -558,42 +571,42 @@ namespace Morpheus {
 		for (auto& binding : mBindings) {
 			const void* ptr = &mData[binding.mOffset];
 			switch (binding.mUniformType) {
-				ASSIGN_CASE(GL_INT, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_UNSIGNED_INT, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_SHORT, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_UNSIGNED_SHORT, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_BYTE, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_UNSIGNED_BYTE, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_BOOL, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_VEC2, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_VEC3, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_VEC4, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_MAT2, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_MAT3, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_MAT4, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_MAT2x3, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_MAT3x2, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_MAT2x4, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_MAT4x2, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_MAT3x4, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_FLOAT_MAT4x3, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_VEC2, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_VEC3, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_VEC4, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_MAT2, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_MAT3, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_MAT4, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_MAT2x3, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_MAT3x2, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_MAT2x4, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_MAT4x2, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_MAT3x4, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_DOUBLE_MAT4x3, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_INT_VEC2, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_INT_VEC3, binding.mUniformLocation, ptr);
-				ASSIGN_CASE(GL_INT_VEC4, binding.mUniformLocation, ptr);
+				ASSIGN_CASE(GL_INT, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_UNSIGNED_INT, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_SHORT, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_UNSIGNED_SHORT, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_BYTE, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_UNSIGNED_BYTE, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_BOOL, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_VEC2, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_VEC3, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_VEC4, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_MAT2, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_MAT3, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_MAT4, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_MAT2x3, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_MAT3x2, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_MAT2x4, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_MAT4x2, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_MAT3x4, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_FLOAT_MAT4x3, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_VEC2, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_VEC3, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_VEC4, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_MAT2, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_MAT3, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_MAT4, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_MAT2x3, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_MAT3x2, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_MAT2x4, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_MAT4x2, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_MAT3x4, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_DOUBLE_MAT4x3, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_INT_VEC2, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_INT_VEC3, binding.mUniformLocation, ptr, binding.mArrayLength);
+				ASSIGN_CASE(GL_INT_VEC4, binding.mUniformLocation, ptr, binding.mArrayLength);
 			default:
 				assert(0);
 				break;
@@ -638,9 +651,18 @@ namespace Morpheus {
 			auto& binding = result.mBindings[i];
 			auto& original_binding = toOverwrite.mBindings[carryOverIndices[i - mBindings.size()]];
 			std::memcpy(&result.mData[offset], &toOverwrite.mData[original_binding.mOffset], 
-				GLTypeMetadata::sizeOf(original_binding.mUniformType));
+				GLTypeMetadata::sizeOf(original_binding.mUniformType) * original_binding.mArrayLength);
 		}
 		return result;
+	}
+
+	void ShaderSamplerAssignments::add(const ShaderUniform<Sampler>& uniform, ref<Sampler> sampler, ref<Texture> texture) {
+		ShaderSamplerAssignment assign;
+		assign.mUniformLocation = uniform.location();
+		assign.mSampler = sampler;
+		assign.mTexture = texture;
+		assign.mTextureUnit = uniform.unit();
+		mBindings.emplace_back(assign);
 	}
 
 	ShaderSamplerAssignments ShaderSamplerAssignments::overwrite(const ShaderSamplerAssignments& toOverwrite) {
@@ -665,18 +687,16 @@ namespace Morpheus {
 			}
 		}
 
-		for (int i = 0; i < result.mBindings.size(); ++i) {
-			result.mBindings[i].mBindTarget = i;
-		}
-
 		return result;
 	}
 
 	void ShaderSamplerAssignments::assign() const
 	{
-		for (auto& binding : mBindings) {
-			binding.mTexture->bind(GL_TEXTURE0 + binding.mBindTarget);
-			binding.mSampler->bind(binding.mBindTarget);
+		for (uint i = 0, size = mBindings.size(); i < size; ++i) {
+			auto& binding = mBindings[i];
+			binding.mTexture->bind(i);
+			binding.mSampler->bind(i);
+			glUniform1i(binding.mUniformLocation, i);
 		}
 	}
 

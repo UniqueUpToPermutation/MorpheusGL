@@ -3,6 +3,7 @@
 #include <engine/cameracontroller.hpp>
 #include <engine/samplefunction.hpp>
 #include <engine/lambert.hpp>
+#include <engine/ggx.hpp>
 #include <engine/sphericalharmonics.hpp>
 
 #include <GLFW/glfw3.h>
@@ -22,21 +23,36 @@ namespace Morpheus {
 	SET_BASE_TYPE(MaterialGui, GuiBase);
 }
 
+Morpheus::ref<Material> material;
+ShaderUniform<GLfloat> roughness;
 class MaterialGui : public GuiBase {
 protected:
 	nanogui::FormHelper* gui;
 
-	virtual void initGui() override {
+	void initGui() override {
 		gui = new nanogui::FormHelper(mScreen);
 		nanogui::ref<nanogui::Window> window = gui->addWindow(nanogui::Vector2i(10, 10), "Shader Settings");
 
-		gui->addGroup("Mesh");
+		auto groupLabel = gui->addGroup("Material Properties");
+
+		std::function<void(const float& v)> roughnessSetter = [](const float& v) { 
+			float truR = std::min(std::max(v, 0.0f), 1.0f);
+			material->uniformAssignments().set(roughness, truR); 
+		};
+		std::function<float()> roughnessGetter = []() { return material->uniformAssignments().get(roughness); };
+
+		auto slider = new nanogui::Slider(window);
+		slider->setRange(std::pair<float, float>(0.0, 1.0));
+		slider->setCallback(roughnessSetter);
+
+		gui->addWidget("Roughness", slider);
+
 		mScreen->setVisible(true);
 		mScreen->performLayout();
 	}
 
 public:
-	virtual void dispose() override {
+	void dispose() override {
 		delete gui;
 
 		GuiBase::dispose();
@@ -58,10 +74,6 @@ int main() {
 		auto sceneNode = addNode(scene, engine()->handle());
 		setName(sceneNode, "__scene__");
 		auto sceneHandle = issueHandle(sceneNode);
-
-		// Create our GUI
-		auto guiNode = addNode(new MaterialGui(), sceneNode);
-		setName(guiNode, "__gui__");
 
 		// Create camera and camera controller
 		auto camera = new Camera();
@@ -92,52 +104,49 @@ int main() {
 		auto transform = Transform::makeIdentity(sceneNode, sceneNode);
 		transform.addChild(staticMeshNode);
 
-		// Process the light field into an irradiance map
-		auto light_field = StaticMesh::getMaterial(staticMeshNode)->samplerAssignments().mBindings[0].mTexture;
+		Morpheus::ref<Texture> tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/skybox.ktx", GL_RGBA8);
+		Node texNode = addNode<Texture>(tex, sceneNode);
 
-		FunctionSphere<glm::vec3> light_field_func;
-		light_field_func.fromTexture(light_field);
+		auto lambertKernel = new LambertComputeKernel();
+		Node lambertKernelNode = addNode(lambertKernel, sceneNode);
 
-		Eigen::MatrixXf light_field_mat;
-		light_field_func.toSampleMatrix(&light_field_mat);
+		Morpheus::ref<Shader> ggxBackend;
+		load<Shader>("content/ggx.comp", sceneHandle, &ggxBackend);
+		auto ggxKernel = new GGXComputeKernel(ggxBackend, 32);
+		Node ggxKernelNode = addNode(ggxKernel, sceneNode);
 
-		Eigen::VectorXf X, Y, Z;
-		Eigen::VectorXf mode;
-		light_field_func.createGrid(&X, &Y, &Z);
-		Eigen::MatrixXf modes;
+		material = StaticMesh::getMaterial(staticMeshNode);
+		roughness.find(material->shader(), "roughness");
+		material->uniformAssignments().add(roughness, 0.0f);
 
-		Eigen::MatrixXf coeffs;
-		SphericalHarmonics::generateIrradianceModes(X, Y, Z, &modes);
-
-		auto start = std::chrono::system_clock::now();
-		Eigen::MatrixXf dual_modes;
-		CubemapMetric::dual(modes, &dual_modes);
-
-		Eigen::MatrixXf coeffs_gt = dual_modes.transpose() * light_field_mat;
-		auto end = std::chrono::system_clock::now();
-
-		std::cout << "Full Coeffs:" << std::endl;
-		std::cout << coeffs_gt << std::endl;
-		std::chrono::duration<double> duration = end - start;
-		std::cout << "Time Required: " << std::setprecision(4) << duration.count() << " s" << std::endl << std::endl;
-
-		LambertSphericalHarmonicsKernel kernel;
-		Eigen::MatrixXf lambert_coeffs_gt;
-		kernel.applySH(coeffs_gt, &lambert_coeffs_gt);
-
-		Eigen::MatrixXf proj_light_field_mat = modes * lambert_coeffs_gt;
-
-		light_field_func.transition(StorageMode::WRITE);
-		light_field_func.fromSampleMatrix(proj_light_field_mat);
-		light_field_func.transition(StorageMode::READ);
-
-		Morpheus::ref<Texture> tex;
-		auto texNode = light_field_func.toTexture(&tex);
-		sceneNode.addChild(texNode); // Make sure the garbage collector doesn't come
-		StaticMesh::getMaterial(staticMeshNode)->samplerAssignments().mBindings[0].mTexture = tex;
+		// Create our GUI
+		auto guiNode = addNode(new MaterialGui(), sceneNode);
+		setName(guiNode, "__gui__");
 
 		// Initialize the scene graph
 		init(sceneNode);
+
+		// Submit a compute job to the lambert kernel
+		LambertComputeJob lambertJob;
+		lambertJob.mInputImage = tex;
+		lambertKernel->submit(lambertJob);
+		lambertKernel->sync();
+
+		// Submit a compute job to the ggx kernel
+		
+		GGXComputeJob ggxJob;
+		ggxJob.mInputImage = tex;
+		auto specularResult = ggxKernel->submit(ggxJob);
+		ggxKernel->sync();
+
+		ShaderUniform<glm::vec3[]> diffuseIrradianceSH(material->shader(), "diffuseIrradianceSH");
+		ShaderUniform<Sampler> specularEnvMap(material->shader(), "specularEnvMap");
+
+		Morpheus::ref<Sampler> sampler;
+		load<Sampler>(MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC, sceneHandle, &sampler);
+
+		material->uniformAssignments().add(diffuseIrradianceSH, lambertKernel->results(), lambertKernel->shCount());
+		material->samplerAssignments().add(specularEnvMap, sampler, specularResult);
 
 		// Game loop
 		while (en.valid()) {

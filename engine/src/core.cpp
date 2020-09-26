@@ -9,6 +9,8 @@
 #include <engine/gui.hpp>
 #include <engine/scene.hpp>
 #include <engine/staticmesh.hpp>
+#include <engine/lambert.hpp>
+#include <engine/ggx.hpp>
 
 #include <iostream>
 
@@ -123,6 +125,7 @@ namespace Morpheus {
 			T_CASE(ENGINE);
 			T_CASE(RENDERER);
 			T_CASE(UPDATER);
+			T_CASE(LAMBERT_COMPUTE_KERNEL);
 			T_CASE(SCENE_BEGIN);
 			T_CASE(CAMERA);
 			T_CASE(EMPTY);
@@ -144,6 +147,7 @@ namespace Morpheus {
 			T_CASE(STATIC_MESH);
 			T_CASE(CONTENT_END);
 			T_CASE(HALF_EDGE_GEOMETRY);
+			T_CASE(SAMPLER);
 			T_CASE(END);
 		default:
 			return "UNKNOWN";

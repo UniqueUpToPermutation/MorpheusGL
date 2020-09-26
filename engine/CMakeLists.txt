@@ -29,6 +29,7 @@ add_library(engine
     src/texture.cpp
     src/updater.cpp
     src/blit.cpp
+    src/ggx.cpp
     lodepng/lodepng.cpp
     ../nanogui/ext/glad/src/glad.c)
 
@@ -64,6 +65,7 @@ target_include_directories(engine PRIVATE
     ../assimp/include
     ../gli
     ../engine
+    ../incbin
 )
 
 set(${PROJECT_NAME}_INCLUDE_DIRS

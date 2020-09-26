@@ -33,7 +33,19 @@ namespace Morpheus {
 	ContentManager::ContentManager() : mHandle(HANDLE_INVALID) {
 	}
 
-	void ContentManager::unload(Node& node) {
+	ContentManager::~ContentManager() {
+		unloadAll();
+
+		for (auto& factory : mFactories)
+			factory->dispose();
+		mFactories.clear();
+		mTypeToFactory.clear();
+
+		graph()->destroyLookup(mSources);
+		graph()->recallHandle(mHandle);
+	}
+
+	void ContentManager::unload(Node node) {
 		auto desc = graph()->desc(node);
 		// Get factory from type
 		auto factory = mTypeToFactory[desc->type];
@@ -63,21 +75,7 @@ namespace Morpheus {
 	void ContentManager::setSource(const Node& node, const std::string& source) {
 		mSources.set(node, source);
 	}
-
-	void ContentManager::dispose() {
-		unloadAll();
-
-		for (auto& factory : mFactories)
-			factory->dispose();
-		mFactories.clear();
-		mTypeToFactory.clear();
-
-		graph()->destroyLookup(mSources);
-		graph()->recallHandle(mHandle);
-
-		delete this;
-	}
-
+	
 	void ContentManager::collectGarbage() {
 		std::stack<Node> toCollect;
 

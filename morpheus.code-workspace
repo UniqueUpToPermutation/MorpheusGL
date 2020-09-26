@@ -74,7 +74,12 @@
 			"typeindex": "cpp",
 			"typeinfo": "cpp",
 			"valarray": "cpp",
-			"variant": "cpp"
+			"variant": "cpp",
+			"geometry": "cpp",
+			"metissupport": "cpp",
+			"sparseqr": "cpp",
+			"nonlinearoptimization": "cpp",
+			"fft": "cpp"
 		}
 	}
 }

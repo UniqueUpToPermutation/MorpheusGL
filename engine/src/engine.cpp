@@ -9,6 +9,7 @@
 #include <engine/forwardrenderer.hpp>
 #include <engine/input.hpp>
 #include <engine/scene.hpp>
+#include <engine/camera.hpp>
 
 using namespace std;
 
@@ -157,6 +158,10 @@ namespace Morpheus {
 			if (disposeInterface)
 				disposeInterface->dispose();
 		}
+
+		// Explicitly dispose the content manager last to clean up anything remaining
+		delete mContent;
+		mContent = nullptr;
 
 		glfwDestroyWindow(mWindow);
 

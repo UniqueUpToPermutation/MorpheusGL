@@ -93,7 +93,7 @@ namespace Morpheus {
 		if (samplerOut)
 			*samplerOut = sampler;
 
-		return graph()->addNode(samplerOut);
+		return graph()->addNode(*samplerOut);
 	}
 
 	Node ContentFactory<Sampler>::makeUnmanaged(SamplerPrototype prototype, ref<Sampler>* samplerOut) {

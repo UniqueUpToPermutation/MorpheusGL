@@ -5,6 +5,8 @@
 #include <engine/samplefunction.hpp>
 #include <engine/sphericalharmonics.hpp>
 
+#define LAMBERT_SH_COEFFS 9
+
 namespace Morpheus {
 	template <typename T>
 	T factorial(T n)
@@ -28,18 +30,16 @@ namespace Morpheus {
 
 	class Texture;
 	class Shader;
-
-	template <typename VectorType = glm::vec3>
-	class LambertSphericalHarmonicsKernel {
+	class LambertSHKernelCPU {
 	public:
-		typedef typename get_scalar_t<VectorType>::scalar_t scalar_t;
+		typedef double scalar_t;
 
 	private:
 		std::vector<scalar_t> mFilter;
 		int mLargestL;
 
 	public:
-		LambertSphericalHarmonicsKernel(int largestL = 2) {
+		LambertSHKernelCPU(int largestL = 2) {
 			mLargestL = largestL;
 			mFilter.reserve((largestL + 1) * (largestL + 1));
 			for (int l = 0; l <= largestL; ++l) {
@@ -61,6 +61,21 @@ namespace Morpheus {
 					mFilter.emplace_back(coeff);
 				}
 			}
+		}
+
+		template <typename scalar_t>
+		void applySH(const scalar_t shIn[], scalar_t shOut[], const uint modeCount, const uint channelCount) {
+			for (int i = 0; i < channelCount; ++i) {
+				for (int j = 0; j < modeCount; ++j) {
+					shOut[j * channelCount + i] = mFilter[j] * shIn[j * channelCount + i];
+				}
+			}
+		}
+
+		template <typename scalar_t>
+		void applySH(const std::vector<scalar_t>& shIn, std::vector<scalar_t>* shOut, const uint channelCount) {
+			shOut->resize(shIn.size());
+			applySH<scalar_t>(&shIn[0], &(*shOut)[0], shIn.size(), channelCount);
 		}
 
 		template <typename MatrixType>
@@ -89,56 +104,49 @@ namespace Morpheus {
 		}
 	};
 
-	// Implements the Lambert BRDF
-	template <typename VectorType = glm::vec3>
-	class LambertMonteCarloKernel {
-	public:
-		typedef typename get_scalar_t<VectorType>::scalar_t scalar_t;
+	struct LambertComputeJob {
+		ref<Texture> mInputImage;
+	};
 
+	// Implements a lambert convolution in the SH basis on the GPU. Returns a set of 9 SH coefficients for 3 color channels.
+	class LambertComputeKernel : public IInitializable, public IDisposable {
 	private:
-		std::minstd_rand generator;
-		std::uniform_real_distribution<scalar_t> distribution;
+		GLuint mGPUOutputBuffer;
+		
+		std::vector<LambertComputeJob> mJobs;
+		std::vector<float> mResultBuffer;
+
+		ref<Shader> mGPUBackend;
+		NodeHandle mGPUBackendHandle;
+		ShaderUniform<uint> mOffsetUniform;
+		LambertSHKernelCPU mSHTransferFunction;
+
+		bool bInJob;
+		uint mGroupSize;
 
 	public:
-		constexpr static bool HAS_WEIGHTS = true;
-		typedef scalar_t WeightType;
 
-		LambertMonteCarloKernel() :
-			generator((unsigned int)std::chrono::system_clock::now().time_since_epoch().count()),
-			distribution(0.0, 1.0) {
-		}
+		LambertComputeKernel(uint groupSize = 64);
 
-		VectorType sample(const VectorType& location, scalar_t* weight) {
-			*weight = 10.0;
+		void init(Node node) override;
+		void dispose() override;
 
-			// Sample from hemisphere and rotate
-			scalar_t u = distribution(generator);
-			scalar_t v = distribution(generator);
+		// These functions will submit a batch of jobs to the GPU
+		void beginQueue();
+		uint addJob(const LambertComputeJob& job);
+		void submitQueue();
 
-			scalar_t phi = 2 * glm::pi<scalar_t>() * u;
-			scalar_t theta = std::acos(std::sqrt(v));
+		// This function submits a single job to the GPU
+		void submit(const LambertComputeJob& job);
 
-			scalar_t x = std::sin(phi) * std::sin(theta);
-			scalar_t y = std::cos(phi) * std::sin(theta);
-			scalar_t z = std::cos(theta);
+		// Use this before attempting to access results of jobs
+		void sync();
 
-			VectorType v_z = location;
-			VectorType prod = glm::zero<VectorType>();
-			if (std::abs(location.x) < std::abs(location.y)) {
-				prod.x = (scalar_t)1.0;
-			}
-			else {
-				prod.y = (scalar_t)1.0;
-			}
-			VectorType v_x = glm::cross(v_z, prod);
-			VectorType v_y = glm::cross(v_x, v_z);
-		
-			return v_x * x + v_y * y + v_z * z;
-		}
+		float* results(uint job_id = 0);
 
-		template <typename FuncType>
-		void apply(const FuncType& input, FuncType* output, uint32_t sampleCount = DEFAULT_KERNEL_SAMPLE_COUNT) {
-			KernelProc<LambertMonteCarloKernel, FuncType>::apply(*this, input, output, sampleCount);
+		inline uint shCount() const {
+			return LAMBERT_SH_COEFFS;
 		}
 	};
+	SET_NODE_ENUM(LambertComputeKernel, LAMBERT_COMPUTE_KERNEL);
 }

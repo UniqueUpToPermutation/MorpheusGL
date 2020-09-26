@@ -45,7 +45,7 @@ class LaplacianGui : public GuiBase {
 protected:
 	nanogui::FormHelper* gui;
 
-	virtual void initGui() override {
+	void initGui() override {
 		gui = new nanogui::FormHelper(mScreen);
 		nanogui::ref<nanogui::Window> window = gui->addWindow(nanogui::Vector2i(10, 10), "Laplace Tool");
 
@@ -72,7 +72,7 @@ protected:
 	}
 
 public:
-	virtual void dispose() override {
+	void dispose() override {
 		delete gui;
 
 		GuiBase::dispose();

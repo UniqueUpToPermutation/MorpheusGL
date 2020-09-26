@@ -42,8 +42,8 @@ namespace Morpheus {
 		// Resize the texture. Note that this will destroy everything in the texture.
 		void resize(uint32_t width, uint32_t height = 1, uint32_t depth = 1);
 
-		inline void bind(GLenum activeTexture) const {
-			glActiveTexture(activeTexture);
+		inline void bind(GLuint unit) const {
+			glActiveTexture(GL_TEXTURE0 + unit);
 			glBindTexture(mGLTarget, mId);
 		}
 

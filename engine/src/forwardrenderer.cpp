@@ -30,26 +30,26 @@ namespace Morpheus {
 
 	void ForwardRenderer::collectRecursive(Node& current, ForwardRenderCollectParams& params) {
 
-		auto desc = &mNodeDataView[current];
+		auto nodeDesc = &mNodeDataView[current];
 
 		// Ignore anything that is not a scene child.
-		if (!NodeMetadata::isRenderable(desc->type))
+		if (!NodeMetadata::isRenderable(nodeDesc->type))
 			return;
 
 		// Visiting a node on the way down
-		switch (desc->type) {
+		switch (nodeDesc->type) {
 		case NodeType::SCENE_ROOT:
 		{
-			auto scene = getOwner<Scene>(*desc);
+			auto scene = nodeDesc->owner.reinterpret<Scene>();
 
 			// Set the active camera
-			if (!params.mRenderCamera)
+			if (!params.mRenderCamera.isNull())
 				params.mRenderCamera = scene->getActiveCamera();
 			break;
 		}
 		case NodeType::TRANSFORM:
 		{
-			auto newTransform = desc->owner.reinterpret<Transform>();
+			auto newTransform = nodeDesc->owner.reinterpret<Transform>();
 			// Is this transform is static, then it has already been cached
 			// Otherwise, cache (evaluate and save) this transform using the
 			// last transform on the stack
@@ -75,14 +75,14 @@ namespace Morpheus {
 		case NodeType::NANOGUI_SCREEN:
 		{
 			// Found a GUI
-			params.mQueues->mGuis.push(getOwner<GuiBase>(*desc));
+			params.mQueues->mGuis.push(nodeDesc->owner.reinterpret<GuiBase>());
 			break;
 		}
 		case NodeType::CAMERA:
 		{
 			// Found a camera
-			if (!params.mRenderCamera)
-				params.mRenderCamera = getOwner<Camera>(*desc);
+			if (params.mRenderCamera.isNull())
+				params.mRenderCamera = nodeDesc->owner.reinterpret<Camera>();
 			break;
 		}
 		default:
@@ -96,7 +96,7 @@ namespace Morpheus {
 		}
 
 		// Visiting a node on the way up
-		switch (desc->type) {
+		switch (nodeDesc->type) {
 		case NodeType::TRANSFORM:
 			// Pop the transformation from the stack
 			params.mTransformStack->pop();
@@ -144,7 +144,7 @@ namespace Morpheus {
 		mat4 projection = identity<mat4>();
 		vec3 eye = zero<vec3>();
 
-		if (params.mRenderCamera) {
+		if (!params.mRenderCamera.isNull()) {
 			view = params.mRenderCamera->view();
 			projection = params.mRenderCamera->projection();
 			eye = params.mRenderCamera->eye();

@@ -3,6 +3,7 @@
 #include <engine/json.hpp>
 #include <engine/digraph.hpp>
 #include <engine/core.hpp>
+#include <engine/camera.hpp>
 #include <engine/shader.hpp>
 #include <engine/pool.hpp>
 #include <engine/geometry.hpp>
@@ -12,9 +13,6 @@
 #include <engine/gui.hpp>
 #include <engine/blit.hpp>
 namespace Morpheus {
-	
-	class Camera;
-
 	struct StaticMeshRenderInstance {
 		ref<Geometry> mGeometry;
 		ref<Transform> mTransform;
@@ -35,11 +33,11 @@ namespace Morpheus {
 		std::stack<bool>* mIsStaticStack;
 		std::stack<ref<Transform>>* mTransformStack;
 		RenderInstanceType mCurrentRenderType;
-		Camera* mRenderCamera;
+		ref<Camera> mRenderCamera;
 	};
 
 	struct ForwardRenderDrawParams {
-		Camera* mRenderCamera;
+		ref<Camera> mRenderCamera;
 	};
 
 	class ForwardRenderer : public IRenderer {

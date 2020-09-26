@@ -49,7 +49,7 @@ namespace Morpheus {
 	// collection, whereby it checks for each of its children whether or not they have exactly
 	// one parent - if they do, they are unloaded by their respective content manager and removed
 	// from the scene graph. 
-	class ContentManager : public IDisposable, public IInitializable {
+	class ContentManager : public IInitializable {
 	private:
 		NodeHandle mHandle;
 		std::set<IContentFactory*> mFactories;
@@ -70,6 +70,7 @@ namespace Morpheus {
 		Node node() const { return (*graph())[mHandle]; }
 
 		ContentManager();
+		~ContentManager();
 
 		// Add a factory to this content manager.
 		// ContentType: The content type of the factory to add.
@@ -235,7 +236,11 @@ namespace Morpheus {
 
 		// Unload a node via its content factory and then remove it from the scene graph.
 		// node: The node to unload
-		void unload(Node& node);
+		void unload(Node node);
+
+		inline void unload(NodeHandle node) {
+			unload(find(node));
+		}
 
 		// Unload all children.
 		void unloadAll();
@@ -244,9 +249,6 @@ namespace Morpheus {
 		// node: The node which to set.
 		// source: The content tag to set.
 		void setSource(const Node& node, const std::string& source);
-
-		// Dispose of the content manager
-		void dispose() override;
 
 		friend class Engine;
 	};
@@ -345,7 +347,11 @@ namespace Morpheus {
 
 	// Unload a node via its content factory and then remove it from the scene graph.
 	// node: The node to unload
-	inline void unload(Node& node) {
+	inline void unload(Node node) {
+		content()->unload(node);
+	}
+
+	inline void unload(NodeHandle node) {
 		content()->unload(node);
 	}
 

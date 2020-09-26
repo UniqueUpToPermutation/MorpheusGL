@@ -7,6 +7,8 @@
 #include <engine/sampler.hpp>
 #include <engine/texture.hpp>
 
+#include <glm/gtc/type_ptr.hpp>
+
 #define SET_WORLD(loc_str) mWorld.mLoc = glGetUniformLocation(id(), loc_str)
 #define SET_VIEW(loc_str) mView.mLoc = glGetUniformLocation(id(), loc_str)
 #define SET_PROJECTION(loc_str) mProjection.mLoc = glGetUniformLocation(id(), loc_str)
@@ -16,60 +18,89 @@
 
 namespace Morpheus {
 
-	template <GLenum>
+	template <GLenum uniformType>
 	struct GL_TYPE_;
-	
 	template <> struct GL_TYPE_<GL_FLOAT> {
-		typedef float C_TYPE_;
-		inline static void setUniform(GLint loc, float v) {
+		typedef GLfloat C_TYPE_;
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, C_TYPE_ v) {
 			glUniform1f(loc, v);
 		}
-		inline static void readJson(const nlohmann::json& j, float* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform1fv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			j.get_to(*v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE> {
-		typedef double C_TYPE_;
-		inline static void setUniform(GLint loc, double v) {
+		typedef GLdouble C_TYPE_;
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, C_TYPE_ v) {
 			glUniform1d(loc, v);
 		}
-		inline static void readJson(const nlohmann::json& j, double* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform1dv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			j.get_to(*v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_BOOL> {
-		typedef bool C_TYPE_;
-		inline static void setUniform(GLint loc, bool v) {
+		typedef GLboolean C_TYPE_;
+		typedef GLboolean C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = false;
+		inline static void setUniform(GLint loc, C_TYPE_ v) {
 			glUniform1i(loc, v);
 		}
-		inline static void readJson(const nlohmann::json& j, bool* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			throw std::runtime_error("setUniformArray not supported for boolean!");
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			j.get_to(*v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_INT> {
-		typedef int32_t C_TYPE_;
-		inline static void setUniform(GLint loc, int32_t v) {
+		typedef GLint C_TYPE_;
+		typedef GLint C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, C_TYPE_ v) {
 			glUniform1i(loc, v);
 		}
-		inline static void readJson(const nlohmann::json& j, int32_t* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform1iv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			j.get_to(*v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_UNSIGNED_INT> {
-		typedef uint32_t C_TYPE_;
-		inline static void setUniform(GLint loc, uint32_t v) {
+		typedef GLuint C_TYPE_;
+		typedef GLuint C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, C_TYPE_ v) {
 			glUniform1ui(loc, v);
 		}
-		inline static void readJson(const nlohmann::json& j, uint32_t* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform1uiv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			j.get_to(*v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_VEC2> {
 		typedef glm::fvec2 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fvec2& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniform2f(loc, v.x, v.y);
 		}
-		inline static void readJson(const nlohmann::json& j, glm::fvec2* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform2fv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			std::vector<float> e;
 			j.get_to(e);
 			v->x = e[0];
@@ -78,10 +109,15 @@ namespace Morpheus {
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_VEC3> {
 		typedef glm::fvec3 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fvec3& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniform3f(loc, v.x, v.y, v.z);
 		}
-		inline static void readJson(const nlohmann::json& j, glm::fvec3* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform3fv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			std::vector<float> e;
 			j.get_to(e);
 			v->x = e[0];
@@ -91,10 +127,15 @@ namespace Morpheus {
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_VEC4> {
 		typedef glm::fvec4 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fvec4& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniform4f(loc, v.x, v.y, v.z, v.w);
 		}
-		inline static void readJson(const nlohmann::json& j, glm::fvec4* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform4fv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			std::vector<float> e;
 			j.get_to(e);
 			v->x = e[0];
@@ -105,10 +146,15 @@ namespace Morpheus {
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_VEC2> {
 		typedef glm::dvec2 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dvec2& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniform2d(loc, v.x, v.y);
 		}
-		inline static void readJson(const nlohmann::json& j, glm::dvec2* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform2dv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			std::vector<double> e;
 			j.get_to(e);
 			v->x = e[0];
@@ -117,10 +163,15 @@ namespace Morpheus {
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_VEC3> {
 		typedef glm::dvec3 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dvec3& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniform3d(loc, v.x, v.y, v.z);
 		}
-		inline static void readJson(const nlohmann::json& j, glm::dvec3* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform3dv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			std::vector<double> e;
 			j.get_to(e);
 			v->x = e[0];
@@ -130,10 +181,15 @@ namespace Morpheus {
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_VEC4> {
 		typedef glm::dvec4 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dvec4& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniform4d(loc, v.x, v.y, v.z, v.w);
 		}
-		inline static void readJson(const nlohmann::json& j, glm::dvec4* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform4dv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			std::vector<double> e;
 			j.get_to(e);
 			v->x = e[0];
@@ -144,10 +200,15 @@ namespace Morpheus {
 	};
 	template <> struct GL_TYPE_<GL_INT_VEC2> {
 		typedef glm::ivec2 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::ivec2& v) {
+		typedef GLint C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniform2i(loc, v.x, v.y);
 		}
-		inline static void readJson(const nlohmann::json& j, glm::ivec2* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform2iv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			std::vector<int32_t> e;
 			j.get_to(e);
 			v->x = e[0];
@@ -156,10 +217,15 @@ namespace Morpheus {
 	};
 	template <> struct GL_TYPE_<GL_INT_VEC3> {
 		typedef glm::ivec3 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::ivec3& v) {
+		typedef GLint C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniform3i(loc, v.x, v.y, v.z);
 		}
-		inline static void readJson(const nlohmann::json& j, glm::ivec3* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform3iv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			std::vector<int32_t> e;
 			j.get_to(e);
 			v->x = e[0];
@@ -169,10 +235,15 @@ namespace Morpheus {
 	};
 	template <> struct GL_TYPE_<GL_INT_VEC4> {
 		typedef glm::ivec4 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::ivec4& v) {
+		typedef GLint C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniform4i(loc, v.x, v.y, v.z, v.w);
 		}
-		inline static void readJson(const nlohmann::json& j, glm::ivec4* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniform4iv(loc, len, v);
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			std::vector<int32_t> e;
 			j.get_to(e);
 			v->x = e[0];
@@ -182,44 +253,64 @@ namespace Morpheus {
 		}
 	};
 	template <> struct GL_TYPE_<GL_BYTE> {
-		typedef int8_t C_TYPE_;
-		inline static void setUniform(GLint loc, int8_t v) {
+		typedef GLbyte C_TYPE_;
+		typedef GLbyte C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = false;
+		inline static void setUniform(GLint loc, C_TYPE_ v) {
 			glUniform1i(loc, v);
 		}
-		inline static void readJson(const nlohmann::json& j, int8_t* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			throw std::runtime_error("GLbyte does not support arrays!");
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			int32_t e;
 			j.get_to(e);
-			*v = static_cast<int8_t>(e);
+			*v = static_cast<C_TYPE_>(e);
 		}
 	};
 	template <> struct GL_TYPE_<GL_UNSIGNED_BYTE> {
-		typedef uint8_t C_TYPE_;
-		inline static void setUniform(GLint loc, uint8_t v) {
+		typedef GLubyte C_TYPE_;
+		typedef GLubyte C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = false;
+		inline static void setUniform(GLint loc, C_TYPE_ v) {
 			glUniform1ui(loc, v);
 		}
-		inline static void readJson(const nlohmann::json& j, uint8_t* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			throw std::runtime_error("GLubyte does not support arrays!");
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			uint32_t e;
 			j.get_to(e);
-			*v = static_cast<uint8_t>(e);
+			*v = static_cast<C_TYPE_>(e);
 		}
 	};
 	template <> struct GL_TYPE_<GL_SHORT> {
-		typedef int16_t C_TYPE_;
+		typedef GLshort C_TYPE_;
+		typedef GLshort C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = false;
 		inline static void setUniform(GLint loc, int16_t v) {
 			glUniform1i(loc, v);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			throw std::runtime_error("GLshort does not support arrays!");
 		}
 		inline static void readJson(const nlohmann::json& j, int16_t* v) {
 			uint32_t e;
 			j.get_to(e);
-			*v = static_cast<int16_t>(e);
+			*v = static_cast<C_TYPE_>(e);
 		}
 	};
 	template <> struct GL_TYPE_<GL_UNSIGNED_SHORT> {
-		typedef uint16_t C_TYPE_;
-		inline static void setUniform(GLint loc, uint16_t v) {
+		typedef GLushort C_TYPE_;
+		typedef GLushort C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = false;
+		inline static void setUniform(GLint loc, C_TYPE_ v) {
 			glUniform1ui(loc, v);
 		}
-		inline static void readJson(const nlohmann::json& j, uint16_t* v) {
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			throw std::runtime_error("GLushort does not support arrays!");
+		}
+		inline static void readJson(const nlohmann::json& j, C_TYPE_* v) {
 			uint32_t e;
 			j.get_to(e);
 			*v = static_cast<uint16_t>(e);
@@ -227,116 +318,207 @@ namespace Morpheus {
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_MAT2> {
 		typedef glm::fmat2 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fmat2& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix2fv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix2fv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_MAT3> {
 		typedef glm::fmat3 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fmat3& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix3fv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix3fv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_MAT4> {
 		typedef glm::fmat4 C_TYPE_;
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
 		inline static void setUniform(GLint loc, const glm::fmat4& v) {
 			glUniformMatrix4fv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix4fv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_MAT2x3> {
 		typedef glm::fmat2x3 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fmat2x3& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix2x3fv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix2x3fv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_MAT2x4> {
 		typedef glm::fmat2x4 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fmat2x4& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix2x4fv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix2x4fv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_MAT3x2> {
 		typedef glm::fmat3x2 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fmat3x2& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix3x2fv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix3x2fv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_MAT4x2> {
 		typedef glm::fmat4x2 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fmat4x2& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix4x2fv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix4x2fv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_MAT4x3> {
 		typedef glm::fmat4x3 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fmat4x3& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix4x3fv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix4x3fv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_FLOAT_MAT3x4> {
 		typedef glm::fmat3x4 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::fmat3x4& v) {
+		typedef GLfloat C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix3x4fv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix3x4fv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_MAT2> {
 		typedef glm::dmat2 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dmat2& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix2dv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix2dv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_MAT3> {
 		typedef glm::dmat3 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dmat3& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix3dv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix3dv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_MAT4> {
 		typedef glm::dmat4 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dmat4& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix4dv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix4dv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_MAT2x3> {
 		typedef glm::dmat2x3 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dmat2x3& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix2x3dv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix2x3dv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_MAT2x4> {
 		typedef glm::dmat2x4 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dmat2x4& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix2x4dv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix2x4dv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_MAT3x2> {
 		typedef glm::dmat3x2 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dmat3x2& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix3x2dv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix3x2dv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_MAT4x2> {
 		typedef glm::dmat4x2 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dmat4x2& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix4x2dv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix4x2dv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_MAT4x3> {
 		typedef glm::dmat4x3 C_TYPE_;
-		inline static void setUniform(GLint loc, const glm::dmat4x3& v) {
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
+		inline static void setUniform(GLint loc, const C_TYPE_& v) {
 			glUniformMatrix4x3dv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix4x3dv(loc, len, false, v);
 		}
 	};
 	template <> struct GL_TYPE_<GL_DOUBLE_MAT3x4> {
 		typedef glm::dmat3x4 C_TYPE_;
+		typedef GLdouble C_ARRAY_TYPE_;
+		static constexpr bool IS_ARRAY_ENABLED = true;
 		inline static void setUniform(GLint loc, const glm::dmat3x4& v) {
 			glUniformMatrix3x4dv(loc, 1, false, &v[0][0]);
+		}
+		inline static void setUniformArray(GLint loc, const C_ARRAY_TYPE_* v, GLsizei len) {
+			glUniformMatrix3x4dv(loc, len, false, v);
 		}
 	};
 
 	class GLTypeMetadata {
 	public:
 		static uint32_t sizeOf(GLenum type);
+
 		static void fromJson(const nlohmann::json& j, GLenum type, void* out_ptr);
 	};
 
@@ -442,64 +624,129 @@ namespace Morpheus {
 	};
 
 	template <typename T>
+	using UNIFORM_C_TYPE_ = 
+		typename GL_TYPE_<C_TO_GL_TYPE_<typename std::remove_all_extents_t<T>>::RESULT>::C_TYPE_;
+
+	template <typename T>
+	using UNIFORM_C_ARRAY_TYPE_ = 
+		typename GL_TYPE_<C_TO_GL_TYPE_<typename std::remove_all_extents_t<T>>::RESULT>::C_ARRAY_TYPE_;
+
+	template <typename T>
+	constexpr GLenum UNIFORM_TYPE_() { 
+		return C_TO_GL_TYPE_<typename std::remove_all_extents_t<T>>::RESULT; 
+	}
+
+	struct RendererShaderView;
+
+	template <typename T>
 	struct ShaderUniform {
-		static const GLenum UNIF_TYPE = C_TO_GL_TYPE_<T>::RESULT;
+
+		static constexpr GLenum UNIF_TYPE = UNIFORM_TYPE_<T>();
+
+		typedef UNIFORM_C_TYPE_<T> C_TYPE_;
+		typedef UNIFORM_C_ARRAY_TYPE_<T> C_ARRAY_TYPE_;
+
+	private:
 		GLint mLoc;
-		inline void set(const T& v) const {
+
+	public:
+
+		inline GLint location() const { 
+			return mLoc;
+		}
+
+		inline void set(const C_TYPE_& v) const {
 			GL_TYPE_<UNIF_TYPE>::setUniform(mLoc, v);
 		}
 
-		inline void find(const ref<Shader>& shader, const std::string& identifier);
+		inline void set(const C_ARRAY_TYPE_ v[], GLsizei len) const {
+			GL_TYPE_<UNIF_TYPE>::setUniformArray(mLoc, v, len);
+		}
 
 		inline ShaderUniform() : mLoc(-1) {
 		}
 
+		inline void find(const ref<Shader>& shader, const std::string& identifier);
 		inline ShaderUniform(const ref<Shader>& shader, const std::string& identifier);
+
+		friend void readRenderUniforms(const nlohmann::json& j, const Shader* shad, RendererShaderView* out);
 	};
 
 	template <>
 	struct ShaderUniform<Texture> {
+	private:
 		GLint mLoc;
+		GLint mUnit;
+
+	public:
+		inline GLint location() const { 
+			return mLoc;
+		}
+
+		inline GLint unit() const {
+			return mUnit;
+		}
+
 		inline void set(const ref<Texture>& texture, const GLenum access) const {
-			texture->bindImage(mLoc, access);
+			texture->bindImage(mUnit, access);
 		}
 
 		inline void set(const Texture* texture, const GLenum access) const {
-			texture->bindImage(mLoc, access);
+			texture->bindImage(mUnit, access);
+		}
+
+		inline void setUnit(const GLint unit) {
+			glUniform1i(mLoc, unit);
+			mUnit = unit;
+		}
+
+		inline ShaderUniform() : mLoc(-1), mUnit(-1) {
 		}
 
 		inline void find(const ref<Shader>& shader, const std::string& identifier);
-
-		inline ShaderUniform() : mLoc(-1) {
-		}
-
 		inline ShaderUniform(const ref<Shader>& shader, const std::string& identifier);
 	};
 
 	template <>
 	struct ShaderUniform<Sampler> {
+	private:
 		GLint mLoc;
+		GLint mUnit;
+
+	public:
+		inline GLint location() const { 
+			return mLoc;
+		}
+
+		inline GLint unit() const {
+			return mUnit;
+		}
+		
 		inline void set(const ref<Texture>& texture, const ref<Sampler>& sampler) const {
-			sampler->bind(mLoc);
-			texture->bind(GL_TEXTURE0 + mLoc);
+			sampler->bind(mUnit);
+			texture->bind(mUnit);
 		}
 
 		inline void set(const Texture* texture, const Sampler* sampler) const {
-			sampler->bind(mLoc);
-			texture->bind(GL_TEXTURE0 + mLoc);
+			sampler->bind(mUnit);
+			texture->bind(mUnit);
 		}
 
 		inline void set(const GLenum texture_target, const GLint texture, const GLint sampler) const {
-			glActiveTexture(GL_TEXTURE0 + mLoc);
+			glActiveTexture(GL_TEXTURE0 + mUnit);
 			glBindTexture(texture_target, texture);
-			glBindSampler(mLoc, sampler);
+			glBindSampler(mUnit, sampler);
+		}
+
+		inline void setUnit(const GLint unit) {
+			glUniform1i(mLoc, unit);
+			mUnit = unit;
+		}
+
+		inline ShaderUniform() : mLoc(-1), mUnit(-1) {
 		}
 
 		inline void find(const ref<Shader>& shader, const std::string& identifier);
-
-		inline ShaderUniform() : mLoc(-1) {
-		}
-
 		inline ShaderUniform(const ref<Shader>& shader, const std::string& identifier);
 	};
 
@@ -515,13 +762,20 @@ namespace Morpheus {
 	};
 
 	struct RendererShaderView {
+		// The world transformation matrix
 		ShaderUniform<glm::mat4> mWorld;
+		// The view transformation matrix
 		ShaderUniform<glm::mat4> mView;
+		// The projection matrix
 		ShaderUniform<glm::mat4> mProjection;
+		// The world inverse transpose matrix for correct normals
 		ShaderUniform<glm::mat4> mWorldInverseTranspose;
+		// The eye position
 		ShaderUniform<glm::vec3> mEyePosition;
-
-		void init();
+		// The SH coefficients of diffuse irradiance from light probes
+		ShaderUniform<glm::vec3[]> mDiffuseIrradianceSH;
+		// The current time
+		ShaderUniform<float> mTime;
 	};
 
 	struct ShaderEditorView {
@@ -532,6 +786,7 @@ namespace Morpheus {
 		GLint mUniformLocation;
 		GLenum mUniformType;
 		uint32_t mOffset;
+		GLsizei mArrayLength;
 	};
 
 	class ShaderUniformAssignments {
@@ -543,14 +798,153 @@ namespace Morpheus {
 		uint32_t computeSize() const;
 
 		void assign() const;
-		ShaderUniformAssignments overwrite(const ShaderUniformAssignments& toOverwrite);	
+		ShaderUniformAssignments overwrite(const ShaderUniformAssignments& toOverwrite);
+
+		template <typename T>
+		void add(const ShaderUniform<T>& uniform, const UNIFORM_C_TYPE_<T>& value) {
+			ShaderUniformAssignment binding;
+			uint oldSize = mData.size();
+
+			binding.mUniformLocation = uniform.location();
+			binding.mArrayLength = 1;
+			binding.mUniformType = UNIFORM_TYPE_<T>();
+			binding.mOffset = oldSize;
+
+			mBindings.emplace_back(binding);
+			mData.resize(oldSize + sizeof(UNIFORM_C_TYPE_<T>));
+			memcpy(&mData[oldSize], &value, sizeof(UNIFORM_C_TYPE_<T>));
+		}
+
+		template <typename T>
+		void add(const ShaderUniform<T[]>& uniform, const std::vector<UNIFORM_C_TYPE_<T>>& value) {
+			ShaderUniformAssignment binding;
+			uint oldSize = mData.size();
+
+			binding.mUniformLocation = uniform.mLoc;
+			binding.mArrayLength = value.size();
+			binding.mUniformType = UNIFORM_TYPE_<T>();
+			binding.mOffset = oldSize;
+
+			mBindings.emplace_back(binding);
+			mData.resize(oldSize + value.size() * sizeof(UNIFORM_C_TYPE_<T>));
+			memcpy(&mData[oldSize], &value.front(), value.size() * sizeof(UNIFORM_C_TYPE_<T>));
+		}
+
+		template <typename T>
+		void add(const ShaderUniform<T[]>& uniform, const std::vector<UNIFORM_C_ARRAY_TYPE_<T>>& value) {
+			add(uniform, &value[0], value.size() / (sizeof(UNIFORM_C_TYPE_<T>) / sizeof(UNIFORM_C_ARRAY_TYPE_<T>)));
+		}
+
+		template <typename T>
+		void add(const ShaderUniform<T[]>& uniform, const UNIFORM_C_ARRAY_TYPE_<T> arr[], GLsizei len) {
+			ShaderUniformAssignment binding;
+			uint oldSize = mData.size();
+
+			binding.mUniformLocation = uniform.location();
+			binding.mArrayLength = len;
+			binding.mUniformType = UNIFORM_TYPE_<T>();
+			binding.mOffset = oldSize;
+
+			mBindings.emplace_back(binding);
+			mData.resize(oldSize + len * sizeof(UNIFORM_C_TYPE_<T>));
+			memcpy(&mData[oldSize], arr, len * sizeof(UNIFORM_C_TYPE_<T>));
+		}
+
+		template <typename T>
+		int findOffset(const ShaderUniform<T>& uniform) const {
+			for (auto& binding : mBindings) {
+				if (binding.mUniformLocation == uniform.location())
+					return binding.mOffset;
+			}
+			return -1;
+		}
+
+		template <typename T>
+		T& at(int offset) {
+			return *(reinterpret_cast<T*>(&mData[offset]));
+		}
+
+		template <typename T>
+		T* arrayAt(int offset) {
+			return reinterpret_cast<T*>(&mData[offset]);
+		}
+
+		template <typename T>
+		const T& at(int offset) const {
+			return *(reinterpret_cast<const T*>(&mData[offset]));
+		}
+
+		template <typename T>
+		const T* arrayAt(int offset) const {
+			return reinterpret_cast<const T*>(&mData[offset]);
+		}
+
+		template <typename T>
+		T* arrayAt(const ShaderUniform<T>& uniform) {
+			int offset = findOffset(uniform);
+			if (offset >= 0) 
+				return arrayAt<T>(offset);
+			else 
+				return nullptr;
+		}
+
+		template <typename T>
+		const T* arrayAt(const ShaderUniform<T>& uniform) const {
+			int offset = findOffset(uniform);
+			if (offset >= 0) 
+				return arrayAt<T>(offset);
+			else 
+				return nullptr;
+		}
+
+		// This is quite slow, do not use in performance critical code
+		// The better way to do this is to find the offset once and then
+		// use at<T>(offset)
+		template <typename T>
+		void set(const ShaderUniform<T>& uniform, const T& value) {
+			int offset = findOffset(uniform);
+			if (offset >= 0) {
+				at<T>(offset) = value;
+			}
+		}
+
+		// This is quite slow, do not use in performance critical code
+		// The better way to do this is to find the offset once and then
+		// use at<T>(offset)
+		template <typename T>
+		T get(const ShaderUniform<T>& uniform) const {
+			int offset = findOffset(uniform);
+			if (offset >= 0) {
+				return at<T>(offset);
+			}
+			return T();
+		}
+
+		// This is quite slow, do not use in performance critical code
+		// The better way to do this is to find the offset once and then
+		// use atArray<T>(offset)
+		template <typename T>
+		void setArray(const ShaderUniform<T>& uniform, const T values[], const uint len) {
+			int offset = findOffset(uniform);
+			if (offset >= 0) {
+				std::memcpy(&mData[offset], values, len * sizeof(T));
+			}
+		}
+
+		// This is quite slow, do not use in performance critical code
+		// The better way to do this is to find the offset once and then
+		// use atArray<T>(offset)
+		template <typename T>
+		void setArray(const ShaderUniform<T>& uniform, std::vector<T>& values) {
+			setArray(uniform, &values[0], values.size());
+		}
 	};
 
 	struct ShaderSamplerAssignment {
 		GLint mUniformLocation;
 		ref<Texture> mTexture;
 		ref<Sampler> mSampler;
-		GLint mBindTarget;
+		GLint mTextureUnit;
 	};
 
 	class ShaderSamplerAssignments {
@@ -559,6 +953,8 @@ namespace Morpheus {
 
 		void assign() const;
 		ShaderSamplerAssignments overwrite(const ShaderSamplerAssignments& toOverwrite);
+
+		void add(const ShaderUniform<Sampler>& uniform, ref<Sampler> sampler, ref<Texture> texture);
 	};
 
 	class Shader {
@@ -580,6 +976,11 @@ namespace Morpheus {
 		inline const ShaderEditorView& editorView() const { return mEditorView; }
 		inline GLuint id() const { return mId; }
 
+		template <typename T>
+		ShaderUniform<T> getUniform(const std::string& name) const {
+			return ShaderUniform<T>(this, name);
+		}
+
 		friend class ContentFactory<Shader>;
 		friend class ShaderView;
 	};
@@ -597,7 +998,7 @@ namespace Morpheus {
 		}
 
 		template <typename T>
-		inline void link(ShaderUniform<T>& u, const std::string& name) {
+		inline void bind(ShaderUniform<T>& u, const std::string& name) {
 			u.mLoc = glGetUniformLocation(shader_->mId, name.c_str());
 			if (u.mLoc < 0) 
 				std::cout << "Warning: Uniform " << name << " not found!" << std::endl;
@@ -635,15 +1036,17 @@ namespace Morpheus {
 		const std::string& parentSrc = "");
 
 	GLuint compileShader(const std::string& code, const ShaderType type);
+	GLuint compileComputeKernel(const std::string& code);
 	void printProgramLinkerOutput(GLint program);
 	void printShaderCompilerOutput(GLint shader);
 
 	inline void ShaderUniform<Sampler>::find(const ref<Shader>& shader, const std::string& identifier) {
 		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());
+		glGetUniformiv(shader->id(), mLoc, &mUnit);
 	}
 
-	inline ShaderUniform<Sampler>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) :
-		mLoc(glGetUniformLocation(shader->id(), identifier.c_str())) {
+	inline ShaderUniform<Sampler>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) {
+		find(shader, identifier);
 	}
 
 	template <typename T>
@@ -652,16 +1055,16 @@ namespace Morpheus {
 	}
 
 	template <typename T>
-	inline ShaderUniform<T>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) :
-		mLoc(glGetUniformLocation(shader->id(), identifier.c_str())) {
+	inline ShaderUniform<T>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) {
+		find(shader, identifier);
 	}
 
 	inline void ShaderUniform<Texture>::find(const ref<Shader>& shader, const std::string& identifier) {
 		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());
+		glGetUniformiv(shader->id(), mLoc, &mUnit);
 	}
 
-	inline ShaderUniform<Texture>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) :
-		mLoc(glGetUniformLocation(shader->id(), identifier.c_str())) {
-
+	inline ShaderUniform<Texture>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) {
+		find(shader, identifier);
 	}
 }

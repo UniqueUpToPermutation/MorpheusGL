@@ -19,3 +19,6 @@
 [submodule "engine/lodepng"]
 	path = engine/lodepng
 	url = https://github.com/lvandeve/lodepng.git
+[submodule "incbin"]
+	path = incbin
+	url = https://github.com/graphitemaster/incbin.git

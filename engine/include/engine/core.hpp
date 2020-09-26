@@ -65,7 +65,6 @@ namespace Morpheus {
 	class IContentFactory;
 	class Updater;
 	class Scene;
-	class Camera;
 	class GuiBase;
 	class IRenderer;
 	class Shader;
@@ -116,6 +115,10 @@ namespace Morpheus {
 		ENGINE,
 		RENDERER,
 		UPDATER,
+		
+		// Misc.
+		LAMBERT_COMPUTE_KERNEL,
+		GGX_COMPUTE_KERNEL,
 
 		// All nodes that are found inside of a scene
 		SCENE_BEGIN,
@@ -152,9 +155,8 @@ namespace Morpheus {
 		typedef T RESULT;
 	};
 	template <typename T>
-	struct NODE_TYPE_ {
-		static const NodeType RESULT = NodeType::END;
-	};
+	struct NODE_TYPE_;
+
 	template <NodeType>
 	struct OWNER_TYPE_ {
 		typedef void RESULT;
@@ -201,6 +203,10 @@ namespace Morpheus {
 	SET_POOLED(ENGINE, 						false);
 	SET_POOLED(RENDERER, 					false);
 	SET_POOLED(UPDATER, 					false);
+
+	SET_POOLED(LAMBERT_COMPUTE_KERNEL,		false);
+	SET_POOLED(GGX_COMPUTE_KERNEL, 			false);
+
 	SET_POOLED(EMPTY, 						false);
 	SET_POOLED(LOGIC, 						false);
 	SET_POOLED(TRANSFORM, 					true);
@@ -226,6 +232,10 @@ namespace Morpheus {
 	SET_RENDERABLE(ENGINE, 					false);
 	SET_RENDERABLE(RENDERER, 				false);
 	SET_RENDERABLE(UPDATER, 				false);
+
+	SET_RENDERABLE(LAMBERT_COMPUTE_KERNEL,	false);
+	SET_RENDERABLE(GGX_COMPUTE_KERNEL,		false);
+
 	SET_RENDERABLE(EMPTY, 					true);
 	SET_RENDERABLE(LOGIC, 					true);
 	SET_RENDERABLE(TRANSFORM, 				true);
@@ -248,6 +258,9 @@ namespace Morpheus {
 	SET_RENDERABLE(SAMPLER, 				false);
 
 	// The content flag
+	SET_CONTENT(LAMBERT_COMPUTE_KERNEL, 	false);
+	SET_CONTENT(GGX_COMPUTE_KERNEL,			false);
+
 	SET_CONTENT(HALF_EDGE_GEOMETRY, 		true);
 	SET_CONTENT(CONTENT_MANAGER, 			false);
 	SET_CONTENT(GEOMETRY, 					true);
@@ -400,6 +413,9 @@ namespace Morpheus {
 		inline void to(ref<void>& r) const {
 			r.p.mHandle = PoolHandle<void>(mHandle);
 		}
+		inline bool isNull() const {
+			return mHandle.mPoolPtr == nullptr;
+		}
 		inline T* getPtr() const {
 			assert(true);
 			return nullptr;
@@ -434,6 +450,9 @@ namespace Morpheus {
 		}
 		inline T* getPtr() const {
 			return mPtr;
+		}
+		inline bool isNull() const {
+			return mPtr == nullptr;
 		}
 		inline PoolHandle<T> getPoolHandle() const {
 			assert(true);
@@ -481,6 +500,10 @@ namespace Morpheus {
 			mPoolGate.from(h);
 		}
 
+		inline bool isNull() const {
+			return mPoolGate.isNull();
+		}
+
 		template <typename T2>
 		inline T2* getAs() const {
 			T* ptr = mPoolGate.get();
@@ -517,12 +540,6 @@ namespace Morpheus {
 		NodeType type;
 		ref<void> owner;
 	};
-
-	template <typename T>
-	inline T* getOwner(NodeData& n) {
-		assert(NODE_ENUM(T) == n.type || PROTOTYPE_TO_PROXY_<NODE_ENUM(T)>::RESULT == n.type);
-		return n.owner.reinterpretGet<T>();
-	}
 
 	template <>
 	inline IDisposable* getInterface<IDisposable>(NodeData& d) {

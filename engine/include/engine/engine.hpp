@@ -172,8 +172,17 @@ namespace Morpheus {
 	inline NodeData* desc(const Node& n) {
 		return graph()->desc(n);
 	}
+	inline Node find(const NodeHandle h) {
+		return graph()->find(h);
+	}
+	inline Node find(const std::string& name) {
+		return graph()->find(name);
+	}
 	inline NodeData* desc(const std::string& name) {
-		return desc((*graph())[name]);
+		return desc(find(name));
+	}
+	inline NodeData* desc(NodeHandle h) {
+		return desc(find(h));
 	}
 	inline NodeHandle issueHandle(const Node& n) {
 		return graph()->issueHandle(n);
@@ -183,12 +192,6 @@ namespace Morpheus {
 	}
 	inline void recallName(const std::string& name) {
 		graph()->recallName(name);
-	}
-	inline Node find(const NodeHandle h) {
-		return graph()->find(h);
-	}
-	inline Node find(const std::string& name) {
-		return graph()->find(name);
 	}
 	inline bool tryFind(const std::string& name, Node* out) {
 		return graph()->tryFind(name, out);
@@ -201,7 +204,7 @@ namespace Morpheus {
 		return graph()->addNode<OwnerType>(owner, type);
 	}
 	template <typename OwnerType>
-	inline Node addNode(OwnerType* owner, NodeType type, Node& parent) {
+	inline Node addNode(OwnerType* owner, NodeType type, Node parent) {
 		return graph()->addNode<OwnerType>(owner, type, parent);
 	}
 	template <typename OwnerType>
@@ -213,7 +216,7 @@ namespace Morpheus {
 		return graph()->addNode<OwnerType>(owner, type, parentName);
 	}
 	template <typename OwnerType>
-	inline Node addNode(OwnerType* owner, Node& parent) {
+	inline Node addNode(OwnerType* owner, Node parent) {
 		return graph()->addNode<OwnerType>(owner, parent);
 	}
 	template <typename OwnerType>
@@ -227,7 +230,7 @@ namespace Morpheus {
 	inline Node addNode(ref<void> owner, NodeType type) {
 		return graph()->addNode(owner, type);
 	}
-	inline Node addNode(ref<void> owner, NodeType type, Node& parent) {
+	inline Node addNode(ref<void> owner, NodeType type, Node parent) {
 		return graph()->addNode(owner, type, parent);
 	}
 	inline Node addNode(ref<void> owner, NodeType type, NodeHandle parentHandle) {
@@ -237,7 +240,7 @@ namespace Morpheus {
 		return graph()->addNode(owner, type, parentName);
 	}
 	template <typename OwnerType>
-	inline Node addNode(ref<void> owner, Node& parent) {
+	inline Node addNode(ref<void> owner, Node parent) {
 		return graph()->addNode<OwnerType>(owner, parent);
 	}
 	template <typename OwnerType>
@@ -261,6 +264,20 @@ namespace Morpheus {
 	template <typename T> 
 	inline Node addNode(const ref<T>& owner) {
 		return graph()->addNode<T>(owner);
+	}
+
+	template <typename T>
+	inline ref<T> getOwner(NodeHandle n) {
+		auto d = desc(n);
+		assert(NODE_ENUM(T) == d->type || PROTOTYPE_TO_PROXY_<NODE_ENUM(T)>::RESULT == d->type);
+		return d->owner.reinterpret<T>();
+	}
+
+	template <typename T>
+	inline ref<T> getOwner(const std::string& name) {
+		auto d = desc(name);
+		assert(NODE_ENUM(T) == d->type || PROTOTYPE_TO_PROXY_<NODE_ENUM(T)>::RESULT == d->type);
+		return d->owner.reinterpret<T>();
 	}
 
 	class IRenderer : public IDisposable, public IInitializable {

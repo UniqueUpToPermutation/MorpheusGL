@@ -3,25 +3,29 @@
 #include <engine/geometry.hpp>
 
 static const char blitShaderVert[] = 
-    "#version 450 core\n"
-    "layout(location = 0) in vec2 position;\n"
-    "uniform vec2 lower;\n"
-    "uniform vec2 upper;\n"
-    "out vec2 uv;\n"
-    "void main() {\n"
-    "vec2 transformed = lower + position * (upper - lower);\n"
-    "gl_Position = vec4(transformed, 0.0, 1.0);\n"
-    "uv = position;\n"
-    "}";
+R"(
+    #version 410 core
+    layout(location = 0) in vec2 position;
+    uniform vec2 lower;
+    uniform vec2 upper;
+    out vec2 uv;
+    void main() {
+    vec2 transformed = lower + position * (upper - lower);
+    gl_Position = vec4(transformed, 0.0, 1.0);
+        uv = position;
+    }
+)";
 
 static const char blitShaderFrag[] = 
-    "#version 450 core\n"
-    "in vec2 uv;\n"
-    "uniform sampler2D blitTexture;\n"
-    "out vec4 outColor;\n"
-    "void main() {\n"
-    "outColor = texture(blitTexture, uv);\n"
-    "}";
+R"(
+    #version 410 core
+    in vec2 uv;
+    uniform sampler2D blitTexture;
+    out vec4 outColor;
+    void main() {
+        outColor = texture(blitTexture, uv);
+    }
+)";
 
 namespace Morpheus {
     GLint makeBlitShaderRaw() {
@@ -45,9 +49,9 @@ namespace Morpheus {
         ref<Shader> result = shaderFactory->makeFromGL(makeBlitShaderRaw());
         GL_ASSERT;
 
-        shaderViewOut->mLower.mLoc = glGetUniformLocation(result->id(), "lower");
-        shaderViewOut->mUpper.mLoc = glGetUniformLocation(result->id(), "upper");
-        shaderViewOut->mBlitTexture.mLoc = glGetUniformLocation(result->id(), "blitTexture");
+        shaderViewOut->mLower.find(result, "lower");
+        shaderViewOut->mUpper.find(result, "upper");
+        shaderViewOut->mBlitTexture.find(result, "blitTexture");
 
         if (shaderOut)
             *shaderOut = result;
