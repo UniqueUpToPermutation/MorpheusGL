@@ -12,6 +12,7 @@
     "world": "model",
     "world_inverse_transpose": "modelInverseTranspose",
     "view": "view",
-    "projection": "projection"
+	"projection": "projection",
+	"eye_position": "eyePosition"
   }
 }

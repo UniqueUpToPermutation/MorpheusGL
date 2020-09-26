@@ -93,10 +93,19 @@ namespace Morpheus {
 
 				GL_ASSERT;
 
-				// Batch mipmaps into sets of 8
-				for (; unit < COMPUTE_KERNEL_MAX_TEXTURES && currentLevel < job.mInputImage->levels(); ++currentLevel, ++unit) {
+				// Assign a compute job to every mip level individually, batch remaining mips together when
+				// mips become small enough to fit in a single compute group.
+				if (job.mInputImage->width() >> currentLevel <= mGroupSize) {
+					for (; unit < COMPUTE_KERNEL_MAX_TEXTURES && currentLevel < job.mInputImage->levels(); ++currentLevel, ++unit) {
+						glBindImageTexture(unit, outputTexture->id(), currentLevel, false, 0, 
+							GL_WRITE_ONLY, outputTexture->format());
+					}
+				}
+				else {
 					glBindImageTexture(unit, outputTexture->id(), currentLevel, false, 0, 
 						GL_WRITE_ONLY, outputTexture->format());
+					unit = 1;
+					++currentLevel;
 				}
 
 				GL_ASSERT;
@@ -124,7 +133,7 @@ namespace Morpheus {
 		return tex;
 	}
 
-	void GGXComputeKernel::sync() {
+	void GGXComputeKernel::barrier() {
 		glTextureBarrier();
 	}
 

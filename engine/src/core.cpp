@@ -11,6 +11,7 @@
 #include <engine/staticmesh.hpp>
 #include <engine/lambert.hpp>
 #include <engine/ggx.hpp>
+#include <engine/brdf.hpp>
 
 #include <iostream>
 
@@ -126,6 +127,8 @@ namespace Morpheus {
 			T_CASE(RENDERER);
 			T_CASE(UPDATER);
 			T_CASE(LAMBERT_COMPUTE_KERNEL);
+			T_CASE(GGX_COMPUTE_KERNEL);
+			T_CASE(COOK_TORRANCE_LUT_COMPUTE_KERNEL);
 			T_CASE(SCENE_BEGIN);
 			T_CASE(CAMERA);
 			T_CASE(EMPTY);

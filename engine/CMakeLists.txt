@@ -29,7 +29,8 @@ add_library(engine
     src/texture.cpp
     src/updater.cpp
     src/blit.cpp
-    src/ggx.cpp
+	src/ggx.cpp
+	src/brdf.cpp
     lodepng/lodepng.cpp
     ../nanogui/ext/glad/src/glad.c)
 

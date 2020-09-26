@@ -37,7 +37,7 @@ namespace Morpheus {
 
 		ref<Texture> submit(const GGXComputeJob& job);
 
-		void sync();
+		void barrier();
 
 		void init(Node node) override;
 		void dispose() override;

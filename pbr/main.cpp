@@ -5,6 +5,7 @@
 #include <engine/lambert.hpp>
 #include <engine/ggx.hpp>
 #include <engine/sphericalharmonics.hpp>
+#include <engine/brdf.hpp>
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
@@ -25,6 +26,9 @@ namespace Morpheus {
 
 Morpheus::ref<Material> material;
 ShaderUniform<GLfloat> roughness;
+ShaderUniform<GLfloat> metalness;
+ShaderUniform<glm::vec3> albedo;
+
 class MaterialGui : public GuiBase {
 protected:
 	nanogui::FormHelper* gui;
@@ -39,13 +43,33 @@ protected:
 			float truR = std::min(std::max(v, 0.0f), 1.0f);
 			material->uniformAssignments().set(roughness, truR); 
 		};
-		std::function<float()> roughnessGetter = []() { return material->uniformAssignments().get(roughness); };
 
-		auto slider = new nanogui::Slider(window);
-		slider->setRange(std::pair<float, float>(0.0, 1.0));
-		slider->setCallback(roughnessSetter);
+		std::function<void(const float& v)> metalnessSetter = [](const float& v) {
+			float truM = std::min(std::max(v, 0.0f), 1.0f);
+			material->uniformAssignments().set(metalness, truM);
+		};
 
-		gui->addWidget("Roughness", slider);
+		auto roughnessSlider = new nanogui::Slider(window);
+		roughnessSlider->setRange(std::pair<float, float>(0.0, 1.0));
+		roughnessSlider->setCallback(roughnessSetter);
+
+		gui->addWidget("Roughness", roughnessSlider);
+
+		auto metalnessSlider = new nanogui::Slider(window);
+		metalnessSlider->setRange(std::pair<float, float>(0.0, 1.0));
+		metalnessSlider->setCallback(metalnessSetter);
+
+		gui->addWidget("Metalness", metalnessSlider);
+
+		std::function<void(const nanogui::Color& v)> albedoSetter = [](const nanogui::Color& v) {
+			material->uniformAssignments().set(albedo, glm::vec3(v.r(), v.g(), v.b()));
+		};
+		std::function<nanogui::Color()> albedoGetter = []() {
+			glm::vec3 v = material->uniformAssignments().get<glm::vec3>(albedo);
+			return nanogui::Color(v.r, v.g, v.b, 1.0);
+		};
+
+		gui->addVariable("Albedo", albedoSetter, albedoGetter);
 
 		mScreen->setVisible(true);
 		mScreen->performLayout();
@@ -115,9 +139,18 @@ int main() {
 		auto ggxKernel = new GGXComputeKernel(ggxBackend, 32);
 		Node ggxKernelNode = addNode(ggxKernel, sceneNode);
 
+		Morpheus::ref<Shader> lutBackend;
+		load<Shader>("content/brdf.comp", sceneHandle, &lutBackend);
+		auto lutKernel = new CookTorranceLUTComputeKernel(lutBackend, 32);
+		Node lutKernelNode = addNode(lutKernel, sceneNode);
+
 		material = StaticMesh::getMaterial(staticMeshNode);
 		roughness.find(material->shader(), "roughness");
+		metalness.find(material->shader(), "metalness");
+		albedo.find(material->shader(), "albedo");
 		material->uniformAssignments().add(roughness, 0.0f);
+		material->uniformAssignments().add(metalness, 0.0f);
+		material->uniformAssignments().add(albedo, glm::vec3(1.0f, 1.0f, 1.0f));
 
 		// Create our GUI
 		auto guiNode = addNode(new MaterialGui(), sceneNode);
@@ -130,28 +163,38 @@ int main() {
 		LambertComputeJob lambertJob;
 		lambertJob.mInputImage = tex;
 		lambertKernel->submit(lambertJob);
-		lambertKernel->sync();
 
 		// Submit a compute job to the ggx kernel
-		
 		GGXComputeJob ggxJob;
 		ggxJob.mInputImage = tex;
 		auto specularResult = ggxKernel->submit(ggxJob);
-		ggxKernel->sync();
 
-		ShaderUniform<glm::vec3[]> diffuseIrradianceSH(material->shader(), "diffuseIrradianceSH");
-		ShaderUniform<Sampler> specularEnvMap(material->shader(), "specularEnvMap");
+		Morpheus::ref<Texture> lut = lutKernel->submit();
+		addNode<Texture>(lut, sceneNode);
+
+		lambertKernel->barrier();
+		ggxKernel->barrier();
+		lutKernel->barrier();
+
+		ShaderUniform<glm::vec3[]> environmentDiffuseSH(material->shader(), "environmentDiffuseSH");
+		ShaderUniform<Sampler> environmentSpecular(material->shader(), "environmentSpecular");
+		ShaderUniform<Sampler> environmentBRDF(material->shader(), "environmentBRDF");
 
 		Morpheus::ref<Sampler> sampler;
 		load<Sampler>(MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC, sceneHandle, &sampler);
 
-		material->uniformAssignments().add(diffuseIrradianceSH, lambertKernel->results(), lambertKernel->shCount());
-		material->samplerAssignments().add(specularEnvMap, sampler, specularResult);
+		Morpheus::ref<Sampler> lutSampler;
+		load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, sceneHandle, &lutSampler);
+
+		material->uniformAssignments().add(environmentDiffuseSH, lambertKernel->results(), lambertKernel->shCount());
+		material->samplerAssignments().add(environmentSpecular, sampler, specularResult);
+		material->samplerAssignments().add(environmentBRDF, lutSampler, lut);
 
 		// Game loop
 		while (en.valid()) {
 			en.update();
 			en.render(sceneHandle);
+			//en.renderer()->debugBlit(lut, glm::vec2(0.0, 0.0), glm::vec2(256, 256));
 			en.present();
 		}
 	}

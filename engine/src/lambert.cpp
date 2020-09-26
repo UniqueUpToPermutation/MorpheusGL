@@ -261,7 +261,7 @@ namespace Morpheus {
         return &mResultBuffer[blockSize * job_id];
     }
 
-    void LambertComputeKernel::sync() {
+    void LambertComputeKernel::barrier() {
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 

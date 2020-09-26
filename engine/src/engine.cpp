@@ -167,6 +167,7 @@ namespace Morpheus {
 
 		glfwTerminate();
 	}
+	
 	void Engine::exit()
 	{
 		bValid = false;

@@ -13,9 +13,6 @@ layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 const float PI = 3.1415926535897932384626433832795;
 
-const uint NumSamples = 1024;
-const float InvNumSamples = 1.0 / float(NumSamples);
-
 // Uniforms
 layout(binding = 0) uniform samplerCube inputTexture;
 layout(binding = 0) writeonly uniform imageCube outputTextures[TEXTURE_ARRAY_SIZE];
@@ -35,9 +32,9 @@ float radicalInverse_VdC(uint bits)
 }
 
 // Sample i-th point from Hammersley point set of NumSamples points total.
-vec2 hammersley(uint i)
+vec2 hammersley(uint i, uint sampleCount)
 {
-	return vec2(i * InvNumSamples, radicalInverse_VdC(i));
+	return vec2(float(i) / float(sampleCount), radicalInverse_VdC(i));
 }
 
 vec3 importanceSampleGGX(vec2 Xi, float Roughness, vec3 N)
@@ -58,29 +55,29 @@ vec3 importanceSampleGGX(vec2 Xi, float Roughness, vec3 N)
     return TangentX * H.x + TangentY * H.y + N * H.z;
 }
 
-vec3 precomputeSpecular(float Roughness, vec3 N)
+vec3 prefilterEnvMap(float Roughness, vec3 R)
 {
-    // Assume the observer is looking directly at the surface (split-sum approx)
-    vec3 V = N;
-    vec3 SpecularLighting = vec3(0, 0, 0);
-    for (uint i = 0; i < NumSamples; i++)
-    {
-        vec2 Xi = hammersley(i);
-        vec3 H = importanceSampleGGX(Xi, Roughness, N);
-        vec3 L = 2 * dot( V, H ) * H - V;
+	const uint NumSamples = 1024;
 
-        float NoV = clamp(dot( N, V ), 0.0, 1.0);
-        float NoL = clamp(dot( N, L ), 0.0, 1.0);
-        float NoH = clamp(dot( N, H ), 0.0, 1.0);
-        float VoH = clamp(dot( V, H ), 0.0, 1.0);
+	vec3 N = R;
+	vec3 V = R;
+	vec3 PrefilteredColor = vec3(0.0, 0.0, 0.0);
+	float TotalWeight = 0.0;
 
-        if (NoL > 0)
-        {
-            vec3 SampleColor = textureLod(inputTexture, L, 0).rgb;
-            SpecularLighting += SampleColor;
-        }
-    }
-    return SpecularLighting / NumSamples;
+	for (uint i = 0; i < NumSamples; i++)
+	{
+		vec2 Xi = hammersley(i, NumSamples);
+		vec3 H = importanceSampleGGX(Xi, Roughness, N);
+		vec3 L = 2 * dot(V, H) * H - V;
+		float NoL = clamp(dot(N, L), 0.0, 1.0);
+
+		if (NoL > 0)
+		{
+			PrefilteredColor += textureLod(inputTexture, L, 0).rgb * NoL;
+			TotalWeight += NoL;
+		}
+	}
+	return PrefilteredColor / TotalWeight;
 }
 
 vec3 getDirection(vec2 surfacePosition, uint face) {
@@ -133,14 +130,16 @@ void main() {
     int currentTextureIndex = 0;
 	uint currentLevel = beginLevel;
 
-    while (currentTextureIndex < outputTextureCount && pixLocation.x < size && pixLocation.y < size) {
+    while (currentTextureIndex < outputTextureCount && 
+		currentTextureIndex < TEXTURE_ARRAY_SIZE && 
+		pixLocation.x < size && pixLocation.y < size) {
         vec2 surfacePos = getSurfacePosition(pixLocation, size);
         vec3 dir = getDirection(surfacePos, face);
 
         float roughness = float(currentLevel) / float(totalLevels - 1);
 
         // Do Monte Carlo
-        vec3 specular = precomputeSpecular(roughness, dir);
+        vec3 specular = prefilterEnvMap(roughness, dir);
 
         imageStore(outputTextures[currentTextureIndex], ivec3(gl_GlobalInvocationID), vec4(specular, 1.0));
 

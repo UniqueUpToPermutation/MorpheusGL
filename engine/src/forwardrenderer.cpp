@@ -187,6 +187,8 @@ namespace Morpheus {
 			GL_ASSERT;
 			// Bind the geometry's vertex arary and draw the geometry
 			glBindVertexArray(geo->vertexArray());
+			glBindBuffer(GL_ARRAY_BUFFER, geo->vertexBuffer());
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geo->indexBuffer());
 			GL_ASSERT;
 			glDrawElements(geo->elementType(), geo->elementCount(),
 				geo->indexType(), nullptr);
@@ -287,7 +289,10 @@ namespace Morpheus {
 		mTextureBlitShaderView.mBlitTexture.set(texture, mDebugBlitSampler);
 
 		glBindVertexArray(mBlitGeometry->vertexArray());
+		glBindBuffer(GL_ARRAY_BUFFER, mBlitGeometry->vertexBuffer());
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBlitGeometry->indexBuffer());
 		glDrawElements(mBlitGeometry->elementType(), mBlitGeometry->elementCount(),
 				mBlitGeometry->indexType(), nullptr);
+		GL_ASSERT;
 	}
 }

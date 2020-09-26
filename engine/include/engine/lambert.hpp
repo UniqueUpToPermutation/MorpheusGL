@@ -140,7 +140,7 @@ namespace Morpheus {
 		void submit(const LambertComputeJob& job);
 
 		// Use this before attempting to access results of jobs
-		void sync();
+		void barrier();
 
 		float* results(uint job_id = 0);
 

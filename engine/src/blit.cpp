@@ -23,7 +23,7 @@ R"(
     uniform sampler2D blitTexture;
     out vec4 outColor;
     void main() {
-        outColor = texture(blitTexture, uv);
+        outColor = vec4(texture(blitTexture, uv).rgb, 1.0);
     }
 )";
 
