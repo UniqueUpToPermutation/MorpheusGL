@@ -1,8 +1,10 @@
 # The Morpheus Graphics Engine
 
-**This is a work in progress. I don't have any impressive tech demos yet, but I've laid most of the ground work now, so more exciting stuff whould be comming soon.**
+**This is a work in progress. I don't have any impressive tech demos yet, but I've laid most of the ground work now, so more exciting stuff should be comming soon.**
 
-Morpheus is an open source physically-based cross-platform renderer built using OpenGL. It runs on Linux and Windows (in that order of precedence). MacOSX is a maybe, because Apple hasn't updated their OpenGL implementation since like 2011, which means they're still stuck on OpenGL 4.1. But I make use of a lot of compute shaders. Maybe I'll make a scaled back version of this engine for OpenGL 4.1 someday, but for now, I'm targeting OpenGL 4.5.
+Morpheus is an open source physically-based cross-platform renderer built using OpenGL. It runs on Linux and Windows (in that order of precedence). 
+
+MacOS support is possible, as the engine compiles with clang. But because Apple hasn't updated their OpenGL implementation since 2011, they're still stuck on OpenGL 4.1. I unfortunately make use of a lot of compute shaders which require OpenGL 4.3+. Maybe I'll make a scaled back version of this engine for OpenGL 4.1 someday, but for now, I'm targeting OpenGL 4.5.
 
 ![lapviewer2](images/lapviewer2.png)
 
