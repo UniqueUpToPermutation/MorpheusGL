@@ -6,7 +6,7 @@
 #include <engine/sphericalharmonics.hpp>
 
 #define DEFAULT_CT_LUT_PIXELS 128
-#define DEFAULT_CT_LUT_GROUP_SIZE 64
+#define DEFAULT_CT_LUT_GROUP_SIZE 32
 
 namespace Morpheus {
 	class CookTorranceLUTComputeKernel : public INodeOwner {
@@ -16,8 +16,7 @@ namespace Morpheus {
 		uint mGroupSize;
 
 	public:
-		CookTorranceLUTComputeKernel(Shader* gpuBackend, 
-			uint computeGroupSize = DEFAULT_CT_LUT_GROUP_SIZE);
+		CookTorranceLUTComputeKernel(uint computeGroupSize = DEFAULT_CT_LUT_GROUP_SIZE);
 		~CookTorranceLUTComputeKernel() override;
 
 		Texture* submit(uint roughnessPixels = DEFAULT_CT_LUT_PIXELS, 

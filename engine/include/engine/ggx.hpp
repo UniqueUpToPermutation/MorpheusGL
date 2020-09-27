@@ -5,6 +5,8 @@
 #include <engine/samplefunction.hpp>
 #include <engine/sphericalharmonics.hpp>
 
+#define GGX_COMPUTE_KERNEL_DEFAULT_GROUP_SIZE 32
+
 namespace Morpheus {
 	struct GGXComputeJob {
 		Texture* mInputImage;
@@ -28,7 +30,7 @@ namespace Morpheus {
 
 	public:
 
-		GGXComputeKernel(Shader* gpuBackend, uint groupSize);
+		GGXComputeKernel(uint groupSize = GGX_COMPUTE_KERNEL_DEFAULT_GROUP_SIZE);
 		~GGXComputeKernel() override;
 
 		void beginQueue();

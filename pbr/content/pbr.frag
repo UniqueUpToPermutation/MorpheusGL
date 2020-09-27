@@ -76,7 +76,6 @@ void main()
 
 	// Total specular IBL contribution.
 	vec3 specularIBL = (F0 * specularBRDF.x + specularBRDF.y) * specularIrradiance;
-
 	vec3 ambientLighting = diffuseIBL + specularIBL;
 
 	outColor = vec4(ambientLighting, 1.0);

@@ -651,6 +651,10 @@ namespace Morpheus {
 
 	public:
 
+		inline bool valid() const {
+			return mLoc != -1;
+		}
+
 		inline GLint location() const { 
 			return mLoc;
 		}
@@ -679,6 +683,10 @@ namespace Morpheus {
 		GLint mUnit;
 
 	public:
+		inline bool valid() const {
+			return mLoc != -1;
+		}
+
 		inline GLint location() const { 
 			return mLoc;
 		}
@@ -710,6 +718,10 @@ namespace Morpheus {
 		GLint mUnit;
 
 	public:
+		inline bool valid() const {
+			return mLoc != -1;
+		}
+
 		inline GLint location() const { 
 			return mLoc;
 		}

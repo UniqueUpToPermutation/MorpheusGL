@@ -2,7 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
-const char* computeKernelSource = 
+static const char* computeKernelSource = 
 R"(
     #define SH_C_0 0.28209479177
     #define SH_C_1 0.4886025119
@@ -171,13 +171,17 @@ namespace Morpheus {
 
             mOffsetUniform.find(mGPUBackend, "outputOffset");
 
+			if (!mOffsetUniform.valid()) {
+				throw std::runtime_error("Lambert Computer Kernel: could not find outputOffset!");
+			}
+
             bInJob = false;
             mGPUOutputBuffer = 0;
         }
     }
 
     LambertComputeKernel::~LambertComputeKernel() {
-        markForUnload(mGPUBackend);
+        safeUnload(mGPUBackend);
 
         if (mGPUOutputBuffer != 0) {
             glDeleteBuffers(1, &mGPUOutputBuffer);

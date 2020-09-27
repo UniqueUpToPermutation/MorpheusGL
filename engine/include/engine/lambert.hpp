@@ -6,6 +6,7 @@
 #include <engine/sphericalharmonics.hpp>
 
 #define LAMBERT_SH_COEFFS 9
+#define LAMBERT_COMPUTE_KERNEL_DEFAULT_GROUP_SIZE 32
 
 namespace Morpheus {
 	template <typename T>
@@ -125,7 +126,7 @@ namespace Morpheus {
 
 	public:
 
-		LambertComputeKernel(uint groupSize = 64);
+		LambertComputeKernel(uint groupSize = LAMBERT_COMPUTE_KERNEL_DEFAULT_GROUP_SIZE);
 		~LambertComputeKernel();
 
 		void init() override;

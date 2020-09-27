@@ -42,12 +42,6 @@ namespace Morpheus {
 
 		graph()->destroyLookup(mSources);
 	}
-	
-	void ContentManager::safeUnload(INodeOwner* node) {
-		if (node->parentCount() == 1) {
-			unload(node);
-		}
-	}
 
 	void ContentManager::unloadMarked() {
 		while (!mMarkedNodes.empty()) {

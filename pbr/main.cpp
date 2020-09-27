@@ -28,6 +28,7 @@ Material* material;
 ShaderUniform<GLfloat> roughness;
 ShaderUniform<GLfloat> metalness;
 ShaderUniform<glm::vec3> albedo;
+ShaderUniform<glm::vec3> FDialectric;
 
 class MaterialGui : public GuiBase {
 protected:
@@ -129,20 +130,19 @@ int main() {
 		createContentNode(tex, scene);
  
 		auto lambertKernel = new LambertComputeKernel();
+		auto ggxKernel = new GGXComputeKernel();
+		auto lutKernel = new CookTorranceLUTComputeKernel();
+
 		createNode(lambertKernel, scene);
-
-		Shader* ggxBackend = load<Shader>("content/ggx.comp", scene);
-		auto ggxKernel = new GGXComputeKernel(ggxBackend, 32);
 		createNode(ggxKernel, scene);
-
-		Shader* lutBackend = load<Shader>("content/brdf.comp", scene);
-		auto lutKernel = new CookTorranceLUTComputeKernel(lutBackend, 32);
 		createNode(lutKernel, scene);
 
+		// Set material parameters
 		material = staticMesh->getMaterial();
 		roughness.find(material->shader(), "roughness");
 		metalness.find(material->shader(), "metalness");
 		albedo.find(material->shader(), "albedo");
+		FDialectric.find(material->shader(), "Fdialectric");
 		material->uniformAssignments().add(roughness, 0.0f);
 		material->uniformAssignments().add(metalness, 0.0f);
 		material->uniformAssignments().add(albedo, glm::vec3(1.0f, 1.0f, 1.0f));
@@ -165,8 +165,9 @@ int main() {
 		ggxJob.mInputImage = tex;
 		auto specularResult = ggxKernel->submit(ggxJob);
 
-		Texture* lut = lutKernel->submit();
-		createContentNode(lut, scene);
+		// Create a lookup texture with the BRDF kernel
+		Texture* brdf = lutKernel->submit();
+		createContentNode(brdf, scene);
 
 		lambertKernel->barrier();
 		ggxKernel->barrier();
@@ -181,13 +182,16 @@ int main() {
 
 		material->uniformAssignments().add(environmentDiffuseSH, lambertKernel->results(), lambertKernel->shCount());
 		material->samplerAssignments().add(environmentSpecular, sampler, specularResult);
-		material->samplerAssignments().add(environmentBRDF, lutSampler, lut);
+		material->samplerAssignments().add(environmentBRDF, lutSampler, brdf);
+
+		// Free this texture, we don't need it anymore.
+		// Garbage collector will get it on shutdown, but this frees up memory.
+		unload(tex);
 
 		// Game loop
 		while (en.valid()) {
 			en.update();
 			en.render(scene);
-			//en.renderer()->debugBlit(lut, glm::vec2(0.0, 0.0), glm::vec2(256, 256));
 			en.present();
 		}
 	}

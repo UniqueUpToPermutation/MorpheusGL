@@ -179,8 +179,19 @@ namespace Morpheus {
 		// node: The node to unload
 		void unload(INodeOwner* node);
 
-		// Only unloads the node if it has no other users.
-		void safeUnload(INodeOwner* node);
+		// Only unloads the node if it has less than or equal to two users.
+		// Presumably, one is the content manager, and the other is the parent that is about to
+		// be destroyed. All children of the node will also be safe unloaded.
+		inline void safeUnload(INodeOwner* node) {
+			if (node->parentCount() <= 2) {
+				for (auto it = node->children(); it.valid();) {
+					INodeOwner* child = it();
+					it.next();
+					safeUnload(child);
+				}
+				unload(node);
+			}
+		}
 
 		// Marks this node for an unload if necessary
 		inline void markForUnload(INodeOwner* node) {
@@ -260,5 +271,9 @@ namespace Morpheus {
 
 	inline void markForUnload(INodeOwner* node) {
 		content()->markForUnload(node);
+	}
+
+	inline void safeUnload(INodeOwner* node) {
+		content()->safeUnload(node);
 	}
 }
