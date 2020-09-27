@@ -24,7 +24,7 @@ namespace Morpheus {
 		LEFT_RIGHT_MOUSE
 	};
 
-	class LookAtCameraController : public ILogic {
+	class LookAtCameraController : public Entity {
 	private:
 		bool bEnabled;
 		Camera* mCamera;
@@ -71,6 +71,8 @@ namespace Morpheus {
 		vec3 getLookDirection() const;
 
 	public:
+		~LookAtCameraController() override;
+
 		inline double& thetaRotateSpeed() { return mThetaSpeed; }
 		inline double& phiRotateSpeed() { return mPhiSpeed; }
 		inline double& dollySpeed() { return mDollySpeed; }
@@ -88,8 +90,7 @@ namespace Morpheus {
 		void setEnabled(const bool value) override;
 		void update(const double dt) override;
 		void applyTo(Camera* camera);
-		void init(Node node) override;
-		void dispose() override;
+		void init() override;
 	};
 	SET_BASE_TYPE(LookAtCameraController, ILogic);
 }

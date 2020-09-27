@@ -22,7 +22,7 @@ namespace Morpheus {
 	class HalfEdgeGeometry;
 
 	// A piece of OpenGL geometry data in the engine.
-	class Geometry {
+	class Geometry : public INodeOwner {
 	private:
 		GLuint mVao;
 		GLuint mVbo;
@@ -32,15 +32,17 @@ namespace Morpheus {
 		GLenum mIndexType;
 		BoundingBox mAabb;
 
-		inline Geometry() { }
+		inline Geometry() : INodeOwner(NodeType::GEOMETRY) { }
 		inline Geometry(GLuint vao, GLuint vbo, GLuint ibo,
 			GLenum elementType, GLsizei elementCount, GLenum indexType,
 			BoundingBox aabb) :
-			mVao(vao), mVbo(vbo), mIbo(ibo), mElementType(elementType),
+			INodeOwner(NodeType::GEOMETRY), mVao(vao), mVbo(vbo), mIbo(ibo), mElementType(elementType),
 			mElementCount(elementCount), mIndexType(indexType),
 			mAabb(aabb) { }
 
 	public:
+		Geometry* toGeometry() override;
+
 		inline GLuint vertexArray() const { return mVao; }
 		inline GLuint vertexBuffer() const { return mVbo; }
 		inline GLuint indexBuffer() const { return mIbo; }
@@ -74,36 +76,32 @@ namespace Morpheus {
 	public:
 		ContentFactory();
 
-		ref<void> load(const std::string& source, Node& loadInto) override;
-		void unload(ref<void> ref) override;
+		INodeOwner* load(const std::string& source, Node loadInto) override;
+		void unload(INodeOwner* ref) override;
 		void dispose() override;
 
-		ref<Geometry> makeGeometryUnmanaged(GLuint vao, GLuint vbo, GLuint ibo,
+		Geometry* makeGeometryUnmanaged(GLuint vao, GLuint vbo, GLuint ibo,
 			GLenum elementType, GLsizei elementCount, GLenum indexType,
 			BoundingBox aabb) const;
-		ref<Geometry> makeGeometryUnmanaged(const HalfEdgeGeometry* geo,
+		Geometry* makeGeometryUnmanaged(const HalfEdgeGeometry* geo,
 			const HalfEdgeAttributes& attrib) const;
-		ref<Geometry> makeGeometryUnmanaged(const HalfEdgeGeometry* geo) const;
+		Geometry* makeGeometryUnmanaged(const HalfEdgeGeometry* geo) const;
 
-		Node makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
+		Geometry* makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
 			GLenum elementType, GLsizei elementCount, GLenum indexType,
-			BoundingBox aabb, const std::string& source, ref<Geometry>* refOut = nullptr) const;
-		Node makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
+			BoundingBox aabb, const std::string& source) const;
+		Geometry* makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
 			GLenum elementType, GLsizei elementCount, GLenum indexType,
-			BoundingBox aabb, ref<Geometry>* refOut = nullptr) const;
-		Node makeGeometry(const HalfEdgeGeometry* geo, 
+			BoundingBox aab) const;
+		Geometry* makeGeometry(const HalfEdgeGeometry* geo, 
 			const HalfEdgeAttributes& attrib,
-			const std::string& source,
-			ref<Geometry>* refOut = nullptr) const;
-		Node makeGeometry(const HalfEdgeGeometry* geo,
-			const HalfEdgeAttributes& attrib,
-			ref<Geometry>* refOut = nullptr) const;
-		Node makeGeometry(const HalfEdgeGeometry* geo,
-			ref<Geometry>* refOut = nullptr) const;
-		Node makeGeometry(const HalfEdgeGeometry* geo,
-			const std::string& source,
-			ref<Geometry>* refOut) const;
-		Node makeBox(const glm::vec3& center, const glm::vec3& radius, const bool bInverted) const;
+			const std::string& source) const;
+		Geometry* makeGeometry(const HalfEdgeGeometry* geo,
+			const HalfEdgeAttributes& attrib) const;
+		Geometry* makeGeometry(const HalfEdgeGeometry* geo) const;
+		Geometry* makeGeometry(const HalfEdgeGeometry* geo,
+			const std::string& source) const;
+		Geometry* makeBox(const glm::vec3& center, const glm::vec3& radius, const bool bInverted) const;
 
 		std::string getContentTypeString() const override;
 	};

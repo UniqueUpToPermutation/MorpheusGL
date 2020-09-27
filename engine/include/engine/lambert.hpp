@@ -105,19 +105,18 @@ namespace Morpheus {
 	};
 
 	struct LambertComputeJob {
-		ref<Texture> mInputImage;
+		Texture* mInputImage;
 	};
 
 	// Implements a lambert convolution in the SH basis on the GPU. Returns a set of 9 SH coefficients for 3 color channels.
-	class LambertComputeKernel : public IInitializable, public IDisposable {
+	class LambertComputeKernel : public INodeOwner {
 	private:
 		GLuint mGPUOutputBuffer;
 		
 		std::vector<LambertComputeJob> mJobs;
 		std::vector<float> mResultBuffer;
 
-		ref<Shader> mGPUBackend;
-		NodeHandle mGPUBackendHandle;
+		Shader* mGPUBackend;
 		ShaderUniform<uint> mOffsetUniform;
 		LambertSHKernelCPU mSHTransferFunction;
 
@@ -127,9 +126,9 @@ namespace Morpheus {
 	public:
 
 		LambertComputeKernel(uint groupSize = 64);
+		~LambertComputeKernel();
 
-		void init(Node node) override;
-		void dispose() override;
+		void init() override;
 
 		// These functions will submit a batch of jobs to the GPU
 		void beginQueue();

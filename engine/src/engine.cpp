@@ -23,7 +23,7 @@ namespace Morpheus {
 		fprintf(stderr, "Error: %s\n", description);
 	}
 
-	Engine::Engine() : mWindow(nullptr), bValid(false) {
+	Engine::Engine() : INodeOwner(NodeType::ENGINE), mWindow(nullptr), bValid(false) {
 		gEngine = this;
 		NodeMetadata::init();
 	}
@@ -49,8 +49,7 @@ namespace Morpheus {
 		}
 
 		// Start building the engine graph
-		auto v = mGraph.addNode(this);
-		mHandle = mGraph.issueHandle(v);
+		mGraph.createNode(this);
 
 		// Load config
 		ifstream f(configPath);
@@ -66,7 +65,7 @@ namespace Morpheus {
 
 		// Create renderer
 		auto renderer = new ForwardRenderer();
-		mGraph.addNode(renderer, mHandle);
+		mGraph.createNode(renderer, this);
 		mRenderer = renderer;
 
 		// Renderer may request framebuffer features from GLFW
@@ -100,16 +99,17 @@ namespace Morpheus {
 
 		// Create content manager with handle
 		mContent = new ContentManager();
-		mGraph.addNode(mContent, mHandle);
+		mGraph.createNode(mContent, this);
 		
 		// Add updater to the graph
-		mGraph.addNode(&mUpdater, mHandle);
+		mUpdater = new Updater();
+		mGraph.createNode(mUpdater, this);
 
 		// Set appropriate window callbacks
 		mInput.glfwRegister();
 
 		// Initialize everything else
-		init(node());
+		::Morpheus::init(this);
 
 		// Set valid
 		bValid = true;
@@ -121,30 +121,24 @@ namespace Morpheus {
 		return !glfwWindowShouldClose(mWindow) && bValid;
 	}
 
-	void Engine::render(Node scene) {
+	void Engine::render(INodeOwner* scene) {
 		mRenderer->draw(scene);
-	}
-
-	void Engine::render(NodeHandle sceneHandle) {
-		mRenderer->draw(sceneHandle);
 	}
 
 	void Engine::present() {
 		glfwSwapBuffers(mWindow);
 	}
 
-	Node Engine::makeScene(ref<Scene>* sceneOut) {
+	Scene* Engine::makeScene() {
 		auto scene = new Scene();
-		if (sceneOut)
-			*sceneOut = ref<Scene>(scene);
-		auto node = mGraph.addNode(scene, handle());
-		return node;
+		mGraph.createNode(scene, this);
+		return scene;
 	}
 
 	void Engine::update() {
 		glfwPollEvents(); // Update window!
 
-		mUpdater.updateChildren(); // Update everything else
+		mUpdater->updateChildren(); // Update everything else
 	}
 
 	void Engine::shutdown() {
@@ -152,11 +146,11 @@ namespace Morpheus {
 		mInput.glfwUnregster();
 
 		// Clean up anything disposable
-		for (auto nodeIt = mGraph.vertices(); nodeIt.valid(); nodeIt.next()) {
-			auto desc = mGraph.desc(nodeIt());
-			auto disposeInterface = getInterface<IDisposable>(*desc);
-			if (disposeInterface)
-				disposeInterface->dispose();
+		for (auto it = children(); it.valid();) {
+			auto child = it();
+			it.next();
+			if (child != mContent)
+				prune(child);
 		}
 
 		// Explicitly dispose the content manager last to clean up anything remaining
@@ -173,12 +167,12 @@ namespace Morpheus {
 		bValid = false;
 	}
 
-	void IRenderer::debugBlit(ref<Texture> texture,
+	void IRenderer::debugBlit(Texture* texture,
 		const glm::vec2& position) {
 		debugBlit(texture, position, position + glm::vec2(texture->width(), texture->height()));
 	}
 
-	void IRenderer::debugBlit(ref<Texture> texture) {
+	void IRenderer::debugBlit(Texture* texture) {
 		debugBlit(texture, glm::vec2(0.0, 0.0), glm::vec2(texture->width(), texture->height()));
 	}
 }

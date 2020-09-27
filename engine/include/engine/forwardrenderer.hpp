@@ -14,14 +14,13 @@
 #include <engine/blit.hpp>
 namespace Morpheus {
 	struct StaticMeshRenderInstance {
-		ref<Geometry> mGeometry;
-		ref<Transform> mTransform;
-		ref<Material> mMaterial;
+		StaticMesh* mStaticMesh;
+		Transform* mTransform;
 	};
 
 	struct ForwardRenderQueue {
 		RenderQueue<StaticMeshRenderInstance> mStaticMeshes;
-		RenderQueue<ref<GuiBase>> mGuis;
+		RenderQueue<GuiBase*> mGuis;
 	};
 
 	enum class RenderInstanceType {
@@ -31,45 +30,43 @@ namespace Morpheus {
 	struct ForwardRenderCollectParams {
 		ForwardRenderQueue* mQueues;
 		std::stack<bool>* mIsStaticStack;
-		std::stack<ref<Transform>>* mTransformStack;
+		std::stack<Transform*>* mTransformStack;
 		RenderInstanceType mCurrentRenderType;
-		ref<Camera> mRenderCamera;
+		Camera* mRenderCamera;
 	};
 
 	struct ForwardRenderDrawParams {
-		ref<Camera> mRenderCamera;
+		Camera* mRenderCamera;
 	};
 
 	class ForwardRenderer : public IRenderer {
 	private:
-		NodeHandle mHandle;
-		NodeDataView mNodeDataView;
 		ForwardRenderQueue mQueues;
 		std::stack<bool> mIsStaticStack;
-		std::stack<ref<Transform>> mTransformStack;
-		std::stack<ref<Material>> mMaterialStack;
+		std::stack<Transform*> mTransformStack;
+		std::stack<Material*> mMaterialStack;
 
 		// Debug texture blitting
-		ref<Shader> mTextureBlitShader;
-		ref<Geometry> mBlitGeometry;
-		ref<Sampler> mDebugBlitSampler;
+		Shader* mTextureBlitShader;
+		Geometry* mBlitGeometry;
+		Sampler* mDebugBlitSampler;
 		BlitShaderView mTextureBlitShaderView;
 
-		void collectRecursive(Node& current, ForwardRenderCollectParams& params);
-		void collect(Node& start, ForwardRenderCollectParams& params);
-		void draw(const ForwardRenderQueue* queue, const ForwardRenderDrawParams& params);
+		void collectRecursive(INodeOwner* current, ForwardRenderCollectParams& params);
+		void collect(INodeOwner* start, ForwardRenderCollectParams& params);
+		void draw(ForwardRenderQueue* queue, const ForwardRenderDrawParams& params);
 		void makeDebugObjects();
 
 	public:
-		NodeHandle handle() const override;
-		RendererType getType() const override;
-		void init(Node node) override;
+		~ForwardRenderer() override;
+
+		RendererType getRendererType() const override;
+		void init() override;
 		void postGlfwRequests() override;
-		void draw(Node scene) override;
-		void dispose() override;
+		void draw(INodeOwner* scene) override;
 		void setClearColor(float r, float g, float b) override;
 
-		void debugBlit(ref<Texture> texture, 
+		void debugBlit(Texture* texture, 
 			const glm::vec2& lower,
 			const glm::vec2& upper) override;
 

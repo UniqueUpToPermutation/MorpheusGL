@@ -271,7 +271,7 @@ namespace Morpheus {
 		friend class Face;
 	};
 
-	class HalfEdgeGeometry {
+	class HalfEdgeGeometry : public INodeOwner {
 	public:
 		typedef float basetype;
 
@@ -288,8 +288,10 @@ namespace Morpheus {
 		BoundingBox aabb;
 
 	public:
-		explicit HalfEdgeGeometry() {}
+		explicit HalfEdgeGeometry() : INodeOwner(NodeType::HALF_EDGE_GEOMETRY) {}
 		explicit HalfEdgeGeometry(const HalfEdgeGeometry& geo);
+
+		HalfEdgeGeometry* toHalfEdgeGeometry() override;
 
 		inline std::set<uint32_t> interiorSet() const {
 			std::set<uint32_t> result;

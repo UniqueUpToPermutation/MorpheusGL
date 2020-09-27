@@ -196,10 +196,10 @@ namespace Morpheus {
 		mMoveMode = newMode;
 	}
 
-	void LookAtCameraController::init(Node node) {
-		auto parentDesc = desc(node.parents()());
-		assert(parentDesc->type == NodeType::CAMERA);
-		mCamera = parentDesc->owner.reinterpretGet<Camera>();
+	void LookAtCameraController::init() {
+		auto parent = parents()();
+		assert(parent->getType() == NodeType::CAMERA);
+		mCamera = parent->toCamera();
 
 		mMouseHandler = [this](GLFWwindow* window, int scancode, int action, int modifiers) {
 
@@ -283,8 +283,7 @@ namespace Morpheus {
 		applyTo(mCamera);
 	}
 
-	void LookAtCameraController::dispose() {
+	LookAtCameraController::~LookAtCameraController() {
 		input()->unregisterTarget(this);
-		delete this;
 	}
 }

@@ -7,38 +7,36 @@
 namespace Morpheus {
 	
 	// A material is a shader plus overrides on different shader uniforms
-	class Material {
+	class Material : public INodeOwner {
 	private:
-		ref<Shader> mShader;
+		Shader* mShader;
 		ShaderUniformAssignments mUniformAssigments;
 		ShaderSamplerAssignments mSamplerAssignments;
 
 	public:
-		inline ref<Shader> shader() const { return mShader; }
+		inline Material() : INodeOwner(NodeType::MATERIAL) {
+		}
+
+		Material* toMaterial() override;
+
+		inline Shader* shader() const { return mShader; }
 		inline ShaderUniformAssignments& uniformAssignments() {
 			return mUniformAssigments;
 		}
 		inline ShaderSamplerAssignments& samplerAssignments() {
 			return mSamplerAssignments;
 		}
+		inline Material* duplicate();
 
-		friend ref<Material> duplicateRef<Material>(const ref<Material>& a);
 		friend class ContentFactory<Material>;
 	};
 	SET_NODE_ENUM(Material, MATERIAL);
 
 	template <>
-	ref<Material> duplicateRef<Material>(const ref<Material>& a);
-	template <>
-	Node duplicateToNode<Material>(const ref<Material>& a);
-	template <>
-	Node duplicate<Material>(const Node& a);
-
-	template <>
 	class ContentFactory<Material> : public IContentFactory {
 	public:
-		ref<void> load(const std::string& source, Node& loadInto) override;
-		void unload(ref<void> ref) override;
+		INodeOwner* load(const std::string& source, Node loadInto) override;
+		void unload(INodeOwner* ref) override;
 		void dispose() override;
 
 		std::string getContentTypeString() const override;

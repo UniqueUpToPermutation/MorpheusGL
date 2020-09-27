@@ -1,13 +1,17 @@
 #include <engine/brdf.hpp>
 
 namespace Morpheus {
-	CookTorranceLUTComputeKernel::CookTorranceLUTComputeKernel(ref<Shader> gpuBackend, 
-		uint computeGroupSize) : 
+	CookTorranceLUTComputeKernel::CookTorranceLUTComputeKernel(Shader* gpuBackend, 
+		uint computeGroupSize) : INodeOwner(NodeType::COOK_TORRANCE_LUT_COMPUTE_KERNEL),
 		mGPUBackend(gpuBackend), 
 		mGroupSize(computeGroupSize) {
 	}
 
-	ref<Texture> CookTorranceLUTComputeKernel::submit(uint roughnessPixels, uint NoVPixels) {
+	CookTorranceLUTComputeKernel::~CookTorranceLUTComputeKernel() {
+		markForUnload(mGPUBackend);
+	}
+
+	Texture* CookTorranceLUTComputeKernel::submit(uint roughnessPixels, uint NoVPixels) {
 		auto result = getFactory<Texture>()->makeTexture2DUnmanaged(roughnessPixels, NoVPixels, GL_RG16, 1);
 
 		uint groups_x = result->width() / mGroupSize;
@@ -24,10 +28,6 @@ namespace Morpheus {
 		glTextureBarrier();
 	}
 
-	void CookTorranceLUTComputeKernel::init(Node node) {
-	}
-
-	void CookTorranceLUTComputeKernel::dispose() {
-		delete this;
+	void CookTorranceLUTComputeKernel::init() {
 	}
 }

@@ -144,12 +144,12 @@ R"(
 )";
 
 namespace Morpheus {
-    LambertComputeKernel::LambertComputeKernel(uint groupSize) :
+    LambertComputeKernel::LambertComputeKernel(uint groupSize) : INodeOwner(NodeType::LAMBERT_COMPUTE_KERNEL),
         mGroupSize(groupSize), mGPUBackend(nullptr) {
     }
 
-    void LambertComputeKernel::init(Node node) {
-        if (mGPUBackend.isNull()) {
+    void LambertComputeKernel::init() {
+        if (mGPUBackend) {
             std::string source(computeKernelSource);
 
             std::stringstream ss;
@@ -166,8 +166,8 @@ namespace Morpheus {
 
             // Add compute shader to this object's children for resource management
             mGPUBackend = getFactory<Shader>()->makeFromGL(program);
-            Node gpuBackendNode = createContentNode(mGPUBackend, node);
-            mGPUBackendHandle = issueHandle(gpuBackendNode);
+			createContentNode(mGPUBackend);
+            addChild(mGPUBackend);
 
             mOffsetUniform.find(mGPUBackend, "outputOffset");
 
@@ -176,19 +176,16 @@ namespace Morpheus {
         }
     }
 
-    void LambertComputeKernel::dispose() {
-        unload(mGPUBackendHandle);
-        recallHandle(mGPUBackendHandle);
+    LambertComputeKernel::~LambertComputeKernel() {
+        markForUnload(mGPUBackend);
 
         if (mGPUOutputBuffer != 0) {
             glDeleteBuffers(1, &mGPUOutputBuffer);
         }
-
-        delete this;
     }
 
     uint LambertComputeKernel::addJob(const LambertComputeJob& job) {
-        if (mGPUBackend.isNull())
+        if (!mGPUBackend)
             throw std::runtime_error("LambertComputeKernel: Kernel has not been initialized!");
 
         if (bInJob)
@@ -205,7 +202,7 @@ namespace Morpheus {
         return result;
     }
 
-    auto outputFloatSizeFor(const ref<Texture>& image, const uint mGroupSize) {
+    auto outputFloatSizeFor(const Texture* image, const uint mGroupSize) {
         return sizeof(float) * LAMBERT_SH_COEFFS *
             image->height() / mGroupSize;
     };

@@ -63,7 +63,7 @@ namespace Morpheus {
 			mPtr(ptr), mCurrent(current) { }
 
 		// Returns whether or not this iterator is still valid.
-		inline bool valid() { return mCurrent != -1; }
+		inline bool valid() const { return mCurrent != -1; }
 		// Returns the id of the current object.
 		inline int id() const { return mCurrent; }
 	};
@@ -205,15 +205,16 @@ namespace Morpheus {
 		void resizeVertices(uint32_t newSize);
 		void resizeEdges(uint32_t newSize);
 
-		void applyVertexMap(const int map[], const uint32_t mapLen, const uint32_t newSize);
-		void applyEdgeMap(const int map[], const uint32_t mapLen, const uint32_t newSize);
+	protected:
+
+		virtual void applyVertexMap(const int map[], const uint32_t mapLen, const uint32_t newSize);
+		virtual void applyEdgeMap(const int map[], const uint32_t mapLen, const uint32_t newSize);
 
 	public:
 		Digraph();
 		~Digraph();
 		Digraph(uint32_t reserveVertices, uint32_t reserveEdges);
 
-		
 		// Create a vertex in the graph.
 		// returns: The vertex created. 
 		DigraphVertex createVertex();
@@ -238,7 +239,7 @@ namespace Morpheus {
 		
 		// Deletes a vertex in the graph. Removes all ingoing and outgoing edges.
 		// v: The vertex to delete.
-		void deleteVertex(DigraphVertex& v);
+		void deleteVertex(DigraphVertex v);
 		
 		// Deletes a vertex in the graph. Removes all ingoing and outgoing edges.
 		// v: The numerical id of the vertex to delete.
@@ -246,7 +247,7 @@ namespace Morpheus {
 		
 		// Deletes an edge in the graph.
 		// e: The edge to delete.
-		void deleteEdge(DigraphEdge& e);
+		void deleteEdge(DigraphEdge e);
 		
 		// Attempts to reduce the amount of memory needed to store the graph.
 		// bTight: Whether or not the amount of memory to use should be exactly the amount needed.

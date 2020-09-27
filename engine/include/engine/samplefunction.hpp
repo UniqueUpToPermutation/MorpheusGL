@@ -13,11 +13,11 @@
 #define DEFAULT_KERNEL_SAMPLE_COUNT 100u
 
 namespace Morpheus {
-	void writeCubemapSideBaseLevel(ref<Texture> tex, size_t i_side, GLenum format, const std::vector<float>& mData);
-	void writeTextureBaseLevel(ref<Texture> tex, GLenum format, const std::vector<float>& mData);
+	void writeCubemapSideBaseLevel(Texture* tex, size_t i_side, GLenum format, const std::vector<float>& mData);
+	void writeTextureBaseLevel(Texture* tex, GLenum format, const std::vector<float>& mData);
 
-	void readCubemapSideBaseLevel(ref<Texture> tex, size_t i_side, uint32_t element_length, std::vector<float>* mData);
-	void readTextureBaseLevel(ref<Texture> tex, uint32_t element_length, std::vector<float>* mData);
+	void readCubemapSideBaseLevel(Texture* tex, size_t i_side, uint32_t element_length, std::vector<float>* mData);
+	void readTextureBaseLevel(Texture* tex, uint32_t element_length, std::vector<float>* mData);
 
 	template <typename VecType>
 	struct get_scalar_t {
@@ -752,7 +752,7 @@ namespace Morpheus {
 			}
 		}
 
-		void writeToTexture(ref<Texture> tex) {
+		void writeToTexture(Texture* tex) {
 			assert(mStorageMode == StorageMode::READ);
 			assert(tex->type() == TextureType::CUBE_MAP);
 			if (tex->width() != width() || tex->height() != height()) {
@@ -797,32 +797,29 @@ namespace Morpheus {
 			tex->genMipmaps();
 		}
 
-		ref<Texture> toTextureUnmanaged(const GLenum format,
+		Texture* toTextureUnmanaged(const GLenum format,
 			ContentFactory<Texture>* factory) {
 			assert(mStorageMode == StorageMode::READ);
 			checkValidFormat<OutputType>(format);
-			ref<Texture> tex = factory->makeCubemapUnmanaged(width(), height(), format);
+			Texture* tex = factory->makeCubemapUnmanaged(width(), height(), format);
 			GL_ASSERT;
 			writeToTexture(tex);
 			return tex;
 		}
 
-		Node toTexture(ref<Texture>* out,
-			const GLenum format,
+		Texture* toTexture(const GLenum format,
 			ContentFactory<Texture>* factory) {
 			assert(mStorageMode == StorageMode::READ);
 			checkValidFormat<OutputType>(format);
-			ref<Texture> tex;
+			Texture* tex;
 			GL_ASSERT;
-			Node texNode = factory->makeCubemapUnparented(&tex, width(), height(), format);
+			tex = factory->makeCubemapUnparented(width(), height(), format);
 			GL_ASSERT;
 			writeToTexture(tex);
-			if (out)
-				*out = tex;
-			return texNode;
+			return tex;
 		}
 
-		void fromTexture(ref<Texture> tex) {
+		void fromTexture(Texture* tex) {
 			assert(tex->type() == TextureType::CUBE_MAP);
 
 			init(tex->width(), tex->height(), true);
@@ -1082,7 +1079,7 @@ namespace Morpheus {
 			}
 		}
 
-		void writeToTexture(ref<Texture> tex) {
+		void writeToTexture(Texture* tex) {
 			assert(mStorageMode == StorageMode::READ);
 			assert(tex->type() == TextureType::TEXTURE_2D);
 			if (tex->width() != width() || tex->height() != height()) {
@@ -1117,7 +1114,7 @@ namespace Morpheus {
 			tex->genMipmaps();
 		}
 
-		void fromTexture(ref<Texture> tex) {
+		void fromTexture(Texture* tex) {
 			assert(tex->type() == TextureType::CUBE_MAP);
 
 			init(tex->width(), tex->height(), true);
@@ -1138,22 +1135,22 @@ namespace Morpheus {
 			transition(StorageMode::READ);
 		}
 
-		ref<Texture> toTextureUnmanaged(const GLenum format,
+		Texture* toTextureUnmanaged(const GLenum format,
 			ContentFactory<Texture>* factory) {
 			assert(mStorageMode == StorageMode::READ);
 			checkValidFormat<OutputType>(format);
-			ref<Texture> tex = factory->makeTexture2DUnmanaged(width(), height(), format);
+			Texture* tex = factory->makeTexture2DUnmanaged(width(), height(), format);
 			GL_ASSERT;
 			writeToTexture(tex);
 			return tex;
 		}
 
-		Node toTexture(ref<Texture>* out,
+		Node toTexture(Texture** out,
 			const GLenum format,
 			ContentFactory<Texture>* factory) {
 			assert(mStorageMode == StorageMode::READ);
 			checkValidFormat<OutputType>(format);
-			ref<Texture> tex;
+			Texture* tex;
 			Node texNode = factory->makeTexture2D(&tex, width(), height(), format);
 			GL_ASSERT;
 			writeToTexture(tex);
@@ -1425,23 +1422,22 @@ namespace Morpheus {
 			mStorage.transform(f);
 		}
 
-		inline ref<Texture> toTextureUnmanaged(
+		inline Texture* toTextureUnmanaged(
 			const GLenum format = defaultTextureFormatForFunctionOutput<ReturnType>(),
 			ContentFactory<Texture>* factory = content()->getFactory<Texture>()) {
 			return mStorage.toTextureUnmanaged(format, factory);
 		}
 
-		inline Node toTexture(ref<Texture>* out = nullptr,
-			const GLenum format = defaultTextureFormatForFunctionOutput<ReturnType>(),
+		inline Texture* toTexture(const GLenum format = defaultTextureFormatForFunctionOutput<ReturnType>(),
 			ContentFactory<Texture>* factory = content()->getFactory<Texture>()) {
-			return mStorage.toTexture(out, format, factory);
+			return mStorage.toTexture(format, factory);
 		}
 
-		inline void fromTexture(ref<Texture> texture) {
+		inline void fromTexture(Texture* texture) {
 			mStorage.fromTexture(texture);
 		}
 
-		inline void writeToTexture(ref<Texture> target) {
+		inline void writeToTexture(Texture* target) {
 			mStorage.writeToTexture(target);
 		}
 

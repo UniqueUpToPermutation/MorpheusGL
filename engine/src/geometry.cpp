@@ -13,11 +13,15 @@ using namespace Assimp;
 using namespace std;
 
 namespace Morpheus {
+	Geometry* Geometry::toGeometry() {
+		return this;
+	}
+
 	ContentFactory<Geometry>::ContentFactory() {
 		mImporter = new Importer();
 	}
 
-	ref<void> ContentFactory<Geometry>::load(const std::string& source, Node& loadInto) {
+	INodeOwner* ContentFactory<Geometry>::load(const std::string& source, Node loadInto) {
 		cout << "Loading geometry " << source << "..." << endl;
 
 		const aiScene* pScene = mImporter->ReadFile(source.c_str(),
@@ -26,7 +30,7 @@ namespace Morpheus {
 
 		if (!pScene) {
 			cout << "Error: failed to load " << source << endl;
-			return ref<void>(nullptr);
+			return nullptr;
 		}
 
 		uint32_t nVerts;
@@ -34,7 +38,7 @@ namespace Morpheus {
 
 		if (!pScene->HasMeshes()) {
 			cout << "Error: " << source << " has no meshes!" << endl;
-			return ref<void>(nullptr);
+			return nullptr;
 		}
 
 		if (pScene->mNumMeshes > 1) {
@@ -145,10 +149,10 @@ namespace Morpheus {
 		delete[] vert_buffer;
 		delete[] indx_buffer;
 
-		return ref<void>(geo);
+		return geo;
 	}
-	void ContentFactory<Geometry>::unload(ref<void> ref) {
-		auto r = ref.reinterpretGet<Geometry>();
+	void ContentFactory<Geometry>::unload(INodeOwner* ref) {
+		auto r = ref->toGeometry();
 		GLuint bufs[2] = { r->mVbo, r->mIbo };
 		GLuint vao = r->mVao;
 		glDeleteBuffers(2, bufs);
@@ -160,19 +164,19 @@ namespace Morpheus {
 		delete this;
 	}
 
-	ref<Geometry> ContentFactory<Geometry>::makeGeometryUnmanaged(GLuint vao, GLuint vbo, GLuint ibo,
+	Geometry* ContentFactory<Geometry>::makeGeometryUnmanaged(GLuint vao, GLuint vbo, GLuint ibo,
 		GLenum elementType, GLsizei elementCount, GLenum indexType,
 		BoundingBox aabb) const {
 		Geometry* geo = new Geometry(vao, vbo, ibo, elementType, elementCount,
 			indexType, aabb);
-		return ref<Geometry>(geo);
+		return geo;
 	}
 
-	ref<Geometry> ContentFactory<Geometry>::makeGeometryUnmanaged(const HalfEdgeGeometry* geo) const {
+	Geometry* ContentFactory<Geometry>::makeGeometryUnmanaged(const HalfEdgeGeometry* geo) const {
 		return makeGeometryUnmanaged(geo, HalfEdgeAttributes::defaults());
 	}
 
-	ref<Geometry> ContentFactory<Geometry>::makeGeometryUnmanaged(const HalfEdgeGeometry* geo,
+	Geometry* ContentFactory<Geometry>::makeGeometryUnmanaged(const HalfEdgeGeometry* geo,
 		const HalfEdgeAttributes& attrib) const {
 		uint32_t current_off = 0;
 		uint32_t position_off = 0;
@@ -367,81 +371,64 @@ namespace Morpheus {
 		delete[] vert_buffer;
 		delete[] indx_buffer;
 
-		return ref<Geometry>(result);
+		return result;
 	}
 
-	Node ContentFactory<Geometry>::makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
+	Geometry* ContentFactory<Geometry>::makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
 		GLenum elementType, GLsizei elementCount, GLenum indexType,
-		BoundingBox aabb, const std::string& source, ref<Geometry>* refOut) const
+		BoundingBox aabb, const std::string& source) const
 	{
 		Geometry* geo = new Geometry(vao, vbo, ibo, elementType, elementCount,
 			indexType, aabb);
 
-		if (refOut)
-			*refOut = ref<Geometry>(geo);
-
 		// Add geometry to content
-		auto node = graph()->addNode(geo);
-		content()->addContentNode(node, source);
-		return node;
+		createContentNode(geo, source);
+		return geo;
 	}
 
-	Node ContentFactory<Geometry>::makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
+	Geometry* ContentFactory<Geometry>::makeGeometry(GLuint vao, GLuint vbo, GLuint ibo,
 		GLenum elementType, GLsizei elementCount, GLenum indexType,
-		BoundingBox aabb, ref<Geometry>* refOut) const
+		BoundingBox aabb) const
 	{
 		Geometry* geo = new Geometry(vao, vbo, ibo, elementType, elementCount,
 			indexType, aabb);
 
-		if (refOut)
-			*refOut = ref<Geometry>(geo);
-
 		// Add geometry to content
-		auto node = graph()->addNode(geo);
-		content()->addContentNode(node);
-		return node;
+		createContentNode(geo);
+		return geo;
 	}
 
-	Node ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
-		const HalfEdgeAttributes& attrib,
-		ref<Geometry>* refOut) const {
-		return makeGeometry(geo, attrib, "", refOut);
+	Geometry* ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
+		const HalfEdgeAttributes& attrib) const {
+		return makeGeometry(geo, attrib, "");
 	}
 
-	Node ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
-		const std::string& source,
-		ref<Geometry>* refOut) const {
-		return makeGeometry(geo, HalfEdgeAttributes::defaults(), source, refOut);
+	Geometry* ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
+		const std::string& source) const {
+		return makeGeometry(geo, HalfEdgeAttributes::defaults(), source);
 	}
 
-	Node ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
-		ref<Geometry>* refOut) const {
-		return makeGeometry(geo, HalfEdgeAttributes::defaults(), "", refOut);
+	Geometry* ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo) const {
+		return makeGeometry(geo, HalfEdgeAttributes::defaults(), "");
 	}
 
 	std::string ContentFactory<Geometry>::getContentTypeString() const {
 		return MORPHEUS_STRINGIFY(Geometry);
 	}
 
-	Node ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
+	Geometry* ContentFactory<Geometry>::makeGeometry(const HalfEdgeGeometry* geo,
 		const HalfEdgeAttributes& attrib,
-		const std::string& source,
-		ref<Geometry>* refOut) const {
+		const std::string& source) const {
 
 		auto result = makeGeometryUnmanaged(geo, attrib);
 
-		if (refOut)
-			*refOut = ref<Geometry>(result);
-
 		// Add geometry to content
-		Node node;
-		node = graph()->addNode(result);
 		if (source.length() > 0)
-			content()->addContentNode(node, source);
+			createContentNode(result, source);
 		else
-			content()->addContentNode(node);
+			createContentNode(result);
 
-		return node;
+		return result;
 	}
 
 	HalfEdgeAttributes HalfEdgeAttributes::defaults()

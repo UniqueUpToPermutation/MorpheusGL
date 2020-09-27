@@ -141,7 +141,7 @@ namespace Morpheus {
 		return DigraphEdge(this, id);
 	}
 
-	void Digraph::deleteVertex(DigraphVertex& v) {
+	void Digraph::deleteVertex(DigraphVertex v) {
 		for (auto inIt = v.incomming(); inIt.valid(); ) {
 			auto e = inIt();
 			inIt.next();
@@ -168,7 +168,7 @@ namespace Morpheus {
 		deleteVertex(vert);
 	}
 
-	void Digraph::deleteEdge(DigraphEdge& e) {
+	void Digraph::deleteEdge(DigraphEdge e) {
 		auto id = e.id();
 		auto head = mEdges[id].mHead;
 		auto tail = mEdges[id].mTail;

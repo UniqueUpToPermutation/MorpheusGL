@@ -32,8 +32,8 @@ namespace Morpheus {
 	// Defines the interface for loading and unloading assets.
 	class IContentFactory {
 	public:
-		virtual ref<void> load(const std::string& source, Node& loadInto) = 0;
-		virtual void unload(ref<void> ref) = 0;
+		virtual INodeOwner* load(const std::string& source, Node loadInto) = 0;
+		virtual void unload(INodeOwner* ref) = 0;
 		virtual void dispose() = 0;
 		virtual std::string getContentTypeString() const = 0;
 
@@ -49,28 +49,18 @@ namespace Morpheus {
 	// collection, whereby it checks for each of its children whether or not they have exactly
 	// one parent - if they do, they are unloaded by their respective content manager and removed
 	// from the scene graph. 
-	class ContentManager : public IInitializable {
+	class ContentManager : public INodeOwner {
 	private:
-		NodeHandle mHandle;
 		std::set<IContentFactory*> mFactories;
 		std::unordered_map<NodeType, IContentFactory*> mTypeToFactory;
 		DigraphTwoWayVertexLookupView<std::string> mSources;
+		std::stack<INodeOwner*> mMarkedNodes;
 
 	public:
-		void init(Node node) override;
-
-		// The handle of this content manager in the scene graph.
-		// returns: The handle of this content manager. 
-		NodeHandle handle() const { return mHandle; }
-		
-		// The node of this content manager in the scene graph.
-		// Do not store this value as it may change if the graph's
-		// memory is altered.
-		// returns: The node of this content manager. 
-		Node node() const { return (*graph())[mHandle]; }
-
+		void init() override;
+	
 		ContentManager();
-		~ContentManager();
+		~ContentManager() override;
 
 		// Add a factory to this content manager.
 		// ContentType: The content type of the factory to add.
@@ -90,48 +80,16 @@ namespace Morpheus {
 			delete factory;
 		}
 
-		// Transfer ownership of an already existing node to the content manager.
-		// content: The node for which to transfer ownership.
-		void addContentNode(Node& content) {
-			auto self = node();
-			graph()->createEdge(self, content);
-		}
-
 		// Create a node for a content object and transfer ownership of node to content manager.
-		// ContentType: The type of the content.
 		// content: A reference to the content.
 		// returns: A child node of the content manager with the content as an owner. 
-		template <typename ContentType>
-		Node createContentNode(ref<ContentType>& content) {
-			auto newNode = graph()->addNode(content);
-			addContentNode(newNode);
-			return newNode;
+		void createContentNode(INodeOwner* content) {
+			graph()->createNode(content, this);
 		}
 
-		// Create a node for a content object and transfer ownership of node to content manager.
-		// ContentType: The type of the content.
-		// content: A reference to the content.
-		// parent: The parent of this node (i.e., scene, user, etc.), so that it does not get
-		// deallocated upon garbage collection
-		// returns: A child node of the content manager with the content as an owner. 
-		template <typename ContentType>
-		Node createContentNode(ref<ContentType>& content, Node parent) {
-			auto newNode = graph()->addNode(content);
-			addContentNode(newNode);
-			if (parent.valid())
-				graph()->createEdge(parent, newNode);
-			return newNode;
-		}
-
-		// Create a node for a content object and transfer ownership of node to content manager.
-		// ContentType: The type of the content.
-		// content: A reference to the content.
-		// parent: The parent of this node (i.e., scene, user, etc.), so that it does not get
-		// deallocated upon garbage collection
-		// returns: A child node of the content manager with the content as an owner. 
-		template <typename ContentType>
-		Node createContentNode(ref<ContentType>& content, NodeHandle parent) {
-			return createContentNode<ContentType>(content, find(parent));
+		void createContentNode(INodeOwner* content, const std::string& source) {
+			graph()->createNode(content, this);
+			mSources.set(content->node(), source);
 		}
 
 		// Get a content factory by content type.
@@ -148,10 +106,8 @@ namespace Morpheus {
 		// ContentManager::load.
 		// content: The node for which to transfer ownership.
 		// sourceName: The name of the content so it can be looked up with ContentManager::load.
-		void addContentNode(Node& content, const std::string& sourceName) {
-			auto self = node();
-			graph()->createEdge(self, content);
-			mSources.set(content, sourceName);
+		void setSource(INodeOwner* content, const std::string& sourceName) {
+			mSources.set(content->node(), sourceName);
 		}
 
 		// Loads an asset for a parent node.
@@ -161,73 +117,47 @@ namespace Morpheus {
 		// refOut: If this is not null, a ref to the loaded asset will be written to it.
 		// returns: A node containing the asset. 
 		template <typename ContentType>
-		Node load(const std::string& source, const Node& parent, ref<ContentType>* refOut = nullptr) {
+		ContentType* load(const std::string& source, INodeOwner* parent = nullptr) {
 			assert(IS_BASE_TYPE_<ContentType>::RESULT);
 
 			std::string source_mod = source;
 			std::replace(source_mod.begin(), source_mod.end(), '\\', '/');
 			
 			auto graph_ = graph();
-			Node v;
-			if (mSources.tryFind(source_mod, &v)) {
-				assert(graph_->desc(v)->type == NODE_ENUM(ContentType));
-
-				// Return the ref for convienience.
-				if (refOut)
-					*refOut = graph_->desc(v)->owner.reinterpret<ContentType>();
-
-				return v;
+			Node contentNode;
+			INodeOwner* content;
+			if (mSources.tryFind(source_mod, &contentNode)) {
+				content = graph()->owner(contentNode);
+				return convert<ContentType>(content);
 			}
 			else {
 				// Create a vertex to load the content into
-				v = graph_->createVertex();
-				// Add the new vertex as a child of the content manager
-				graph_->createEdge(node(), v);
+				contentNode = graph_->createVertex();
 				
 				// Load a ref via the correct content factory
 				auto type = NODE_ENUM(ContentType);
-				ref<void> obj_ref = mTypeToFactory[type]->load(source_mod, v);
+				content = mTypeToFactory[type]->load(source_mod, contentNode);
+
+				if (content == nullptr) {
+					graph_->deleteVertex(contentNode);
+					throw new std::runtime_error("Failed to load content!");
+				}
+
+				// Set the owner of the new vertex to the content just loaded
+				graph_->setOwner(contentNode, content);
 
 				// Set the node description of the created node appropriately
-				auto desc = graph_->desc(v);
-				desc->type = type;
-				desc->owner = obj_ref;
+				mSources.set(contentNode, source_mod);
 				
 				// If a parent was passed, add the created content as a child of the parent
-				if (parent.valid())
-					graph_->createEdge(parent, v);
+				if (parent)
+					parent->addChild(content);
 
-				mSources.set(v, source_mod);
+				// Add the new vertex as a child of the content manager
+				addChild(content);
 
-				// Return the ref for convienience.
-				if (refOut)
-					*refOut = obj_ref.reinterpret<ContentType>();
-
-				return v;
+				return convert<ContentType>(content);
 			}
-		}
-
-		// Loads an asset for a parent node.
-		// ContentType: Specifies the type of content. This determines which content factory is used.
-		// source: The source (i.e., file path) to load from.
-		// parentHandle: Set a parent of the newly created node.
-		// refOut: If this is not null, a ref to the loaded asset will be written to it.
-		// returns: A node containing the asset. 
-		template <typename ContentType>
-		inline Node load(const std::string& source, const NodeHandle parentHandle, ref<ContentType>* refOut = nullptr) {
-			Node v = graph()->find(parentHandle);
-			return load<ContentType>(source, v, refOut);
-		}
-
-		// Loads an asset.
-		// ContentType: Specifies the type of content. This determines which content factory is used.
-		// source: The source (i.e., file path) to load from.
-		// refOut: If this is not null, a ref to the loaded asset will be written to it.
-		// returns: A node containing the asset. 
-		template <typename ContentType> 
-		inline Node load(const std::string& source, ref<ContentType>* refOut = nullptr) {
-			// Set self as the parent of the new object
-			return load<ContentType>(source, Node::invalid(), refOut);
 		}
 
 		// Perform garbage collection for all descendents that are no longer
@@ -236,58 +166,29 @@ namespace Morpheus {
 
 		// Unload a node via its content factory and then remove it from the scene graph.
 		// node: The node to unload
-		void unload(Node node);
+		void unload(INodeOwner* node);
 
-		inline void unload(NodeHandle node) {
-			unload(find(node));
+		// Only unloads the node if it has no other users.
+		void safeUnload(INodeOwner* node);
+
+		// Marks this node for an unload if necessary
+		inline void markForUnload(INodeOwner* node) {
+			mMarkedNodes.emplace(node);
 		}
+
+		// Checks to see if marked nodes are still in use, otherwise unloads them
+		void unloadMarked();
 
 		// Unload all children.
 		void unloadAll();
-
-		// Sets the source string of a content node.
-		// node: The node which to set.
-		// source: The content tag to set.
-		void setSource(const Node& node, const std::string& source);
 
 		friend class Engine;
 	};
 
 	// Transfer ownership of an already existing node to the content manager.
 	// content: The node for which to transfer ownership.
-	inline void addContentNode(Node& contentNode) {
-		return content()->addContentNode(contentNode);
-	}
-
-	// Create a node for a content object and transfer ownership of node to content manager.
-	// ContentType: The type of the content.
-	// content: A reference to the content.
-	// returns: A child node of the content manager with the content as an owner. 
-	template <typename ContentType>
-	inline Node createContentNode(ref<ContentType>& contentNode) {
-		return content()->createContentNode<ContentType>(contentNode);
-	}
-
-	// Create a node for a content object and transfer ownership of node to content manager.
-	// ContentType: The type of the content.
-	// content: A reference to the content.
-	// parent: The parent of this node (i.e., scene, user, etc.), so that it does not get
-	// deallocated upon garbage collection
-	// returns: A child node of the content manager with the content as an owner. 
-	template <typename ContentType>
-	inline Node createContentNode(ref<ContentType>& contentNode, Node parent) {
-		return content()->createContentNode<ContentType>(contentNode, parent);
-	}
-
-	// Create a node for a content object and transfer ownership of node to content manager.
-	// ContentType: The type of the content.
-	// content: A reference to the content.
-	// parent: The parent of this node (i.e., scene, user, etc.), so that it does not get
-	// deallocated upon garbage collection
-	// returns: A child node of the content manager with the content as an owner. 
-	template <typename ContentType>
-	inline Node createContentNode(ref<ContentType>& contentNode, NodeHandle parent) {
-		return content()->createContentNode<ContentType>(contentNode, parent);
+	inline void createContentNode(INodeOwner* contentNode) {
+		return content()->createContentNode(contentNode);
 	}
 
 	// Get a content factory by content type.
@@ -303,30 +204,8 @@ namespace Morpheus {
 	// ContentManager::load.
 	// content: The node for which to transfer ownership.
 	// sourceName: The name of the content so it can be looked up with ContentManager::load.
-	inline void addContentNode(Node& contentNode, const std::string& sourceName) {
-		content()->addContentNode(contentNode, sourceName);
-	}
-
-	// Loads an asset for a parent node.
-	// ContentType: Specifies the type of content. This determines which content factory is used.
-	// source: The source (i.e., file path) to load from.
-	// parent: Set a parent of the newly created node.
-	// refOut: If this is not null, a ref to the loaded asset will be written to it.
-	// returns: A node containing the asset. 
-	template <typename ContentType>
-	inline Node load(const std::string& source, const Node& parent, ref<ContentType>* refOut = nullptr) {
-		return content()->load<ContentType>(source, parent, refOut);
-	}
-
-	// Loads an asset for a parent node.
-	// ContentType: Specifies the type of content. This determines which content factory is used.
-	// source: The source (i.e., file path) to load from.
-	// parentHandle: Set a parent of the newly created node.
-	// refOut: If this is not null, a ref to the loaded asset will be written to it.
-	// returns: A node containing the asset. 
-	template <typename ContentType>
-	inline Node load(const std::string& source, const NodeHandle parentHandle, ref<ContentType>* refOut = nullptr) {
-		return content()->load<ContentType>(source, parentHandle, refOut);
+	inline void createContentNode(INodeOwner* contentNode, const std::string& sourceName) {
+		content()->createContentNode(contentNode, sourceName);
 	}
 
 	// Loads an asset.
@@ -335,8 +214,8 @@ namespace Morpheus {
 	// refOut: If this is not null, a ref to the loaded asset will be written to it.
 	// returns: A node containing the asset. 
 	template <typename ContentType> 
-	inline Node load(const std::string& source, ref<ContentType>* refOut = nullptr) {
-		return content()->load<ContentType>(source, refOut);
+	inline ContentType* load(const std::string& source, INodeOwner* parent = nullptr) {
+		return content()->load<ContentType>(source, parent);
 	}
 
 	// Perform garbage collection for all descendents that are no longer
@@ -347,11 +226,7 @@ namespace Morpheus {
 
 	// Unload a node via its content factory and then remove it from the scene graph.
 	// node: The node to unload
-	inline void unload(Node node) {
-		content()->unload(node);
-	}
-
-	inline void unload(NodeHandle node) {
+	inline void unload(INodeOwner* node) {
 		content()->unload(node);
 	}
 
@@ -360,10 +235,18 @@ namespace Morpheus {
 		content()->unloadAll();
 	}
 
+	inline void unloadMarked() {
+		content()->unloadMarked();
+	}
+
 	// Sets the source string of a content node.
 	// node: The node which to set.
 	// source: The content tag to set.
-	inline void setSource(const Node& node, const std::string& source) {
+	inline void setSource(INodeOwner* node, const std::string& source) {
 		content()->setSource(node, source);
+	}
+
+	inline void markForUnload(INodeOwner* node) {
+		content()->markForUnload(node);
 	}
 }

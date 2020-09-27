@@ -13,8 +13,6 @@ namespace Morpheus {
     };
 
     GLint makeBlitShaderRaw();
-    Node makeBlitShader(Node parent, ref<Shader>* shaderOut, BlitShaderView* shaderViewOut);
-    Node makeBlitGeometry(Node parent, ref<Geometry>* geoOut);
-    Node makeBlitShader(NodeHandle parent, ref<Shader>* shaderOut, BlitShaderView* shaderViewOut);
-    Node makeBlitGeometry(NodeHandle parent, ref<Geometry>* geoOut);
+    Shader* makeBlitShader(INodeOwner* parent, BlitShaderView* shaderViewOut);
+   	Geometry* makeBlitGeometry(INodeOwner* parent);
 }

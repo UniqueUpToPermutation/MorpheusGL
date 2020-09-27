@@ -666,8 +666,8 @@ namespace Morpheus {
 		inline ShaderUniform() : mLoc(-1) {
 		}
 
-		inline void find(const ref<Shader>& shader, const std::string& identifier);
-		inline ShaderUniform(const ref<Shader>& shader, const std::string& identifier);
+		inline void find(const Shader* shader, const std::string& identifier);
+		inline ShaderUniform(const Shader* shader, const std::string& identifier);
 
 		friend void readRenderUniforms(const nlohmann::json& j, const Shader* shad, RendererShaderView* out);
 	};
@@ -687,10 +687,6 @@ namespace Morpheus {
 			return mUnit;
 		}
 
-		inline void set(const ref<Texture>& texture, const GLenum access) const {
-			texture->bindImage(mUnit, access);
-		}
-
 		inline void set(const Texture* texture, const GLenum access) const {
 			texture->bindImage(mUnit, access);
 		}
@@ -703,8 +699,8 @@ namespace Morpheus {
 		inline ShaderUniform() : mLoc(-1), mUnit(-1) {
 		}
 
-		inline void find(const ref<Shader>& shader, const std::string& identifier);
-		inline ShaderUniform(const ref<Shader>& shader, const std::string& identifier);
+		inline void find(const Shader* shader, const std::string& identifier);
+		inline ShaderUniform(const Shader* shader, const std::string& identifier);
 	};
 
 	template <>
@@ -722,11 +718,6 @@ namespace Morpheus {
 			return mUnit;
 		}
 		
-		inline void set(const ref<Texture>& texture, const ref<Sampler>& sampler) const {
-			sampler->bind(mUnit);
-			texture->bind(mUnit);
-		}
-
 		inline void set(const Texture* texture, const Sampler* sampler) const {
 			sampler->bind(mUnit);
 			texture->bind(mUnit);
@@ -746,8 +737,8 @@ namespace Morpheus {
 		inline ShaderUniform() : mLoc(-1), mUnit(-1) {
 		}
 
-		inline void find(const ref<Shader>& shader, const std::string& identifier);
-		inline ShaderUniform(const ref<Shader>& shader, const std::string& identifier);
+		inline void find(const Shader* shader, const std::string& identifier);
+		inline ShaderUniform(const Shader* shader, const std::string& identifier);
 	};
 
 	enum class ShaderParameterType {
@@ -942,8 +933,8 @@ namespace Morpheus {
 
 	struct ShaderSamplerAssignment {
 		GLint mUniformLocation;
-		ref<Texture> mTexture;
-		ref<Sampler> mSampler;
+		Texture* mTexture;
+		Sampler* mSampler;
 		GLint mTextureUnit;
 	};
 
@@ -954,10 +945,10 @@ namespace Morpheus {
 		void assign() const;
 		ShaderSamplerAssignments overwrite(const ShaderSamplerAssignments& toOverwrite);
 
-		void add(const ShaderUniform<Sampler>& uniform, ref<Sampler> sampler, ref<Texture> texture);
+		void add(const ShaderUniform<Sampler>& uniform, Sampler* sampler, Texture* texture);
 	};
 
-	class Shader {
+	class Shader : public INodeOwner {
 	private:
 		GLuint mId;
 		RendererShaderView mRenderView;
@@ -966,6 +957,11 @@ namespace Morpheus {
 		ShaderSamplerAssignments mDefaultSamplerAssignments;
 
 	public:
+		inline Shader() : INodeOwner(NodeType::SHADER) {
+		}
+
+		Shader* toShader() override;
+
 		inline const ShaderUniformAssignments& defaultUniformAssignments() const {
 			return mDefaultUniformAssignments;
 		}
@@ -988,12 +984,12 @@ namespace Morpheus {
 
 	class ShaderView {
 	private:
-		ref<Shader> shader_;
+		Shader* shader_;
 
 	public:
-		inline ShaderView(ref<Shader>& shader_) : shader_(shader_) { }
+		inline ShaderView(Shader* shader_) : shader_(shader_) { }
 
-		inline ref<Shader> shader() const {
+		inline Shader* shader() const {
 			return shader_;
 		}
 
@@ -1008,17 +1004,17 @@ namespace Morpheus {
 	template <>
 	class ContentFactory<Shader> : public IContentFactory {
 	private:
-		void readJsonMetadata(const nlohmann::json& j, Shader* shad, Node& loadInto,
+		void readJsonMetadata(const nlohmann::json& j, Shader* shad, Node loadInto,
 			const std::string& parentSrc = "");
 
-		ref<Shader> loadJson(const std::string& source, Node& loadInto);
-		ref<Shader> loadComp(const std::string& source, Node& loadInto);
+		Shader* loadJson(const std::string& source, Node loadInto);
+		Shader* loadComp(const std::string& source, Node loadInto);
 
 	public:
 		ContentFactory();
-		ref<void> load(const std::string& source, Node& loadInto) override;
-		ref<Shader> makeFromGL(GLint shaderProgram);
-		void unload(ref<void> ref) override;
+		INodeOwner* load(const std::string& source, Node loadInto) override;
+		Shader* makeFromGL(GLint shaderProgram);
+		void unload(INodeOwner* ref) override;
 		void dispose() override;
 
 		std::string getContentTypeString() const override;
@@ -1040,31 +1036,31 @@ namespace Morpheus {
 	void printProgramLinkerOutput(GLint program);
 	void printShaderCompilerOutput(GLint shader);
 
-	inline void ShaderUniform<Sampler>::find(const ref<Shader>& shader, const std::string& identifier) {
+	inline void ShaderUniform<Sampler>::find(const Shader* shader, const std::string& identifier) {
 		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());
 		glGetUniformiv(shader->id(), mLoc, &mUnit);
 	}
 
-	inline ShaderUniform<Sampler>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) {
+	inline ShaderUniform<Sampler>::ShaderUniform(const Shader* shader, const std::string& identifier) {
 		find(shader, identifier);
 	}
 
 	template <typename T>
-	inline void ShaderUniform<T>::find(const ref<Shader>& shader, const std::string& identifier) {
+	inline void ShaderUniform<T>::find(const Shader* shader, const std::string& identifier) {
 		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());
 	}
 
 	template <typename T>
-	inline ShaderUniform<T>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) {
+	inline ShaderUniform<T>::ShaderUniform(const Shader* shader, const std::string& identifier) {
 		find(shader, identifier);
 	}
 
-	inline void ShaderUniform<Texture>::find(const ref<Shader>& shader, const std::string& identifier) {
+	inline void ShaderUniform<Texture>::find(const Shader* shader, const std::string& identifier) {
 		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());
 		glGetUniformiv(shader->id(), mLoc, &mUnit);
 	}
 
-	inline ShaderUniform<Texture>::ShaderUniform(const ref<Shader>& shader, const std::string& identifier) {
+	inline ShaderUniform<Texture>::ShaderUniform(const Shader* shader, const std::string& identifier) {
 		find(shader, identifier);
 	}
 }

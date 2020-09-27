@@ -21,68 +21,63 @@ using namespace glm;
 
 namespace Morpheus {
 
-	NodeHandle ForwardRenderer::handle() const {
-		return mHandle;
-	}
-	RendererType ForwardRenderer::getType() const {
+	RendererType ForwardRenderer::getRendererType() const {
 		return RendererType::FORWARD;
 	}
 
-	void ForwardRenderer::collectRecursive(Node& current, ForwardRenderCollectParams& params) {
-
-		auto nodeDesc = &mNodeDataView[current];
+	void ForwardRenderer::collectRecursive(INodeOwner* current, ForwardRenderCollectParams& params) {
 
 		// Ignore anything that is not a scene child.
-		if (!NodeMetadata::isRenderable(nodeDesc->type))
+		if (!current->isRenderable())
 			return;
 
 		// Visiting a node on the way down
-		switch (nodeDesc->type) {
+		switch (current->getType()) {
 		case NodeType::SCENE_ROOT:
 		{
-			auto scene = nodeDesc->owner.reinterpret<Scene>();
+			auto scene = current->toScene();
 
 			// Set the active camera
-			if (!params.mRenderCamera.isNull())
+			if (params.mRenderCamera)
 				params.mRenderCamera = scene->getActiveCamera();
 			break;
 		}
 		case NodeType::TRANSFORM:
 		{
-			auto newTransform = nodeDesc->owner.reinterpret<Transform>();
+			auto newTransform = current->toTransform();
 			// Is this transform is static, then it has already been cached
 			// Otherwise, cache (evaluate and save) this transform using the
 			// last transform on the stack
-			if (!params.mIsStaticStack->top()) {
+			if (params.mIsStaticStack->top()) {
 				if (params.mTransformStack->empty()) {
-					newTransform->cache(identity<mat4>());
+					newTransform->mTransform.cache(identity<mat4>());
 				} else {
-					newTransform->cache(params.mTransformStack->top()->mCache);
+					newTransform->mTransform.cache(params.mTransformStack->top()->mCache);
 				}
 			} 
 			// Set the current transform to the one we just found.
-			params.mTransformStack->push(newTransform);
+			params.mTransformStack->push(&newTransform->mTransform);
 			break;
 		}
 		case NodeType::STATIC_MESH:
 		{
 			StaticMeshRenderInstance inst;
 			inst.mTransform = params.mTransformStack->top();
-			StaticMesh::getParts(current, &inst.mGeometry, &inst.mMaterial);
+			inst.mStaticMesh = current->toStaticMesh();
 			params.mQueues->mStaticMeshes.push(inst);
 			break;
 		}
 		case NodeType::NANOGUI_SCREEN:
 		{
 			// Found a GUI
-			params.mQueues->mGuis.push(nodeDesc->owner.reinterpret<GuiBase>());
+			params.mQueues->mGuis.push(current->toGui());
 			break;
 		}
 		case NodeType::CAMERA:
 		{
 			// Found a camera
-			if (params.mRenderCamera.isNull())
-				params.mRenderCamera = nodeDesc->owner.reinterpret<Camera>();
+			if (params.mRenderCamera)
+				params.mRenderCamera = current->toCamera();
 			break;
 		}
 		default:
@@ -90,13 +85,12 @@ namespace Morpheus {
 		}
 
 		// If the node is a child of a scene, recursively continue the collection
-		for (auto childIt = current.children(); childIt.valid(); childIt.next()) {
-			auto child = childIt();
-			collectRecursive(child, params);
+		for (auto childIt = current->children(); childIt.valid(); childIt.next()) {
+			collectRecursive(childIt(), params);
 		}
 
 		// Visiting a node on the way up
-		switch (nodeDesc->type) {
+		switch (current->getType()) {
 		case NodeType::TRANSFORM:
 			// Pop the transformation from the stack
 			params.mTransformStack->pop();
@@ -106,10 +100,9 @@ namespace Morpheus {
 		}
 	}
 
-	void ForwardRenderer::collect(Node& start, ForwardRenderCollectParams& params) {
+	void ForwardRenderer::collect(INodeOwner* start, ForwardRenderCollectParams& params) {
 		mQueues.mGuis.clear();
 		mQueues.mStaticMeshes.clear();
-		mNodeDataView = graph()->descs();
 
 		params.mQueues = &mQueues;
 		params.mTransformStack = &mTransformStack;
@@ -126,12 +119,12 @@ namespace Morpheus {
 
 	void ForwardRenderer::makeDebugObjects() {
 		// Create the texture blit shader
-		makeBlitGeometry(mHandle, &mBlitGeometry);
-		makeBlitShader(mHandle, &mTextureBlitShader, &mTextureBlitShaderView);
-		content()->load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, mHandle, &mDebugBlitSampler);
+		mBlitGeometry = makeBlitGeometry(this);
+		mTextureBlitShader = makeBlitShader(this, &mTextureBlitShaderView);
+		mDebugBlitSampler = load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, this);
 	}
 
-	void ForwardRenderer::draw(const ForwardRenderQueue* queue, const ForwardRenderDrawParams& params)
+	void ForwardRenderer::draw(ForwardRenderQueue* queue, const ForwardRenderDrawParams& params)
 	{
 		int width;
 		int height;
@@ -144,7 +137,7 @@ namespace Morpheus {
 		mat4 projection = identity<mat4>();
 		vec3 eye = zero<vec3>();
 
-		if (!params.mRenderCamera.isNull()) {
+		if (params.mRenderCamera) {
 			view = params.mRenderCamera->view();
 			projection = params.mRenderCamera->projection();
 			eye = params.mRenderCamera->eye();
@@ -159,9 +152,9 @@ namespace Morpheus {
 
 		// Draw static meshes
 		for (auto meshPtr = queue->mStaticMeshes.begin(); meshPtr != queue->mStaticMeshes.end(); ++meshPtr) {
-			auto& material = meshPtr->mMaterial;
-			auto& transform = meshPtr->mTransform;
-			auto& geo = meshPtr->mGeometry;
+			auto material = meshPtr->mStaticMesh->getMaterial();
+			auto transform = meshPtr->mTransform;
+			auto geo = meshPtr->mStaticMesh->getGeometry();
 
 			GL_ASSERT;
 
@@ -205,7 +198,7 @@ namespace Morpheus {
 		}
 	}
 
-	void ForwardRenderer::draw(Node scene) {
+	void ForwardRenderer::draw(INodeOwner* scene) {
 		ForwardRenderCollectParams collectParams;
 		collectParams.mQueues = &mQueues;
 		collectParams.mIsStaticStack = &mIsStaticStack;
@@ -242,27 +235,26 @@ namespace Morpheus {
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	}
 
-	void ForwardRenderer::init(Node n)
+	ForwardRenderer::~ForwardRenderer() {
+		markForUnload(this->mBlitGeometry);
+		markForUnload(this->mDebugBlitSampler);
+		markForUnload(this->mTextureBlitShader);
+	}
+
+	void ForwardRenderer::init()
 	{
 		// Set VSync on
 		glfwSwapInterval(1); 
 		glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
 
-		mHandle = graph()->issueHandle(n);
-
 		makeDebugObjects();
-	}
-
-	void ForwardRenderer::dispose() {
-		graph()->recallHandle(mHandle);
-		delete this;
 	}
 
 	void ForwardRenderer::setClearColor(float r, float g, float b) {
 		glClearColor(r, g, b, 1.0f);
 	}
 
-	void ForwardRenderer::debugBlit(ref<Texture> texture, 
+	void ForwardRenderer::debugBlit(Texture* texture, 
 			const glm::vec2& lower,
 			const glm::vec2& upper) {
 		glDisable(GL_DEPTH_TEST);

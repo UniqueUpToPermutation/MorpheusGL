@@ -3,23 +3,18 @@
 #include <engine/core.hpp>
 
 namespace Morpheus {
-	class Updater : public IInitializable {
+	class Updater : public INodeOwner {
 	private:
 		double mLastTick;
-		NodeHandle mHandle;
 		bool bFirstTick;
 
 	public:
 		Updater();
 
-		void init(Node node) override;
+		void init() override;
 
 		void restartClock();
 		void updateChildren();
-
-		inline NodeHandle handle() const {
-			return mHandle;
-		}
 
 		friend class Engine;
 	};

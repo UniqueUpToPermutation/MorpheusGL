@@ -3,7 +3,7 @@
 #define COMPUTE_KERNEL_MAX_TEXTURES 8
 
 namespace Morpheus {
-	GGXComputeKernel::GGXComputeKernel(ref<Shader> gpuBackend, uint groupSize) :
+	GGXComputeKernel::GGXComputeKernel(Shader* gpuBackend, uint groupSize) : INodeOwner(NodeType::GGX_COMPUTE_KERNEL),
 		mGPUBackend(gpuBackend), mGroupSize(groupSize) {
 		
 		mInputSamplerUniform.find(gpuBackend, "inputTexture");
@@ -32,14 +32,14 @@ namespace Morpheus {
         bInJob = false;
 	}
 
-	ref<Texture> GGXComputeKernel::addJobUnmanaged(const GGXComputeJob& job) {
+	Texture* GGXComputeKernel::addJobUnmanaged(const GGXComputeJob& job) {
 		if (job.mInputImage->width() != job.mInputImage->height())
 			throw std::runtime_error("GGXComputeKernel: Dimensions must be equal!");
 
 		if ((job.mInputImage->width() & (job.mInputImage->width() - 1) == 0) || job.mInputImage->width() == 0)
 			throw std::runtime_error("GGXComputeKernel: Dimensions are not a power of two!");
 
-		if (mGPUBackend.isNull())
+		if (mGPUBackend)
             throw std::runtime_error("GGXComputeKernel: Kernel has not been initialized!");
 
         if (bInJob)
@@ -51,7 +51,7 @@ namespace Morpheus {
         uint result = mJobs.size();
         mJobs.emplace_back(job);
 
-		ref<Texture> tex = getFactory<Texture>()->makeCubemapUnmanaged(
+		Texture* tex = getFactory<Texture>()->makeCubemapUnmanaged(
 			job.mInputImage->width(), 
 			job.mInputImage->height(), 
 			job.mInputImage->format());
@@ -126,9 +126,9 @@ namespace Morpheus {
         bInJob = true;
 	}
 
-	ref<Texture> GGXComputeKernel::submit(const GGXComputeJob& job) {
+	Texture* GGXComputeKernel::submit(const GGXComputeJob& job) {
 		beginQueue();
-		ref<Texture> tex = addJobUnmanaged(job);
+		Texture* tex = addJobUnmanaged(job);
 		submitQueue();
 		return tex;
 	}
@@ -137,11 +137,12 @@ namespace Morpheus {
 		glTextureBarrier();
 	}
 
-	void GGXComputeKernel::init(Node node) {
-		load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, node, &mCubemapSampler);
+	void GGXComputeKernel::init() {
+		mCubemapSampler = load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, this);
 	}
 
-	void GGXComputeKernel::dispose() {
-		delete this;
+	GGXComputeKernel::~GGXComputeKernel() {
+		markForUnload(mCubemapSampler);
+		markForUnload(mGPUBackend);
 	}
 }

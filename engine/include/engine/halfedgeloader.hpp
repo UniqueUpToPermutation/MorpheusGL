@@ -26,8 +26,8 @@ namespace Morpheus {
 		HalfEdgeGeometry* loadUnmanaged(const std::string& source, const HalfEdgeLoadParameters& params);
 		HalfEdgeGeometry* loadUnmanaged(const std::string& source);
 
-		ref<void> load(const std::string& source, Node& loadInto) override;
-		void unload(ref<void> ref) override;
+		INodeOwner* load(const std::string& source, Node loadInto) override;
+		void unload(INodeOwner* ref) override;
 		void dispose() override;
 
 		std::string getContentTypeString() const override;

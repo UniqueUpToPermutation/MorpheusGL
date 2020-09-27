@@ -8,8 +8,7 @@ using namespace Morpheus;
 int main() {
     Engine en;
     if (en.startup("config.json").isSuccess()) {
-        auto sceneNode = en.makeScene();
-        auto sceneHandle = issueHandle(sceneNode);
+        auto scene = en.makeScene();
 
         // When escape is pressed, shut the engine down.
         f_key_capture_t keyHandler = [&en](GLFWwindow* win, 
@@ -23,12 +22,13 @@ int main() {
         en.input()->registerTarget(&en);
         en.input()->bindKeyEvent(&en, &keyHandler);
 
-        ref<Texture> texture;
-        en.content()->load<Texture>("content/brick.ktx", en.handle(), &texture);
+        Texture* texture = load<Texture>("content/brick.ktx", scene);
+
+		init(scene);
 
         while (en.valid()) {
             en.update();
-            en.render(sceneHandle);
+            en.render(scene);
             en.renderer()->debugBlit(texture, 
                 glm::vec2(0.0, 0.0), 
                 glm::vec2(512.0, 512.0));

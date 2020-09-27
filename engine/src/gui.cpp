@@ -5,7 +5,11 @@
 
 namespace Morpheus {
 
-	void GuiBase::init(Node node)
+	GuiBase* GuiBase::toGui() {
+		return this;
+	}
+
+	void GuiBase::init()
 	{
 		auto input_ = input();
 		auto engine_ = engine();
@@ -53,9 +57,7 @@ namespace Morpheus {
 		initGui();
 	}
 
-	void GuiBase::dispose() {
+	GuiBase::~GuiBase() {
 		input()->unregisterTarget(this);
-
-		delete this;
 	}
 }

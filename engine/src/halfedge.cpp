@@ -396,8 +396,14 @@ namespace Morpheus {
 		return geo;
 	}
 
-	HalfEdgeGeometry::HalfEdgeGeometry(const HalfEdgeGeometry& geo) {
+
+
+	HalfEdgeGeometry::HalfEdgeGeometry(const HalfEdgeGeometry& geo) : INodeOwner(NodeType::HALF_EDGE_GEOMETRY) {
 		geo.copyTo(this);
+	}
+
+	HalfEdgeGeometry* HalfEdgeGeometry::toHalfEdgeGeometry() {
+		return this;
 	}
 
 	void HalfEdgeGeometry::copyTo(HalfEdgeGeometry* output) const {

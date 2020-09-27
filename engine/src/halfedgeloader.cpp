@@ -336,12 +336,12 @@ namespace Morpheus {
 		return geo;
 	}
 
-	ref<void> ContentFactory<HalfEdgeGeometry>::load(const std::string& source, Node& loadInto) {
-		return ref<void>(loadUnmanaged(source));
+	INodeOwner* ContentFactory<HalfEdgeGeometry>::load(const std::string& source, Node loadInto) {
+		return loadUnmanaged(source);
 	}
 
-	void ContentFactory<HalfEdgeGeometry>::unload(ref<void> ref) {
-		delete ref.reinterpretGet<HalfEdgeGeometry>();
+	void ContentFactory<HalfEdgeGeometry>::unload(INodeOwner* ref) {
+		delete ref;
 	}
 
 	void ContentFactory<HalfEdgeGeometry>::dispose()

@@ -100,6 +100,10 @@ namespace Morpheus {
 		}
 	}
 
+	Shader* Shader::toShader() {
+		return this;
+	}
+
 	ContentFactory<Shader>::ContentFactory() {
 	}
 
@@ -253,8 +257,12 @@ namespace Morpheus {
 
 					textureSrc = prefix_include_path + textureSrc;
 
-					content->load<Texture>(textureSrc, parent, &assignment.mTexture);
-					content->load<Sampler>(samplerSrc, parent, &assignment.mSampler);
+					assignment.mTexture = load<Texture>(textureSrc);
+					assignment.mSampler = load<Sampler>(samplerSrc);
+
+					parent.addChild(assignment.mTexture->node());
+					parent.addChild(assignment.mSampler->node());
+
 					assignment.mUniformLocation = a;
 					glGetUniformiv(shad->id(), a, &assignment.mTextureUnit); // Read the texture unit we should bind to
 					out->mBindings.emplace_back(assignment);
@@ -308,7 +316,7 @@ namespace Morpheus {
 		}
 	}
 
-	void ContentFactory<Shader>::readJsonMetadata(const nlohmann::json& j, Shader* shad, Node& loadInto,
+	void ContentFactory<Shader>::readJsonMetadata(const nlohmann::json& j, Shader* shad, Node loadInto,
 		const std::string& parentSrc) {
 		if (j.contains("editor_uniforms")) {
 			auto jsonEdUnif = j["editor_uniforms"];
@@ -353,7 +361,7 @@ namespace Morpheus {
 		}
 	}
 
-	ref<Shader> ContentFactory<Shader>::loadJson(const std::string& source, Node& loadInto) {
+	Shader* ContentFactory<Shader>::loadJson(const std::string& source, Node loadInto) {
 		json j;
 		ifstream f(source);
 
@@ -361,8 +369,7 @@ namespace Morpheus {
 
 		if (!f.is_open()) {
 			cout << "Failed to open " << source << "!" << endl;
-			ref<Shader> r(nullptr);
-			return r;
+			return nullptr;
 		}
 
 		f >> j;
@@ -446,11 +453,10 @@ namespace Morpheus {
 		shader->mId = id;
 		readJsonMetadata(j, shader, loadInto, source);
 
-		ref<Shader> r(shader);
-		return r;
+		return shader;
 	}
 
-	ref<Shader> ContentFactory<Shader>::loadComp(const std::string& source, Node& loadInto) {
+	Shader* ContentFactory<Shader>::loadComp(const std::string& source, Node loadInto) {
 		Shader* shader = new Shader();
 
 		vector<string> paths;
@@ -470,11 +476,10 @@ namespace Morpheus {
 		glDeleteShader(comp_id);
 
 		shader->mId = id;
-		ref<Shader> r(shader);
-		return r;
+		return shader;
 	}
 
-	ref<void> ContentFactory<Shader>::load(const std::string& source, Node& loadInto) {
+	INodeOwner* ContentFactory<Shader>::load(const std::string& source, Node loadInto) {
 		size_t loc = source.rfind('.');
 		if (loc != std::string::npos) {
 			auto ext = source.substr(loc);
@@ -489,17 +494,17 @@ namespace Morpheus {
 			}
 		}
 		std::runtime_error("Shader has no extension!");
-		return ref<void>(nullptr);
+		return nullptr;
 	}
 
-	ref<Shader> ContentFactory<Shader>::makeFromGL(GLint shaderProgram) {
+	Shader* ContentFactory<Shader>::makeFromGL(GLint shaderProgram) {
 		Shader* shad = new Shader();
 		shad->mId = shaderProgram;
-		return ref<Shader>(shad);
+		return shad;
 	}
 
-	void ContentFactory<Shader>::unload(ref<void> ref) {
-		Shader* shad = ref.reinterpretGet<Shader>();
+	void ContentFactory<Shader>::unload(INodeOwner* ref) {
+		Shader* shad = ref->toShader();
 		glDeleteProgram(shad->mId);
 		delete shad;
 	}
@@ -656,7 +661,7 @@ namespace Morpheus {
 		return result;
 	}
 
-	void ShaderSamplerAssignments::add(const ShaderUniform<Sampler>& uniform, ref<Sampler> sampler, ref<Texture> texture) {
+	void ShaderSamplerAssignments::add(const ShaderUniform<Sampler>& uniform, Sampler* sampler, Texture* texture) {
 		ShaderSamplerAssignment assign;
 		assign.mUniformLocation = uniform.location();
 		assign.mSampler = sampler;

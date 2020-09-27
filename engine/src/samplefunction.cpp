@@ -6,7 +6,7 @@
 
 namespace Morpheus {
 
-	void writeCubemapSideBaseLevel(ref<Texture> tex, size_t i_side, GLenum format, const std::vector<float>& mData) {
+	void writeCubemapSideBaseLevel(Texture* tex, size_t i_side, GLenum format, const std::vector<float>& mData) {
 		GL_ASSERT;
 		glBindTexture(GL_TEXTURE_CUBE_MAP, tex->id());
 		GL_ASSERT;
@@ -17,7 +17,7 @@ namespace Morpheus {
 		GL_ASSERT;
 	}
 
-	void writeTextureBaseLevel(ref<Texture> tex, GLenum format, const std::vector<float>& mData) {
+	void writeTextureBaseLevel(Texture* tex, GLenum format, const std::vector<float>& mData) {
 		glBindTexture(GL_TEXTURE_2D, tex->id());
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex->width(), tex->height(), format, GL_FLOAT, &mData[0]);
 		GL_ASSERT;
@@ -39,7 +39,7 @@ namespace Morpheus {
 		return GL_INVALID_ENUM;
 	}
 
-	void readCubemapSideBaseLevel(ref<Texture> tex, size_t i_side, uint32_t element_length, std::vector<float>* mData) {
+	void readCubemapSideBaseLevel(Texture* tex, size_t i_side, uint32_t element_length, std::vector<float>* mData) {
 		mData->resize((size_t)element_length * (size_t)tex->width() * (size_t)tex->height());
 		GLenum format = defaultFormatForLength(element_length);
 		glGetTextureSubImage(tex->id(), 0, 0, 0, (GLint)i_side, tex->width(), tex->height(), 1,
@@ -47,7 +47,7 @@ namespace Morpheus {
 		GL_ASSERT;
 	}
 
-	void readTextureBaseLevel(ref<Texture> tex, uint32_t element_length, std::vector<float>* mData) {
+	void readTextureBaseLevel(Texture* tex, uint32_t element_length, std::vector<float>* mData) {
 		mData->resize((size_t)element_length * (size_t)tex->width() * (size_t)tex->height());
 		GLenum format = defaultFormatForLength(element_length);
 		glGetTextureSubImage(tex->id(), 0, 0, 0, 0, tex->width(), tex->height(), 1, 

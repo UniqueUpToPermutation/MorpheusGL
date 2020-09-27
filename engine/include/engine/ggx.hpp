@@ -7,40 +7,39 @@
 
 namespace Morpheus {
 	struct GGXComputeJob {
-		ref<Texture> mInputImage;
+		Texture* mInputImage;
 	};
 
-	class GGXComputeKernel : public IInitializable, public IDisposable {
+	class GGXComputeKernel : public INodeOwner {
 	private:
 		std::vector<GGXComputeJob> mJobs;
-		std::vector<ref<Texture>> mJobTextures;
+		std::vector<Texture*> mJobTextures;
 
-		ref<Sampler> mCubemapSampler;
+		Sampler* mCubemapSampler;
 		ShaderUniform<Sampler> mInputSamplerUniform;
 		ShaderUniform<GLuint> mOutputTextureCount;
 		ShaderUniform<GLuint> mBeginLevel;
 		ShaderUniform<GLuint> mTotalLevels;
 
-		ref<Shader> mGPUBackend;
-		NodeHandle mGPUBackendHandle;
+		Shader* mGPUBackend;
 
 		bool bInJob;
 		uint mGroupSize;
 
 	public:
 
-		GGXComputeKernel(ref<Shader> gpuBackend, uint groupSize);
+		GGXComputeKernel(Shader* gpuBackend, uint groupSize);
+		~GGXComputeKernel() override;
 
 		void beginQueue();
-		ref<Texture> addJobUnmanaged(const GGXComputeJob& job);
+		Texture* addJobUnmanaged(const GGXComputeJob& job);
 		void submitQueue();
 
-		ref<Texture> submit(const GGXComputeJob& job);
+		Texture* submit(const GGXComputeJob& job);
 
 		void barrier();
 
-		void init(Node node) override;
-		void dispose() override;
+		void init() override;
 	};
 	SET_NODE_ENUM(GGXComputeKernel, GGX_COMPUTE_KERNEL);
 }

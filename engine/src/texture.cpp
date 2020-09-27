@@ -6,12 +6,16 @@
 #include <glad/glad.h>
 
 namespace Morpheus {
-	ref<void> ContentFactory<Texture>::load(const std::string& source, Node& loadInto) {
+	Texture* Texture::toTexture() {
+		return this;
+	}
+
+	INodeOwner* ContentFactory<Texture>::load(const std::string& source, Node loadInto) {
 		return loadInternal<false>(source, 0);
 	}
 
 	template <bool overrideFormat>
-	ref<Texture> ContentFactory<Texture>::loadGliInternal(const std::string& source,
+	Texture* ContentFactory<Texture>::loadGliInternal(const std::string& source,
 		GLenum internalFormat) {
 		TextureType type;
 		GLenum gltype;
@@ -181,11 +185,11 @@ namespace Morpheus {
 		tex_ptr->mDepth = Extent.z;
 		tex_ptr->mLevels = tex.levels();
 		tex_ptr->mFormat = internalFormatToUse;
-		return ref<Texture>(tex_ptr);
+		return tex_ptr;
 	}
 
 	template <bool overrideFormat>
-	ref<Texture> ContentFactory<Texture>::loadPngInternal(const std::string& source,
+	Texture* ContentFactory<Texture>::loadPngInternal(const std::string& source,
 		GLenum internalFormat) {
 		std::vector<uint8_t> image;
 		uint32_t width, height;
@@ -222,15 +226,15 @@ namespace Morpheus {
 			tex->mLevels = numLevels;
 			tex->mFormat = internalFormatToUse;
 
-			return ref<Texture>(tex);
+			return tex;
 		}
 		else {
-			return ref<Texture>(nullptr);
+			return nullptr;
 		}
 	}
 
 	template <bool overrideFormat>
-	ref<Texture> ContentFactory<Texture>::loadInternal(const std::string& source,
+	Texture* ContentFactory<Texture>::loadInternal(const std::string& source,
 		GLenum internalFormat) {
 		std::cout << "Loading texture " << source;
 		size_t loc = source.rfind('.');
@@ -246,38 +250,38 @@ namespace Morpheus {
 			}
 			else {
 				std::cout << "\nFormat not recognized!" << std::endl;
-				return ref<Texture>(nullptr);
+				return nullptr;
 			}
 		}
 		else {
 			std::cout << std::endl << source << " missing file extension!" << std::endl;
-			return ref<Texture>(nullptr);
+			return nullptr;
 		}
 	}
 
-	ref<Texture> ContentFactory<Texture>::loadGliUnmanaged(const std::string& source) {
+	Texture* ContentFactory<Texture>::loadGliUnmanaged(const std::string& source) {
 		return loadGliInternal<false>(source, 0);
 	}
 
-	ref<Texture> ContentFactory<Texture>::loadPngUnmanaged(const std::string& source) {
+	Texture* ContentFactory<Texture>::loadPngUnmanaged(const std::string& source) {
 		return loadPngInternal<false>(source, 0);
 	}
 
-	ref<Texture> ContentFactory<Texture>::loadTextureUnmanaged(const std::string& source) {
+	Texture* ContentFactory<Texture>::loadTextureUnmanaged(const std::string& source) {
 		return loadInternal<false>(source, 0);
 	}
 
-	ref<Texture> ContentFactory<Texture>::loadTextureUnmanaged(const std::string& source, 
+	Texture* ContentFactory<Texture>::loadTextureUnmanaged(const std::string& source, 
 		GLenum internalFormat) {
 		return loadInternal<true>(source, internalFormat);
 	}
 
-	ref<Texture> ContentFactory<Texture>::loadGliUnmanaged(const std::string& source,
+	Texture* ContentFactory<Texture>::loadGliUnmanaged(const std::string& source,
 		GLenum internalFormat) {
 		return loadGliInternal<true>(source, internalFormat);
 	}
 
-	ref<Texture> ContentFactory<Texture>::loadPngUnmanaged(const std::string& source,
+	Texture* ContentFactory<Texture>::loadPngUnmanaged(const std::string& source,
 		GLenum internalFormat) {
 		return loadPngInternal<true>(source, internalFormat);
 	}
@@ -405,8 +409,8 @@ namespace Morpheus {
 		GL_ASSERT;
 	}
 
-	void ContentFactory<Texture>::unload(ref<void> ref) {
-		auto tex = ref.reinterpretGet<Texture>();
+	void ContentFactory<Texture>::unload(INodeOwner* ref) {
+		auto tex = ref->toTexture();
 		glDeleteTextures(1, &tex->mId);
 		delete tex;
 	}
@@ -415,7 +419,7 @@ namespace Morpheus {
 		delete this;
 	}
 
-	ref<Texture> ContentFactory<Texture>::makeTexture2DUnmanaged(const uint32_t width, const uint32_t height, 
+	Texture* ContentFactory<Texture>::makeTexture2DUnmanaged(const uint32_t width, const uint32_t height, 
 		const GLenum format, const int miplevels) {
 		GLuint TextureName = 0;
 		glGenTextures(1, &TextureName);
@@ -442,36 +446,26 @@ namespace Morpheus {
 		tex->mDepth = 1;
 		tex->mFormat = format;
 		tex->mLevels = actual_mip_levels;
-		return ref<Texture>(tex);
+		return tex;
 	}
 
-	Node ContentFactory<Texture>::makeTexture2DUnparented(ref<Texture>* out, const uint32_t width, const uint32_t height,
+	Texture* ContentFactory<Texture>::makeTexture2DUnparented(const uint32_t width, const uint32_t height,
 		const GLenum format, const int miplevels) {
-		ref<Texture> texRef = makeTexture2DUnmanaged(width, height, format, miplevels);
-		if (out)
-			*out = texRef;
-		return content()->createContentNode(texRef);
+		Texture* tex =  makeTexture2DUnmanaged(width, height, format, miplevels);
+		content()->createContentNode(tex);
+		return tex;
 	}
 
-	Node ContentFactory<Texture>::makeTexture2D(ref<Texture>* out, Node parent, 
+	Texture* ContentFactory<Texture>::makeTexture2D(INodeOwner* parent, 
 		const uint32_t width, const uint32_t height, 
 		const GLenum format, const int miplevels) {
-		ref<Texture> texRef = makeTexture2DUnmanaged(width, height, format, miplevels);
-		if (out)
-			*out = texRef;
-		return content()->createContentNode(texRef, parent);
+		Texture* tex = makeTexture2DUnmanaged(width, height, format, miplevels);
+		content()->createContentNode(tex);
+		parent->addChild(tex);
+		return tex;
 	}
 
-	Node ContentFactory<Texture>::makeTexture2D(ref<Texture>* out, NodeHandle parent, 
-		const uint32_t width, const uint32_t height, 
-		const GLenum format, const int miplevels) {
-		ref<Texture> texRef = makeTexture2DUnmanaged(width, height, format, miplevels);
-		if (out)
-			*out = texRef;
-		return content()->createContentNode(texRef, parent);
-	}
-
-	ref<Texture> ContentFactory<Texture>::makeCubemapUnmanaged(const uint32_t width, const uint32_t height,
+	Texture* ContentFactory<Texture>::makeCubemapUnmanaged(const uint32_t width, const uint32_t height,
 		const GLenum format, const int miplevels) {
 		GLuint TextureName = 0;
 		glGenTextures(1, &TextureName);
@@ -498,33 +492,23 @@ namespace Morpheus {
 		tex->mDepth = 1;
 		tex->mFormat = format;
 		tex->mLevels = actual_mip_levels;
-		return ref<Texture>(tex);
+		return tex;
 	}
 
-	Node ContentFactory<Texture>::makeCubemapUnparented(ref<Texture>* out, const uint32_t width, const uint32_t height,
+	Texture* ContentFactory<Texture>::makeCubemapUnparented(const uint32_t width, const uint32_t height,
 		const GLenum format, const int miplevels) {
-		ref<Texture> texRef = makeCubemapUnmanaged(width, height, format, miplevels);
-		if (out)
-			*out = texRef;
-		return content()->createContentNode(texRef);
+		Texture* texRef = makeCubemapUnmanaged(width, height, format, miplevels);
+		content()->createContentNode(texRef);
+		return texRef;
 	}
 
-	Node ContentFactory<Texture>::makeCubemap(ref<Texture>* out, Node parent,
+	Texture* ContentFactory<Texture>::makeCubemap(INodeOwner* parent,
 		const uint32_t width, const uint32_t height, 
 		const GLenum format, const int miplevels) {
-		ref<Texture> texRef = makeCubemapUnmanaged(width, height, format, miplevels);
-		if (out)
-			*out = texRef;
-		return content()->createContentNode(texRef, parent);
-	}
-
-	Node ContentFactory<Texture>::makeCubemap(ref<Texture>* out, NodeHandle parent, 
-		const uint32_t width, const uint32_t height, 
-		const GLenum format, const int miplevels) {
-		ref<Texture> texRef = makeCubemapUnmanaged(width, height, format, miplevels);
-		if (out)
-			*out = texRef;
-		return content()->createContentNode(texRef, parent);
+		Texture* texRef = makeCubemapUnmanaged(width, height, format, miplevels);
+		content()->createContentNode(texRef);
+		parent->addChild(texRef);
+		return texRef;
 	}
 
 	std::string ContentFactory<Texture>::getContentTypeString() const {

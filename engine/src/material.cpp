@@ -8,49 +8,15 @@ using namespace nlohmann;
 using namespace std;
 
 namespace Morpheus {
+	Material* Material::toMaterial() {
+		return this;
+	}
+
 	std::string ContentFactory<Material>::getContentTypeString() const {
 		return MORPHEUS_STRINGIFY(Material);
 	}
 
-    template <>
-    ref<Material> duplicateRef<Material>(const ref<Material>& a)
-    {
-        if (IS_POOLED_<NODE_ENUM(Material)>::RESULT) {
-            Material* mat = new Material();
-            mat->mShader = a->mShader;
-            mat->mUniformAssigments = a->mUniformAssigments;
-            mat->mSamplerAssignments = a->mSamplerAssignments;
-            return ref<Material>(mat);
-        }
-        else {
-            auto h_a = a.getPoolHandle();
-            auto pool = h_a.getPool();
-
-            auto mat = pool->alloc();
-            mat->mShader = a->mShader;
-            mat->mUniformAssigments = a->mUniformAssigments;
-            mat->mSamplerAssignments = a->mSamplerAssignments;
-            return ref<Material>(mat);
-        }
-    }
-
-    template <>
-    Node duplicateToNode<Material>(const ref<Material>& a) {
-        auto dup = duplicateRef(a);
-        auto node = graph()->addNode(dup);
-        content()->addContentNode(node);
-        return node;
-    }
-
-    template <>
-    Node duplicate<Material>(const Node& a) {
-        auto desc = graph()->desc(a);
-        assert(desc->type == NodeType::MATERIAL);
-        auto node = duplicateToNode(desc->owner.reinterpret<Material>());
-        return node;
-    }
-
-    ref<void> ContentFactory<Material>::load(const std::string& source, Node& loadInto) {
+    INodeOwner* ContentFactory<Material>::load(const std::string& source, Node loadInto) {
         
         cout << "Loading material " << source << "..." << endl;
 
@@ -58,7 +24,7 @@ namespace Morpheus {
 
         if (!f.is_open()) {
             cout << "Error: failed to open " << source << "!" << endl;
-            return ref<void>(nullptr);
+            return nullptr;
         }
 
         json j;
@@ -77,45 +43,44 @@ namespace Morpheus {
         shaderSrc = prefix_include_path + shaderSrc;
 
         // Load the shader through the content manager
-        ref<Shader> shaderRef;
-        auto shaderNode = content()->load<Shader>(shaderSrc, &shaderRef);
-        if (!shaderNode.valid()) {
+        auto shader = content()->load<Shader>(shaderSrc);
+        if (!shader) {
             cout << "Error: could not load dependency " << shaderSrc << "!" << endl;
-            return ref<void>(nullptr);
+            return nullptr;
         }
 
         Material* mat = new Material();
-        mat->mShader = shaderRef;
+        mat->mShader = shader;
 
         // Perform an override of shader parameters
         if (j.contains("uniforms")) {
-            readUniformDefaults(j["uniforms"], shaderRef.get(),
+            readUniformDefaults(j["uniforms"], shader,
                 &mat->mUniformAssigments);
             // Overwrite necessary things
-            mat->mUniformAssigments = mat->mUniformAssigments.overwrite(shaderRef->defaultUniformAssignments());
+            mat->mUniformAssigments = mat->mUniformAssigments.overwrite(shader->defaultUniformAssignments());
         }
         else
             // Carry over default assignments
-            mat->mUniformAssigments = shaderRef->defaultUniformAssignments();
+            mat->mUniformAssigments = shader->defaultUniformAssignments();
 
         // Perform an override of shader sampler assignments
         if (j.contains("samplers")) {
-            loadSamplerDefaults(j["samplers"], shaderRef.get(), &mat->mSamplerAssignments,
+            loadSamplerDefaults(j["samplers"], shader, &mat->mSamplerAssignments,
                 content(), loadInto, source);
         }
         else
             // Carry over default assingments
-            mat->mSamplerAssignments = shaderRef->defaultSamplerAssignments();
+            mat->mSamplerAssignments = shader->defaultSamplerAssignments();
 
         // Add this shader as a child of this material
-        graph()->createEdge(loadInto, shaderNode);
+		loadInto.addChild(shader->node());
 
         // Return the material
-        return ref<void>(mat);
+        return mat;
     }
 
-    void ContentFactory<Material>::unload(ref<void> ref) {
-        delete ref.reinterpretGet<Material>();
+    void ContentFactory<Material>::unload(INodeOwner* ref) {
+        delete ref;
     }
     
     void ContentFactory<Material>::dispose() {

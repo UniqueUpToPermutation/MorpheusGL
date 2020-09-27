@@ -13,6 +13,7 @@
 #include <engine/input.hpp>
 
 #include <set>
+#include <string>
 
 namespace Morpheus {
 
@@ -27,7 +28,7 @@ namespace Morpheus {
 	
 	/// The Morpheus graphics engine.
 	
-	class Engine  {
+	class Engine : public INodeOwner {
 	private:
 		// The window the engine is rendering to
 		GLFWwindow* mWindow;
@@ -39,11 +40,9 @@ namespace Morpheus {
 		ContentManager* mContent;
 		// The renderer
 		IRenderer* mRenderer;
-		// The handle for the engine node in the scene graph
-		NodeHandle mHandle;
 		// Component responsible for updating logic entities, any child of the
 		// updater will be updated through the IUpdateable interface
-		Updater mUpdater;
+		Updater* mUpdater;
 		// Component responsible for handling input
 		Input mInput;
 		// Whether or not the engine is still valid, i.e., not exitting.
@@ -54,19 +53,7 @@ namespace Morpheus {
 		// The global JSON configuration of the engine.
 		// returns: A reference to the global JSON configuration. 
 		inline nlohmann::json& config() { return mConfig; }
-		
-		// The scene graph of the engine.
-		// returns: A reference to the scene graph. 
-		inline NodeGraph* graph() { return &mGraph; }
-		
-		// The handle of the engine as a node in the scene graph.
-		// returns: The handle to the engine. 
-		inline NodeHandle handle() const { return mHandle; }
-		
-		// The node of the engine in the scene graph.
-		// returns: The node of the engine in the scene graph 
-		inline Node node() { return mGraph[mHandle]; }
-		
+	
 		// The content manager of the engine.
 		// returns: A reference to the content manager. 
 		inline ContentManager* content() { return mContent; }
@@ -81,7 +68,7 @@ namespace Morpheus {
 		
 		// The engine's updater.
 		// returns: A reference to the engine's updater. 
-		inline Updater* updater() { return &mUpdater; }
+		inline Updater* updater() { return mUpdater; }
 
 		// The engine's input module.
 		// returns: A reference to the engine's input module. 
@@ -112,13 +99,11 @@ namespace Morpheus {
 		bool valid() const;
 		
 		// Tells the renderer to render this scene.
-		void render(Node scene);
-		// Tells the renderer to render this scene.
-		void render(NodeHandle sceneHandle);
+		void render(INodeOwner* scene);
 		// Swaps the back and front buffers.
 		void present();
 		// Creates a new scene as a child of the engine.
-		Node makeScene(ref<Scene>* sceneOut = nullptr);
+		Scene* makeScene();
 	};
 	
 	// The global engine.
@@ -127,7 +112,7 @@ namespace Morpheus {
 	
 	// The global scene graph.
 	// returns: A reference to the scene graph. 
-	inline NodeGraph* graph() {
+	inline NodeGraph* globalGraph() {
 		return engine()->graph();
 	}
 	
@@ -169,151 +154,61 @@ namespace Morpheus {
 	// Return the description of a node.
 	// n: The node.
 	// returns: The description. 
-	inline NodeData* desc(const Node& n) {
-		return graph()->desc(n);
-	}
-	inline Node find(const NodeHandle h) {
-		return graph()->find(h);
-	}
-	inline Node find(const std::string& name) {
-		return graph()->find(name);
-	}
-	inline NodeData* desc(const std::string& name) {
-		return desc(find(name));
-	}
-	inline NodeData* desc(NodeHandle h) {
-		return desc(find(h));
-	}
-	inline NodeHandle issueHandle(const Node& n) {
-		return graph()->issueHandle(n);
+	inline INodeOwner* find(const std::string& name) {
+		return globalGraph()->find(name);
 	}
 	inline void setName(const Node& n, const std::string& name) {
-		graph()->setName(n, name);
+		globalGraph()->setName(n, name);
 	}
 	inline void recallName(const std::string& name) {
-		graph()->recallName(name);
+		globalGraph()->recallName(name);
 	}
-	inline bool tryFind(const std::string& name, Node* out) {
-		return graph()->tryFind(name, out);
+	inline void setName(const INodeOwner* n, const std::string& name) {
+		globalGraph()->setName(n, name);
 	}
-	inline void recallHandle(const NodeHandle handle) {
-		graph()->recallHandle(handle);
-	}
-	template <typename OwnerType>
-	inline Node addNode(OwnerType* owner, NodeType type) {
-		return graph()->addNode<OwnerType>(owner, type);
-	}
-	template <typename OwnerType>
-	inline Node addNode(OwnerType* owner, NodeType type, Node parent) {
-		return graph()->addNode<OwnerType>(owner, type, parent);
-	}
-	template <typename OwnerType>
-	inline Node addNode(OwnerType* owner, NodeType type, NodeHandle parentHandle) {
-		return graph()->addNode<OwnerType>(owner, type, parentHandle);
-	}
-	template <typename OwnerType>
-	inline Node addNode(OwnerType* owner, NodeType type, const std::string& parentName) {
-		return graph()->addNode<OwnerType>(owner, type, parentName);
-	}
-	template <typename OwnerType>
-	inline Node addNode(OwnerType* owner, Node parent) {
-		return graph()->addNode<OwnerType>(owner, parent);
-	}
-	template <typename OwnerType>
-	inline Node addNode(OwnerType* owner, NodeHandle parentHandle) {
-		return graph()->addNode<OwnerType>(owner, parentHandle);
-	}
-	template <typename OwnerType>
-	inline Node addNode(OwnerType* owner, const std::string& parentName) {
-		return graph()->addNode<OwnerType>(owner, parentName);
-	}
-	inline Node addNode(ref<void> owner, NodeType type) {
-		return graph()->addNode(owner, type);
-	}
-	inline Node addNode(ref<void> owner, NodeType type, Node parent) {
-		return graph()->addNode(owner, type, parent);
-	}
-	inline Node addNode(ref<void> owner, NodeType type, NodeHandle parentHandle) {
-		return graph()->addNode(owner, type, parentHandle);
-	}
-	inline Node addNode(ref<void> owner, NodeType type, const std::string& parentName) {
-		return graph()->addNode(owner, type, parentName);
-	}
-	template <typename OwnerType>
-	inline Node addNode(ref<void> owner, Node parent) {
-		return graph()->addNode<OwnerType>(owner, parent);
-	}
-	template <typename OwnerType>
-	inline Node addNode(ref<void> owner, NodeHandle parentHandle) {
-		return graph()->addNode<OwnerType>(owner, parentHandle);
-	}
-	template <typename OwnerType>
-	inline Node addNode(ref<void> owner, const std::string& parentName) {
-		return graph()->addNode<OwnerType>(owner, parentName);
-	}
-	inline Node makeProxy(const Node& base) {
-		return graph()->makeProxy(base);
-	}
-	inline Node makeContentProxy(const Node& base) {
-		return graph()->makeContentProxy(base);
-	}
-	template <typename T> 
-	inline Node addNode(T* owner) {
-		return graph()->addNode<T>(owner);
-	}
-	template <typename T> 
-	inline Node addNode(const ref<T>& owner) {
-		return graph()->addNode<T>(owner);
+	inline bool tryFind(const std::string& name, INodeOwner** out) {
+		return globalGraph()->tryFind(name, out);
 	}
 
-	template <typename T>
-	inline ref<T> getOwner(NodeHandle n) {
-		auto d = desc(n);
-		assert(NODE_ENUM(T) == d->type || PROTOTYPE_TO_PROXY_<NODE_ENUM(T)>::RESULT == d->type);
-		return d->owner.reinterpret<T>();
+	inline void createNode(INodeOwner* owner) {
+		globalGraph()->createNode(owner);
+	}
+	inline void createNode(INodeOwner* owner, INodeOwner* parent) {
+		globalGraph()->createNode(owner, parent);
+	}
+	inline void createNode(INodeOwner* owner, const std::string& parentName) {
+		globalGraph()->createNode(owner, parentName);
 	}
 
-	template <typename T>
-	inline ref<T> getOwner(const std::string& name) {
-		auto d = desc(name);
-		assert(NODE_ENUM(T) == d->type || PROTOTYPE_TO_PROXY_<NODE_ENUM(T)>::RESULT == d->type);
-		return d->owner.reinterpret<T>();
-	}
-
-	class IRenderer : public IDisposable, public IInitializable {
+	class IRenderer : public INodeOwner {
 	public:
+		inline IRenderer() : INodeOwner(NodeType::RENDERER) {
+		}
+
 		// Posts all necessary requests to glfw when creating a context
 		virtual void postGlfwRequests() = 0;
 		// Draw the given scene
-		virtual void draw(Node scene) = 0;
-		// Get the handle of this renderer
-		virtual NodeHandle handle() const = 0;
+		virtual void draw(INodeOwner* node) = 0;
 		// Get the type of this renderer
-		virtual RendererType getType() const = 0;
+		virtual RendererType getRendererType() const = 0;
 		// Set the clear color of this renderer
 		virtual void setClearColor(float r, float g, float b) = 0;
 
 		// Perform a blit of a texture to screen for debugging purposes
 		// lower: the lower bounds of the blit rectangle (in pixels)
 		// upper: the upper bounds of the blit rectangle (in pixels)
-		virtual void debugBlit(ref<Texture> texture, 
+		virtual void debugBlit(Texture* texture, 
 			const glm::vec2& lower,
 			const glm::vec2& upper) = 0;
 
-		void debugBlit(ref<Texture> texture,
+		void debugBlit(Texture* texture,
 			const glm::vec2& position);
 		
-		void debugBlit(ref<Texture> texture);
+		void debugBlit(Texture* texture);
 
-		// Get the node of this renderer
-		inline Node node() const { return (*graph())[handle()]; }
 		// Set the clear color of this renderer
 		void setClearColor(const glm::vec3& color) {
 			setClearColor(color.x, color.y, color.z);
-		}
-
-		inline void draw(NodeHandle scene) {
-			draw(graph()->find(scene));
 		}
 	};
 }

@@ -42,32 +42,23 @@ namespace Morpheus {
         return program;
     }
 
-    Node makeBlitShader(Node parent, ref<Shader>* shaderOut, BlitShaderView* shaderViewOut) {
+    Shader* makeBlitShader(INodeOwner* parent, BlitShaderView* shaderViewOut) {
         auto contentManager = content();
         auto shaderFactory = contentManager->getFactory<Shader>();
 
-        ref<Shader> result = shaderFactory->makeFromGL(makeBlitShaderRaw());
+        Shader* result = shaderFactory->makeFromGL(makeBlitShaderRaw());
         GL_ASSERT;
 
         shaderViewOut->mLower.find(result, "lower");
         shaderViewOut->mUpper.find(result, "upper");
         shaderViewOut->mBlitTexture.find(result, "blitTexture");
 
-        if (shaderOut)
-            *shaderOut = result;
-
-        return contentManager->createContentNode(result, parent);
+		contentManager->createContentNode(result);
+		parent->addChild(result);
+		return result;
     }
 
-    Node makeBlitShader(NodeHandle parent, ref<Shader>* shaderOut, BlitShaderView* shaderViewOut) {
-        return makeBlitShader(graph()->find(parent), shaderOut, shaderViewOut);
-    }
-
-    Node makeBlitGeometry(NodeHandle parent, ref<Geometry>* geoOut) {
-        return makeBlitGeometry(graph()->find(parent), geoOut);
-    }
-
-    Node makeBlitGeometry(Node parent, ref<Geometry>* geoOut) {
+    Geometry* makeBlitGeometry(INodeOwner* parent) {
         auto contentManager = content();
         auto geoFactory = contentManager->getFactory<Geometry>();
 
@@ -102,12 +93,12 @@ namespace Morpheus {
         aabb.mLower = glm::vec3(-1.0f, -1.0f, 0.0f);
         aabb.mUpper = glm::vec3(1.0f, 1.0f, 0.0f);
 
-        ref<Geometry> geo = geoFactory->makeGeometryUnmanaged(vao, vbo, ibo, 
+        Geometry* geo = geoFactory->makeGeometryUnmanaged(vao, vbo, ibo, 
             GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, aabb);
 
-        if (geoOut)
-            *geoOut = geo;
+        contentManager->createContentNode(geo);
+		parent->addChild(geo);
 
-        return contentManager->createContentNode(geo, parent);
+		return geo;
     }
 }

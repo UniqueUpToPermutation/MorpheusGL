@@ -11,9 +11,8 @@ int main() {
     Engine en;
     if (en.startup("config.json").isSuccess()) {
         // Load shader program
-        ref<Shader> computeShader;
-        load<Shader>("content/test.comp", en.handle(), &computeShader);
-
+        Shader* computeShader = load<Shader>("content/test.comp", &en);
+        
         auto texture = getFactory<Texture>()->loadGliUnmanaged("content/skybox.ktx", GL_RGBA8);
 
         std::cout << "Texture Size: (" << 

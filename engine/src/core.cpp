@@ -3,6 +3,8 @@
 #include <engine/content.hpp>
 #include <engine/camera.hpp>
 #include <engine/shader.hpp>
+#include <engine/sampler.hpp>
+#include <engine/halfedgeloader.hpp>
 #include <engine/material.hpp>
 #include <engine/geometry.hpp>
 #include <engine/cameracontroller.hpp>
@@ -12,6 +14,7 @@
 #include <engine/lambert.hpp>
 #include <engine/ggx.hpp>
 #include <engine/brdf.hpp>
+#include <engine/camera.hpp>
 
 #include <iostream>
 
@@ -24,100 +27,53 @@ using namespace std;
 
 namespace Morpheus {
 
-	template <typename T, bool reinterpret> 
-	struct DisposableInterfaceGate;
-	template <typename T, bool reinterpret> 
-	struct UpdatableInterfaceGate;
-	template <typename T, bool reinterpret> 
-	struct InitializableInterfaceGate;
+	Shader* INodeOwner::toShader() 						{ return nullptr; }
+	StaticMesh* INodeOwner::toStaticMesh() 				{ return nullptr; }
+	Sampler* INodeOwner::toSampler() 					{ return nullptr; }
+	Geometry* INodeOwner::toGeometry() 					{ return nullptr; }
+	HalfEdgeGeometry* INodeOwner::toHalfEdgeGeometry() 	{ return nullptr; }
+	Texture* INodeOwner::toTexture() 					{ return nullptr; }
+	Material* INodeOwner::toMaterial() 					{ return nullptr; }
+	Scene* INodeOwner::toScene() 						{ return nullptr; }
+	Camera* INodeOwner::toCamera() 						{ return nullptr; }
+	GuiBase* INodeOwner::toGui() 						{ return nullptr; }
+	TransformNode* INodeOwner::toTransform()			{ return nullptr; }
 
-	template <typename T>
-	struct DisposableInterfaceGate<T, true> {
-		static IDisposable* get(ref<void>& p) {
-			return p.reinterpretGet<T>();
-		}
-	};
-	
-	template <typename T>
-	struct DisposableInterfaceGate<T, false> {
-		static IDisposable* get(ref<void>& p) {
-			return nullptr;
-		}
-	};
- 	
-	template <typename T>
-	struct UpdatableInterfaceGate<T, true> {
-		static IUpdatable* get(ref<void>& p) {
-			return p.reinterpretGet<T>();
-		}
-	};
-	
-	template <typename T>
-	struct UpdatableInterfaceGate<T, false> {
-		static IUpdatable* get(ref<void>& p) {
-			return nullptr;
-		}
-	};
-	
-	template <typename T>
-	struct InitializableInterfaceGate<T, true> {
-		static IInitializable* get(ref<void>& p) {
-			return p.reinterpretGet<T>();
-		}
-	};
-	
-	template <typename T>
-	struct InitializableInterfaceGate<T, false> {
-		static IInitializable* get(ref<void>& p) {
-			return nullptr;
-		}
-	};
-	
+	TransformNode* TransformNode::toTransform() 		{ return this; }
+
 	bool NodeMetadata::renderable[(uint32_t)NodeType::END];
-	bool NodeMetadata::pooled[(uint32_t)NodeType::END];
 	bool NodeMetadata::content[(uint32_t)NodeType::END];
-	NodeType NodeMetadata::proxyToPrototype[(uint32_t)NodeType::END];
-	NodeType NodeMetadata::prototypeToProxy[(uint32_t)NodeType::END];
-	DisposableConverter NodeMetadata::disposableConv[(uint32_t)NodeType::END];
-	UpdatableConverter NodeMetadata::updatableConv[(uint32_t)NodeType::END];
-	InitializableConverter NodeMetadata::initializableConv[(uint32_t)NodeType::END];
 
 	template <NodeType iType>
 	struct InitMetadata {
-		static void init(bool* pooled, bool* renderable, bool* content,
-			NodeType* proxyToPrototype, NodeType* prototypeToProxy,
-			DisposableConverter* disposableConv, UpdatableConverter* updatableConv,
-			InitializableConverter* initializableConv) {
-			pooled[(uint32_t)iType] = IS_POOLED_<iType>::RESULT;
+		static void init(bool* renderable, bool* content) {
 			renderable[(uint32_t)iType] = IS_RENDERABLE_<iType>::RESULT;
 			content[(uint32_t)iType] = IS_CONTENT_<iType>::RESULT;
-			prototypeToProxy[(uint32_t)iType] = PROTOTYPE_TO_PROXY_<iType>::RESULT;
-			proxyToPrototype[(uint32_t)iType] = PROXY_TO_PROTOTYPE_<iType>::RESULT;
 
 			typedef typename OWNER_TYPE_<iType>::RESULT owner_t;
 
-			disposableConv[(uint32_t)iType] = &DisposableInterfaceGate<owner_t, std::is_convertible<owner_t*, IDisposable*>::value>::get;
-			updatableConv[(uint32_t)iType] = &UpdatableInterfaceGate<owner_t, std::is_convertible<owner_t*, IUpdatable*>::value>::get;
-			initializableConv[(uint32_t)iType] = &InitializableInterfaceGate<owner_t, std::is_convertible<owner_t*, IInitializable*>::value>::get;
-				
-			InitMetadata<(NodeType)((uint32_t)iType + 1)>::init(pooled, renderable, content, proxyToPrototype,
-				prototypeToProxy, disposableConv, updatableConv, initializableConv);
+			InitMetadata<(NodeType)((uint32_t)iType + 1)>::init(renderable, content);
 		}
 	};
 
 	template <>
 	struct InitMetadata<NodeType::END> {
-		static void init(bool* pooled, bool* renderable, bool* content,
-			NodeType* proxyToPrototype, NodeType* prototypeToProxy,
-			DisposableConverter* disposableConv, UpdatableConverter* updatableConv,
-			InitializableConverter* initializableConv) {
-
+		static void init(bool* renderable, bool* content) {
 		}
 	};
 
 	void NodeMetadata::init() {
-		InitMetadata<NodeType::START>::init(pooled, renderable, content, proxyToPrototype,
-			prototypeToProxy, disposableConv, updatableConv, initializableConv);
+		InitMetadata<NodeType::START>::init(renderable, content);
+	}
+
+	bool Entity::isUpdatable() const {
+		return true;
+	}
+	bool Entity::isEnabled() const {
+		return bEnabled;
+	}
+	void Entity::setEnabled(const bool value) {
+		bEnabled = value;
 	}
 
 	std::string nodeTypeString(NodeType t) {
@@ -131,12 +87,10 @@ namespace Morpheus {
 			T_CASE(COOK_TORRANCE_LUT_COMPUTE_KERNEL);
 			T_CASE(SCENE_BEGIN);
 			T_CASE(CAMERA);
-			T_CASE(EMPTY);
 			T_CASE(SCENE_ROOT);
-			T_CASE(LOGIC);
+			T_CASE(ENTITY);
 			T_CASE(TRANSFORM);
 			T_CASE(REGION);
-			T_CASE(BOUNDING_BOX);
 			T_CASE(STATIC_OBJECT_MANAGER);
 			T_CASE(DYNAMIC_OBJECT_MANAGER);
 			T_CASE(NANOGUI_SCREEN);
@@ -157,19 +111,17 @@ namespace Morpheus {
 		}
 	}
 
-	void print(Node start)
+	void print(INodeOwner* start)
 	{
 		size_t depth_mul = 3;
 
-		auto& descs = graph()->descs();
+		std::cout << "+ " << nodeTypeString(start->getType()) << std::endl;
 
-		cout << "+ " << nodeTypeString(descs[start].type) << endl;
-
-		stack<DigraphVertexIteratorF> iters;
+		stack<NodeOwnerIteratorF> iters;
 		vector<bool> isLast;
-		iters.push(start.children());
+		iters.push(start->children());
 
-		if (start.outDegree() > 1)
+		if (start->outDegree() > 1)
 			isLast.push_back(false);
 		else
 			isLast.push_back(true);
@@ -177,30 +129,30 @@ namespace Morpheus {
 		while (!iters.empty()) {
 			auto& it = iters.top();
 			if (it.valid()) {
-				Node n = it();
+				INodeOwner* n = it();
 
 				for (int i = 0; i < isLast.size() - 1; ++i) {
 					bool b = isLast[i];
 					if (b)
-						cout << " ";
+						std::cout << " ";
 					else
-						cout << "|";
+						std::cout << "|";
 
 					for (uint32_t j = 0; j < depth_mul; ++j)
-						cout << " ";
+						std::cout << " ";
 				}
 
-				cout << "o";
+				std::cout << "o";
 				for (uint32_t j = 0; j < depth_mul; ++j)
 					cout << "-";
-				cout << "+ ";
-				cout << nodeTypeString(descs[n].type) << endl;
+				std::cout << "+ ";
+				std::cout << nodeTypeString(n->getType()) << endl;
 
-				iters.push(n.children());
+				iters.push(n->children());
 				it.next();
 				if (!it.valid())
 					isLast[isLast.size() - 1] = true;
-				if (n.outDegree() > 1)
+				if (n->outDegree() > 1)
 					isLast.push_back(false);
 				else
 					isLast.push_back(true);
@@ -217,25 +169,25 @@ namespace Morpheus {
 		case GL_NO_ERROR:
 			break;
 		case GL_INVALID_ENUM:
-			cout << "GL_INVALID_ENUM!" << endl;
+			std::cout << "GL_INVALID_ENUM!" << std::endl;
 			break;
 		case GL_INVALID_VALUE:
-			cout << "GL_INVALID_VALUE!" << endl;
+			std::cout << "GL_INVALID_VALUE!" << std::endl;
 			break;
 		case GL_INVALID_OPERATION:
-			cout << "GL_INVALID_OPERATION!" << endl;
+			std::cout << "GL_INVALID_OPERATION!" << std::endl;
 			break;
 		case GL_INVALID_FRAMEBUFFER_OPERATION:
-			cout << "GL_INVALID_FRAMEBUFFER_OPERATOR!" << endl;
+			std::cout << "GL_INVALID_FRAMEBUFFER_OPERATOR!" << std::endl;
 			break;
 		case GL_OUT_OF_MEMORY:
-			cout << "GL_OUT_OF_MEMORY!" << endl;
+			std::cout << "GL_OUT_OF_MEMORY!" << std::endl;
 			break;
 		case GL_STACK_UNDERFLOW:
-			cout << "GL_STACK_UNDERFLOW!" << endl;
+			std::cout << "GL_STACK_UNDERFLOW!" << std::endl;
 			break;
 		case GL_STACK_OVERFLOW:
-			cout << "GL_STACK_OVERFLOW!" << endl;
+			std::cout << "GL_STACK_OVERFLOW!" << std::endl;
 			break;
 		}
 		assert(err == GL_NO_ERROR);
@@ -245,107 +197,85 @@ namespace Morpheus {
 		printError(glGetError());
 	}
 
-	void init(Node& node, NodeGraph* graph, Node& updater) {
-		auto desc = graph->desc(node);
+	void NodeGraph::applyVertexMap(const int map[], const uint32_t mapLen, const uint32_t newSize) {
 
+		// Update all owners
+		for (uint32_t i = 0; i < mapLen; ++i) {
+			mOwners[i]->mNodeId = map[mOwners[i]->mNodeId];
+		}
+
+		// Call base
+		Digraph::applyVertexMap(map, mapLen, newSize);
+	}
+
+	void init(INodeOwner* node)
+	{
 		// Content doesn't belong to a scene and therefore shouldn't be initializable
-		if (NodeMetadata::isContent(desc->type))
+		if (node->isContent())
 			return;
 
 		// Initialize all children
-		for (auto it = node.children(); it.valid(); it.next()) {
-			auto child = it();
-			init(child, graph, updater);
+		for (auto it = node->children(); it.valid(); it.next()) {
+			init(it());
 		}
 
 		// Initialize node after all its children have been initialized
-		auto initInterface = getInterface<IInitializable>(*desc);
-		if (initInterface)
-			initInterface->init(node);
+		node->init();
 
 		// If this node is updatable, register it with the updater
-		auto updateInterface = getInterface<IUpdatable>(*desc);
-		if (updateInterface)
-			updater.addChild(node);
+		if (node->isUpdatable()) {
+			updater()->addChild(node);
+		}
 	}
 
-	void init(Node node)
+	void prune(INodeOwner* start, bool bIgnoreContent)
 	{
-		auto graph_ = graph();
-		auto updaterNode = (*graph_)[updater()->handle()];
-		init(node, graph_, updaterNode);
-	}
-
-	void prune(Node start, bool bIgnoreContent)
-	{
-		auto desc_ = desc(start);
-		if (bIgnoreContent && NodeMetadata::isContent(desc_->type))
+		if (bIgnoreContent && start->isContent())
 			return;
 		else {
-			for (auto it = start.children(); it.valid();) {
+			for (auto it = start->children(); it.valid();) {
 				auto node = it();
 				it.next();
 				prune(node, bIgnoreContent);
 			}
 
-			if (NodeMetadata::isContent(desc_->type))
-				content()->unload(start);
+			if (start->isContent())
+				unload(start);
 			else {
-				auto disposableInterface = getInterface<IDisposable>(*desc_);
-				if (disposableInterface)
-					disposableInterface->dispose();
+				start->graph()->deleteVertex(start->node().id());
+				delete start;
 			}
-
-			graph()->deleteVertex(start);
 		}
+
+		unloadMarked();
 	}
 
 	void prune(const std::string& name, bool bIgnoreContent) {
-		auto node = (*graph())[name];
+		auto node = find(name);
 		prune(node, bIgnoreContent);
 	}
 
-	void prune(NodeHandle handle, bool bIgnoreContent) {
-		auto node = (*graph())[handle];
-		prune(node, bIgnoreContent);
+	Transform Transform::makeIdentity() {
+		Transform t;
+		t.mRotation = glm::identity<glm::quat>();
+		t.mScale = glm::one<glm::vec3>();
+		t.mTranslation = glm::zero<glm::vec3>();
+		return t;
 	}
 
-	Node Transform::makeIdentity(Node parent, Node scene, ref<Transform>* pTransform) {
-		auto data = desc(scene);
-		assert(data->type == NodeType::SCENE_ROOT);
-
-		return makeIdentity(parent, data->owner.reinterpret<Scene>(), pTransform);
+	Transform Transform::makeTranslation(const glm::vec3& translation) {
+		Transform t;
+		t.mRotation = glm::identity<glm::quat>();
+		t.mScale = glm::one<glm::vec3>();
+		t.mTranslation = translation;
+		return t;
 	}
 
-	Node Transform::makeIdentity(Node parent, ref<Scene> scene, ref<Transform>* pTransform) {
-		Node n = scene->makeIdentityTransform(pTransform);
-		parent.addChild(n);
-		return n;
-	}
-
-	Node Transform::makeTranslation(const glm::vec3& translation, Node parent, Node scene, ref<Transform>* pTransform) {
-		auto data = desc(scene);
-		assert(data->type == NodeType::SCENE_ROOT);
-
-		return makeTranslation(translation, parent, data->owner.reinterpret<Scene>(), pTransform);
-	}
-
-	Node Transform::makeTranslation(const glm::vec3& translation, Node parent, ref<Scene> scene, ref<Transform>* pTransform) {
-		Node n = scene->makeTranslation(translation, pTransform);
-		parent.addChild(n);
-		return n;
-	}
-
-	Node Transform::makeRotation(const glm::quat& rotate, Node parent, Node scene, ref<Transform>* pTransform) {
-		auto data = desc(scene);
-		assert(data->type == NodeType::SCENE_ROOT);
-
-		return makeRotation(rotate, parent, data->owner.reinterpret<Scene>(), pTransform);
-	}
-
-	Node Transform::makeRotation(const glm::quat& rotate, Node parent, ref<Scene> scene, ref<Transform>* pTransform) {
-		Node n = scene->makeRotation(rotate, pTransform);
-		parent.addChild(n);
-		return n;
+	Transform Transform::makeRotation(const glm::quat& rotate) {
+		Transform t;
+		t.mRotation = rotate;
+		t.mScale = glm::one<glm::vec3>();
+		t.mTranslation = glm::zero<glm::vec3>();
+		return t;
 	}
 }

@@ -5,29 +5,50 @@
 #include <engine/geometry.hpp>
 
 namespace Morpheus {
-	class StaticMesh  {
+	class StaticMesh : public INodeOwner {
+	private:
+		Geometry* mGeometry;
+		Material* mMaterial;
+
 	public:
-		static ref<Geometry> getGeometry(Node meshNode);
-		static Node getGeometryNode(Node meshNode);
-		static ref<Material> getMaterial(Node meshNode);
-		static Node getMaterialNode(Node meshNode);
-		static void getParts(Node meshNode, ref<Geometry>* geo_out, ref<Material>* mat_out);
+		inline StaticMesh() : INodeOwner(NodeType::STATIC_MESH), mGeometry(nullptr), mMaterial(nullptr) {
+		}
+
+		StaticMesh* toStaticMesh() override;
+		void setGeometry(Geometry* geo);
+		void setMaterial(Material* mat);
+
+		Geometry* getGeometry() {
+			return mGeometry;
+		}
+
+		Material* getMaterial() {
+			return mMaterial;
+		}
+
+		const Geometry* getGeometry() const {
+			return mGeometry;
+		}
+
+		const Material* getMaterial() const {
+			return mMaterial;
+		}
+
+		friend class ContentFactory<StaticMesh>;
 	};
 	SET_NODE_ENUM(StaticMesh, STATIC_MESH);
 
 	template <>
 	class ContentFactory<StaticMesh> : public IContentFactory {
 	public:
-		ref<void> load(const std::string& source, Node& loadInto) override;
-		void unload(ref<void> ref) override;
+		INodeOwner* load(const std::string& source, Node loadInto) override;
+		void unload(INodeOwner* ref) override;
 		void dispose() override;
 
 		std::string getContentTypeString() const override;
 
-		Node makeStaticMesh(const Node& material, const Node& geometry,
-			ref<StaticMesh>* refOut = nullptr);
-		Node makeStaticMesh(const Node& material, const Node& geometry,
-			const std::string& source,
-			ref<StaticMesh>* refOut = nullptr);
+		StaticMesh* makeStaticMesh(Material* material, Geometry* geometry);
+		StaticMesh* makeStaticMesh(Material* material, Geometry* geometry,
+			const std::string& source);
 	};
 }

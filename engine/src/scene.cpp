@@ -1,7 +1,7 @@
 #include <engine/scene.hpp>
 
 namespace Morpheus {
-	void Scene::dispose() {
-		delete this;
-	}
+	Scene* Scene::toScene() {
+		return this;
+	} 
 }

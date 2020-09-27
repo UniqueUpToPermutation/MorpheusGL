@@ -16,11 +16,15 @@
 #define MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC TRILINEAR_CLAMP_SAMPLER_SRC
 
 namespace Morpheus {
-	class Sampler {
+	class Sampler : public INodeOwner {
 	private:
 		GLenum mId;
 
 	public:
+		inline Sampler() : INodeOwner(NodeType::SAMPLER) { }
+
+		Sampler* toSampler() override;
+
 		inline GLuint id() const { return mId; }
 
 		inline void bind(GLuint unit) const {
@@ -53,18 +57,18 @@ namespace Morpheus {
 	template <>
 	class ContentFactory<Sampler> : public IContentFactory {
 	private:
-		ref<Sampler> makeInternal(const SamplerParameters& params);
+		Sampler* makeInternal(const SamplerParameters& params);
 		std::unordered_map<std::string, SamplerPrototype> mStringToPrototypeMap;
 
 	public:
 		ContentFactory();
 
-		ref<void> load(const std::string& source, Node& loadInto) override;
-		void unload(ref<void> ref) override;
+		INodeOwner* load(const std::string& source, Node loadInto) override;
+		void unload(INodeOwner* ref) override;
 		void dispose() override;
 
-		Node makeUnmanaged(const SamplerParameters& params, ref<Sampler>* samplerOut = nullptr);
-		Node makeUnmanaged(const SamplerPrototype prototype, ref<Sampler>* samplerOut = nullptr);
+		Sampler* makeUnmanaged(const SamplerParameters& params);
+		Sampler* makeUnmanaged(const SamplerPrototype prototype);
 	
 		std::string getContentTypeString() const override;
 	};

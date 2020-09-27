@@ -4,12 +4,11 @@
 #include <GLFW/glfw3.h>
 
 namespace Morpheus {
-	Updater::Updater() : mLastTick(0.0), bFirstTick(true) {
+	Updater::Updater() : INodeOwner(NodeType::UPDATER), mLastTick(0.0), bFirstTick(true) {
 	}
 
-	void Updater::init(Node node)
+	void Updater::init()
 	{
-		mHandle = graph()->issueHandle(node);
 		restartClock();
 	}
 
@@ -17,6 +16,7 @@ namespace Morpheus {
 		mLastTick = 0.0;
 		glfwSetTime(mLastTick);
 	}
+	
 	void Updater::updateChildren() {
 		if (bFirstTick) {
 			restartClock();
@@ -28,13 +28,8 @@ namespace Morpheus {
 		mLastTick = currentTick;
 
 		// Go through all children and update them
-		auto graph_ = graph();
-		auto v = (*graph_)[mHandle];
-		for (auto it = v.children(); it.valid(); it.next()) {
-			auto desc = graph_->desc(it());
-			auto updatableInterface = getInterface<IUpdatable>(*desc);
-			if (updatableInterface->isEnabled())
-				updatableInterface->update(dt);
+		for (auto it = children(); it.valid(); it.next()) {
+			it()->update(dt);
 		}
 	}
 }

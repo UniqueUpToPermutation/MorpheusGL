@@ -2,6 +2,10 @@
 #include <unordered_map>
 
 namespace Morpheus {
+	Sampler* Sampler::toSampler() {
+		return this;
+	}
+
 	SamplerParameters makeSamplerParams(SamplerPrototype prototype) {
 		SamplerParameters params;
 		if (prototype == SamplerPrototype::TRILINEAR_CLAMP ||
@@ -38,7 +42,7 @@ namespace Morpheus {
 		return params;
 	}
 
-	ref<void> ContentFactory<Sampler>::load(const std::string& source, Node& loadInto)
+	INodeOwner* ContentFactory<Sampler>::load(const std::string& source, Node loadInto)
 	{
 		std::cout << "Loading sampler " << source << "..." << std::endl;
 
@@ -63,9 +67,9 @@ namespace Morpheus {
 		mStringToPrototypeMap[POINT_TILE_SAMPLER_SRC] = SamplerPrototype::POINT_TILE;
 	}
 
-	void ContentFactory<Sampler>::unload(ref<void> ref)
+	void ContentFactory<Sampler>::unload(INodeOwner* ref)
 	{
-		auto sampler = ref.reinterpretGet<Sampler>();
+		auto sampler = ref->toSampler();
 		glDeleteSamplers(1, &sampler->mId);
 		delete sampler;
 	}
@@ -74,7 +78,7 @@ namespace Morpheus {
 	{
 	}
 
-	ref<Sampler> ContentFactory<Sampler>::makeInternal(const SamplerParameters& params) {
+	Sampler* ContentFactory<Sampler>::makeInternal(const SamplerParameters& params) {
 		GLuint sampler_id;
 		glCreateSamplers(1, &sampler_id);
 		glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, params.mMinFilter);
@@ -84,20 +88,15 @@ namespace Morpheus {
 		glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_R, params.mWrapR);
 		auto sampler = new Sampler();
 		sampler->mId = sampler_id;
-		return ref<Sampler>(sampler);
+		return sampler;
 	}
 
-	Node ContentFactory<Sampler>::makeUnmanaged(const SamplerParameters& params, ref<Sampler>* samplerOut) {
-		auto sampler = makeInternal(params);
-
-		if (samplerOut)
-			*samplerOut = sampler;
-
-		return graph()->addNode(*samplerOut);
+	Sampler* ContentFactory<Sampler>::makeUnmanaged(const SamplerParameters& params) {
+		return makeInternal(params);
 	}
 
-	Node ContentFactory<Sampler>::makeUnmanaged(SamplerPrototype prototype, ref<Sampler>* samplerOut) {
-		return makeUnmanaged(makeSamplerParams(prototype), samplerOut);
+	Sampler* ContentFactory<Sampler>::makeUnmanaged(SamplerPrototype prototype) {
+		return makeUnmanaged(makeSamplerParams(prototype));
 	}
 
 	std::string ContentFactory<Sampler>::getContentTypeString() const {

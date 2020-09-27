@@ -10,7 +10,7 @@
 
 namespace Morpheus {
 
-	void ContentManager::init(Node node) {
+	void ContentManager::init() {
 		// Make shader factory
 		addFactory<Shader>();
 		// Make geometry factory
@@ -27,10 +27,9 @@ namespace Morpheus {
 		addFactory<Sampler>();
 
 		mSources = graph()->createTwoWayVertexLookup<std::string>("__content__");
-		mHandle = graph()->issueHandle(node);
 	}
 
-	ContentManager::ContentManager() : mHandle(HANDLE_INVALID) {
+	ContentManager::ContentManager() : INodeOwner(NodeType::CONTENT_MANAGER) {
 	}
 
 	ContentManager::~ContentManager() {
@@ -42,46 +41,68 @@ namespace Morpheus {
 		mTypeToFactory.clear();
 
 		graph()->destroyLookup(mSources);
-		graph()->recallHandle(mHandle);
+	}
+	
+	void ContentManager::safeUnload(INodeOwner* node) {
+		if (node->parentCount() == 1) {
+			unload(node);
+		}
 	}
 
-	void ContentManager::unload(Node node) {
-		auto desc = graph()->desc(node);
+	void ContentManager::unloadMarked() {
+		while (!mMarkedNodes.empty()) {
+
+			auto top = mMarkedNodes.top();
+			mMarkedNodes.pop();
+
+			auto type = top->getType();
+			std::cout << "Collecting " << nodeTypeString(type) << std::endl;
+
+			if (top->parentCount() <= 1) {
+				// Check if children of this node need to be collected too
+				for (auto it = top->children(); it.valid(); it.next()) {
+					mMarkedNodes.push(it());
+				}
+
+				// Collect garbage
+				unload(top);
+			}
+		}
+	}
+
+	void ContentManager::unload(INodeOwner* node) {
 		// Get factory from type
-		auto factory = mTypeToFactory[desc->type];
-		if (factory)
-			factory->unload(desc->owner);
-		graph()->deleteVertex(node);
+		auto factory = mTypeToFactory[node->getType()];
+		if (factory) {
+			graph()->deleteVertex(node->node());
+			factory->unload(node);
+		}
 
 		std::string src;
-		if (mSources.tryFind(node, &src))
+		if (mSources.tryFind(node->node(), &src))
 			std::cout << "Unloading " << src << " (" << 
 				factory->getContentTypeString() << ")..." << std::endl;
 		else
 			std::cout << "Unloading [UNNAMED] (" << 
 				factory->getContentTypeString()  << ")..." << std::endl;
 
-		mSources.remove(node);
+		mSources.remove(node->node());
 	}
 
 	void ContentManager::unloadAll() {
-		for (auto it = (*graph())[mHandle].children(); it.valid();) {
-			Node v = it();
+		for (auto it = children(); it.valid();) {
+			INodeOwner* v = it();
 			it.next();
 			unload(v);
 		}
 	}
-
-	void ContentManager::setSource(const Node& node, const std::string& source) {
-		mSources.set(node, source);
-	}
 	
 	void ContentManager::collectGarbage() {
-		std::stack<Node> toCollect;
+		std::stack<INodeOwner*> toCollect;
 
 		// Iterate through children and calculate degrees
-		for (auto it = node().children(); it.valid(); it.next()) {
-			auto degree = it().inDegree();
+		for (auto it = children(); it.valid(); it.next()) {
+			auto degree = it()->inDegree();
 
 			// The only parent of this object is the content manager, collect it
 			if (degree == 1)
@@ -94,13 +115,13 @@ namespace Morpheus {
 			auto top = toCollect.top();
 			toCollect.pop();
 
-			auto type = desc(top)->type;
+			auto type = top->getType();
 			std::cout << "Collecting " << nodeTypeString(type) << std::endl;
 
 			// Check if children of this node need to be collected too
-			for (auto it = top.children(); it.valid(); it.next()) {
+			for (auto it = top->children(); it.valid(); it.next()) {
 				auto child = it();
-				auto newDegree = child.inDegree() - 1;
+				auto newDegree = child->inDegree() - 1;
 				if (newDegree <= 1)
 					toCollect.push(it());
 			}
@@ -108,5 +129,8 @@ namespace Morpheus {
 			// Collect garbage
 			unload(top);
 		}
+
+		// All marked nodes have been dealt with
+		mMarkedNodes = std::stack<INodeOwner*>();
 	}
 }

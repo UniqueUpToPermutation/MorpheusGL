@@ -23,12 +23,12 @@ int main() {
         en.input()->bindKeyEvent(&en, &keyHandler);
 
         // Create a scene
-        auto sceneNode = en.makeScene();
-        auto sceneHandle = issueHandle(sceneNode);
+        auto scene = en.makeScene();
+		init(scene);
 
         while (en.valid()) {
             en.update();
-            en.render(sceneHandle);
+            en.render(scene);
             en.present();
         }
     }

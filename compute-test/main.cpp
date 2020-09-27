@@ -10,8 +10,7 @@ using namespace Morpheus;
 int main() {
     Engine en;
     if (en.startup("config.json").isSuccess()) {
-        auto sceneNode = en.makeScene();
-        auto sceneHandle = issueHandle(sceneNode);
+        auto scene = en.makeScene();
 
         // When escape is pressed, shut the engine down.
         f_key_capture_t keyHandler = [&en](GLFWwindow* win, 
@@ -26,16 +25,13 @@ int main() {
         en.input()->bindKeyEvent(&en, &keyHandler);
 
         // Load shader program
-        ref<Shader> computeShader;
-        load<Shader>("content/test.comp", sceneHandle, &computeShader);
+        Shader* computeShader = load<Shader>("content/test.comp", scene);
 
         // Make output texture
         int width;
         int height;
         glfwGetFramebufferSize(en.window(), &width, &height);
-        ref<Texture> output_texture;
-        getFactory<Texture>()->makeTexture2D(&output_texture, 
-            sceneHandle, width, height, GL_RGBA32F);
+        Texture* output_texture =  getFactory<Texture>()->makeTexture2D(scene, width, height, GL_RGBA32F);
 
         // Resizing the window causes a texture resize
         bool bRefresh = true;
@@ -84,7 +80,7 @@ int main() {
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
             en.update();
-            en.render(sceneHandle);
+            en.render(scene);
             // Display texture
             en.renderer()->debugBlit(output_texture);
             en.present();
