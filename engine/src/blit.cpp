@@ -53,8 +53,8 @@ namespace Morpheus {
         shaderViewOut->mUpper.find(result, "upper");
         shaderViewOut->mBlitTexture.find(result, "blitTexture");
 
-		contentManager->createContentNode(result);
-		parent->addChild(result);
+		createContentNode(result, parent);
+
 		return result;
     }
 
@@ -96,8 +96,7 @@ namespace Morpheus {
         Geometry* geo = geoFactory->makeGeometryUnmanaged(vao, vbo, ibo, 
             GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, aabb);
 
-        contentManager->createContentNode(geo);
-		parent->addChild(geo);
+		createContentNode(geo, parent);
 
 		return geo;
     }

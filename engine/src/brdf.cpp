@@ -102,10 +102,6 @@ namespace Morpheus {
 		mGroupSize(computeGroupSize) {
 	}
 
-	CookTorranceLUTComputeKernel::~CookTorranceLUTComputeKernel() {
-		safeUnload(mGPUBackend);
-	}
-
 	Texture* CookTorranceLUTComputeKernel::submit(uint roughnessPixels, uint NoVPixels) {
 		if (!mGPUBackend)
 			std::runtime_error("CookTorranceLUTComputeKernel has not been initialized yet!");

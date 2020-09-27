@@ -188,6 +188,8 @@ int main() {
 		// Garbage collector will get it on shutdown, but this frees up memory.
 		unload(tex);
 
+		print(&en);
+
 		// Game loop
 		while (en.valid()) {
 			en.update();

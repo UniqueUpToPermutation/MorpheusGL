@@ -146,7 +146,11 @@ namespace Morpheus {
 				for (uint32_t j = 0; j < depth_mul; ++j)
 					cout << "-";
 				std::cout << "+ ";
-				std::cout << nodeTypeString(n->getType()) << endl;
+				std::cout << n->node().id() << ": " << nodeTypeString(n->getType());
+				
+				if (n->isContent())
+					std::cout << " \t[" << content()->getSourceString(n) << "]";
+				std::cout << std::endl;
 
 				iters.push(n->children());
 				it.next();
@@ -228,31 +232,41 @@ namespace Morpheus {
 		}
 	}
 
-	void prune(INodeOwner* start, bool bIgnoreContent)
+	void prune(INodeOwner* start, bool bTopLevel)
 	{
-		if (bIgnoreContent && start->isContent())
+		if (start->isContent()) {
+			// This is content. It might have multiple users. Unload it later.
+			markForUnload(start);
 			return;
-		else {
+		} else {
 			for (auto it = start->children(); it.valid();) {
 				auto node = it();
 				it.next();
-				prune(node, bIgnoreContent);
+				prune(node, false);
 			}
 
 			if (start->isContent())
 				unload(start);
 			else {
-				start->graph()->deleteVertex(start->node().id());
+				Node n = start->node();
+				NodeGraph* g = start->graph();
 				delete start;
+				g->deleteVertex(n);
 			}
 		}
 
-		unloadMarked();
+		if (bTopLevel)
+			unloadMarked();
 	}
 
-	void prune(const std::string& name, bool bIgnoreContent) {
+	void prune(INodeOwner* start)
+	{
+		prune(start, true);
+	}
+
+	void prune(const std::string& name) {
 		auto node = find(name);
-		prune(node, bIgnoreContent);
+		prune(node);
 	}
 
 	Transform Transform::makeIdentity() {

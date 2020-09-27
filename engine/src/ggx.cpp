@@ -315,9 +315,4 @@ namespace Morpheus {
 				throw std::runtime_error("GGXComputeKernel: Could not find uniform totalLevels!");
 		}
 	}
-
-	GGXComputeKernel::~GGXComputeKernel() {
-		safeUnload(mCubemapSampler);
-		safeUnload(mGPUBackend);
-	}
 }

@@ -50,8 +50,7 @@ namespace Morpheus {
 			mMarkedNodes.pop();
 
 			auto type = top->getType();
-			std::cout << "Collecting " << nodeTypeString(type) << std::endl;
-
+			
 			if (top->parentCount() <= 1) {
 				// Check if children of this node need to be collected too
 				for (auto it = top->children(); it.valid(); it.next()) {

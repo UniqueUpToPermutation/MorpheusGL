@@ -118,10 +118,12 @@ namespace Morpheus {
 	}
 
 	void ForwardRenderer::makeDebugObjects() {
-		// Create the texture blit shader
+		// Create the texture blit shader (managed)
+		mDebugBlitSampler = load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, this);
+
+		// Create blit geometry and shader (
 		mBlitGeometry = makeBlitGeometry(this);
 		mTextureBlitShader = makeBlitShader(this, &mTextureBlitShaderView);
-		mDebugBlitSampler = load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, this);
 	}
 
 	void ForwardRenderer::draw(ForwardRenderQueue* queue, const ForwardRenderDrawParams& params)
@@ -233,12 +235,6 @@ namespace Morpheus {
 		glfwWindowHint(GLFW_STENCIL_BITS, 8);
 		glfwWindowHint(GLFW_DEPTH_BITS, 24);
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-	}
-
-	ForwardRenderer::~ForwardRenderer() {
-		markForUnload(this->mBlitGeometry);
-		markForUnload(this->mDebugBlitSampler);
-		markForUnload(this->mTextureBlitShader);
 	}
 
 	void ForwardRenderer::init()

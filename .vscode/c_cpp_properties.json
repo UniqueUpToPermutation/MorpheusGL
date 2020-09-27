@@ -1,16 +1,26 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "Linux (Debug)",
             "includePath": [
-                "${workspaceFolder}/engine/include"
+				"${workspaceFolder}/engine/include",
+				"${workspaceFolder}/glm",
+				"${workspaceFolder}/nanogui/ext/glad/include",
+				"${workspaceFolder}/nanogui/ext/eigen",
+				"${workspaceFolder}/nanogui/include",
+				"${workspaceFolder}/nanogui/ext/nanovg/src",
+				"${workspaceFolder}/gli"
             ],
-            "defines": [],
+            "defines": ["_DEBUG",
+				"NANOGUI_USE_OPENGL",
+				"NANOGUI_GLAD",
+				"NANOGUI_SHARED",
+				"GLAD_GLAPI_EXPORT"],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "${default}",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "configurationProvider": "none"
         }
     ],
     "version": 4

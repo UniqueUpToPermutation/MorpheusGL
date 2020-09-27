@@ -1,5 +1,7 @@
 # The Morpheus Graphics Engine
 
+**This is a work in progress. I don't have any impressive tech demos yet, but I've laid most of the ground work now, so more exciting stuff whould be comming soon.**
+
 Morpheus is an open source physically-based cross-platform renderer built using OpenGL. It runs on Linux, MacOS X, and Windows (in that order of precedence).
 
 ![lapviewer2](images/lapviewer2.png)
@@ -139,6 +141,57 @@ An example that displays both nanogui and assimp integration as well as the mesh
 ![lapviewer2](images/lapviewer2.png)
 
 ![lapviewer3](images/lapviewer3.png)
+
+## pbr
+
+An example that shows how to implement PBR using the engine's built in tools for computing Lambert and GGX convolutions on the GPU as well as pre-integrating the Cook-Torrance BRDF via quasi Monte Carlo on the GPU.
+
+```c++
+Texture* tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/skybox.ktx", GL_RGBA8);
+
+auto lambertKernel = new LambertComputeKernel();
+auto ggxKernel = new GGXComputeKernel();
+auto lutKernel = new CookTorranceLUTComputeKernel();
+
+...
+
+// Submit a compute job to the lambert kernel
+LambertComputeJob lambertJob;
+lambertJob.mInputImage = tex;
+lambertKernel->submit(lambertJob);
+
+// Submit a compute job to the ggx kernel
+GGXComputeJob ggxJob;
+ggxJob.mInputImage = tex;
+Texture* specularResult = ggxKernel->submit(ggxJob);
+
+// Create a lookup texture with the BRDF kernel
+Texture* brdf = lutKernel->submit();
+
+lambertKernel->barrier();
+ggxKernel->barrier();
+lutKernel->barrier();
+
+unload(tex);
+
+// Access SH coefficients using lambertKernel->results()
+```
+The implementation is based on these two papers:
+
+*  Diffuse irradiance maps via [the technique in this paper](https://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf).
+* A specular environment map via [the technique used by Unreal Engine 4](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf).
+
+#### PBR Example: A smooth green metal
+
+![pbr0](images/pbr0.png)
+
+#### PBR Example: A smooth white dialectric
+
+![pbr1](images/pbr.png)
+
+### PBR Example: A rougher brown metal
+
+![pbr2](images/pbr2.png)
 
 ## compute-test
 

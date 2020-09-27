@@ -675,12 +675,15 @@ namespace Morpheus {
 	// node: The ancestor node to start at.
 	void init(INodeOwner* node);
 	
-	/// Destroys all ancestors of a node in the scene graph, self included.
-	/// bIgnoreContent: Whether or to ignore nodes managed by the content manager.
-	void prune(INodeOwner* node, bool bIgnoreContent = true);
+	// Destroys all ancestors of a node in the scene graph, self included.
+	// Content is handled separately by the content manager after the prune
+	// is completed. If content has not been orphaned, it is not released,
+	// as there may be multiple users.
+	void prune(INodeOwner* node);
 
-	// Destroys all ancestors of a node with the given name.
-	// name: Node of the node to prune.
-	// bIgnoreContent: Whether to ignore nodes managed by the content manager.
-	void prune(const std::string& name, bool bIgnoreContent = true);
+	// Destroys all ancestors of a node in the scene graph, self included.
+	// Content is handled separately by the content manager after the prune
+	// is completed. If content has not been orphaned, it is not released,
+	// as there may be multiple users.
+	void prune(const std::string& name);
 }
