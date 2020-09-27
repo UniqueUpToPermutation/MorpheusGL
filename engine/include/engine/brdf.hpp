@@ -17,7 +17,6 @@ namespace Morpheus {
 
 	public:
 		CookTorranceLUTComputeKernel(uint computeGroupSize = DEFAULT_CT_LUT_GROUP_SIZE);
-		~CookTorranceLUTComputeKernel() override;
 
 		Texture* submit(uint roughnessPixels = DEFAULT_CT_LUT_PIXELS, 
 			uint NoVPixels = DEFAULT_CT_LUT_PIXELS);

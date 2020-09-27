@@ -181,8 +181,6 @@ namespace Morpheus {
     }
 
     LambertComputeKernel::~LambertComputeKernel() {
-        safeUnload(mGPUBackend);
-
         if (mGPUOutputBuffer != 0) {
             glDeleteBuffers(1, &mGPUOutputBuffer);
         }

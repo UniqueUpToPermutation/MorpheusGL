@@ -31,7 +31,6 @@ namespace Morpheus {
 	public:
 
 		GGXComputeKernel(uint groupSize = GGX_COMPUTE_KERNEL_DEFAULT_GROUP_SIZE);
-		~GGXComputeKernel() override;
 
 		void beginQueue();
 		Texture* addJobUnmanaged(const GGXComputeJob& job);

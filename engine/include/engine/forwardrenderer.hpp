@@ -58,8 +58,6 @@ namespace Morpheus {
 		void makeDebugObjects();
 
 	public:
-		~ForwardRenderer() override;
-
 		RendererType getRendererType() const override;
 		void init() override;
 		void postGlfwRequests() override;
