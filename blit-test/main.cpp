@@ -29,9 +29,14 @@ int main() {
         while (en.valid()) {
             en.update();
             en.render(scene);
+
+			int width;
+			int height;
+			glfwGetFramebufferSize(en.window(), &width, &height);
+
             en.renderer()->debugBlit(texture, 
                 glm::vec2(0.0, 0.0), 
-                glm::vec2(512.0, 512.0));
+                glm::vec2(width, height));
             en.present();
         }
     }
