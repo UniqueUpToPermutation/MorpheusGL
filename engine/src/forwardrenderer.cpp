@@ -48,7 +48,7 @@ namespace Morpheus {
 			// Is this transform is static, then it has already been cached
 			// Otherwise, cache (evaluate and save) this transform using the
 			// last transform on the stack
-			if (params.mIsStaticStack->top()) {
+			if (!params.mIsStaticStack->top()) {
 				if (params.mTransformStack->empty()) {
 					newTransform->mTransform.cache(identity<mat4>());
 				} else {
@@ -76,7 +76,7 @@ namespace Morpheus {
 		case NodeType::CAMERA:
 		{
 			// Found a camera
-			if (params.mRenderCamera)
+			if (!params.mRenderCamera)
 				params.mRenderCamera = current->toCamera();
 			break;
 		}

@@ -72,20 +72,18 @@ protected:
 	}
 
 public:
-	void dispose() override {
+	~LaplacianGui() {
 		delete gui;
-
-		GuiBase::dispose();
 	}
 
-	void update() {
+	void updateGui() {
 		gui->refresh();
 	}
 };
 
 void updateGui() {
-	auto gui = desc("__gui__")->owner.getAs<LaplacianGui>();
-	gui->update();
+	auto gui = dynamic_cast<LaplacianGui*>(find("__gui__"));
+	gui->updateGui();
 }
 
 void updateCurrentMode() {
@@ -99,7 +97,7 @@ void updateCurrentMode() {
 		maxVal = std::max<double>(maxVal, std::abs(mode(i)));
 
 	// Make adjustments to raw geometry
-	auto raw_geo = desc("__raw_geo__")->owner.reinterpretGet<HalfEdgeGeometry>();
+	auto raw_geo = find("__raw_geo__")->toHalfEdgeGeometry();
 	vec3 positive_color(1.0f, 0.0f, 0.0f);
 	vec3 negative_color(0.0f, 0.0f, 1.0f);
 	vec3 zero_color(1.0f, 1.0f, 1.0f);
@@ -117,11 +115,13 @@ void updateCurrentMode() {
 	}
 
 	// Unload the owner of the node and replace it with new geometry
-	auto geo_factory = content()->getFactory<Geometry>();
+	auto geo_factory = getFactory<Geometry>();
+	auto new_geo = geo_factory->makeGeometry(raw_geo);
 
-	geo_factory->unload(desc("__geo__")->owner);
-	desc("__geo__")->owner = geo_factory->makeGeometryUnmanaged(raw_geo);
+	auto staticMesh = find("__static_mesh__");
+	staticMesh->toStaticMesh()->setGeometry(new_geo);
 
+	collectGarbage();
 	updateGui();
 }
 
@@ -161,53 +161,52 @@ void computeModes() {
 }
 
 void loadGeo(const string& source) {
-	Node subSceneNode;
-	if (tryFind("__sub_scene__", &subSceneNode)) {
-		prune(subSceneNode);
-		subSceneNode = Node::invalid();
+	INodeOwner* subScene;
+	if (tryFind("__sub_scene__", &subScene)) {
+		prune(subScene);
 	}
 
 	// Collect unnused data hanging around
 	collectGarbage();
 
 	// Create a sub scene
-	subSceneNode = addNode(new Scene(), "__scene__");
-	setName(subSceneNode, "__sub_scene__");
+	subScene = new Scene();
+	createNode(subScene, find("__scene__"));
+	setName(subScene, "__sub_scene__");
 
 	// Load and add color to the a bunny
-	Morpheus::ref<HalfEdgeGeometry> rawGeo;
-	auto rawGeoNode = load<HalfEdgeGeometry>(source, &rawGeo);
+	HalfEdgeGeometry* rawGeo = load<HalfEdgeGeometry>(source, subScene);
 	rawGeo->createColors(vec3(1.0f, 1.0f, 1.0f));
-	setName(rawGeoNode, "__raw_geo__");
+	setName(rawGeo, "__raw_geo__");
 
 	// Compute the laplacian minor of the interior of the object
-	laplacianInteriorMinor(*rawGeo.get(), &lap, &lifter);
+	laplacianInteriorMinor(*rawGeo, &lap, &lifter);
 	lifter = lifter.transpose();
 
 	// Load material node if necessary
-	Node matNode = load<Material>("content/funcvizmaterial.json");
+	Material* mat = load<Material>("content/funcvizmaterial.json");
 
 	// Convert half edge into renderable geometry
-	Morpheus::ref<Geometry> geo;
-	Node geoNode = getFactory<Geometry>()->makeGeometry(rawGeo.get(), "__geo__", &geo);
-	setName(geoNode, "__geo__");
+	Geometry* geo = getFactory<Geometry>()->makeGeometry(rawGeo, "__geo__");
 
-	auto scene = desc("__scene__")->owner.reinterpretGet<Scene>();
-	auto meshNode = getFactory<StaticMesh>()->makeStaticMesh(matNode, geoNode, "__static_mesh__");
+	auto scene = find("__scene__")->toScene();
+	auto mesh = getFactory<StaticMesh>()->makeStaticMesh(mat, geo);
+	setName(mesh, "__static_mesh__");
 
-	Node transformNode = scene->makeTranslation(vec3(0.0f, 0.0f, 0.0f));
-	subSceneNode.addChild(transformNode);
-	transformNode.addChild(meshNode);
+	auto transform = new TransformNode();
+	createNode(transform, subScene);
+
+	transform->addChild(mesh);
 
 	auto aabb = geo->boundingBox();
 	float distance = length(aabb.mUpper - aabb.mLower) * 1.3f;
 
-	auto controller = desc("__camera_controller__")->owner.getAs<LookAtCameraController>();
+	auto controller = dynamic_cast<LookAtCameraController*>(find("__camera_controller__"));
 	controller->reset(distance);
-	controller->setPhi(- pi<double>() / 2.0);
+	controller->setPhi(-pi<double>() / 2.0);
 	
 	// Initialize this sub scene
-	init(subSceneNode);
+	init(subScene);
 }
 
 int main() {
@@ -216,26 +215,23 @@ int main() {
 
 	if (en.startup("config.json").isSuccess()) {
 
-		// Load default cook-torrance material
-		Node matNode = load<Material>("content/funcvizmaterial.json");
-
 		// Create a scene
-		auto sceneNode = addNode(new Scene(), engine()->handle());
-		setName(sceneNode, "__scene__");
-		auto sceneHandle = issueHandle(sceneNode);
+		auto scene = en.makeScene();
+		setName(scene, "__scene__");
+
+		// Load default cook-torrance material
+		Material* mat = load<Material>("content/funcvizmaterial.json", scene);
 
 		// Create our GUI
-		auto guiNode = addNode(new LaplacianGui(), sceneNode);
-		setName(guiNode, "__gui__");
+		auto gui = new LaplacianGui();
+		createNode(gui, scene);
+		setName(gui, "__gui__");
 
-		// Make sure the material node is not unloaded
-		sceneNode.addChild(matNode);
-	
 		// Create camera and camera controller
 		auto camera = new Camera();
-		auto cameraNode = addNode(camera, sceneNode);
-		auto cameraController = addNode(new LookAtCameraController(0.0), cameraNode);
-
+		createNode(camera, scene);
+		auto cameraController = new LookAtCameraController(0.0);
+		createNode(cameraController, camera);
 		setName(cameraController, "__camera_controller__");
 
 		f_key_capture_t keyHandler = [](GLFWwindow*, int key, int scancode, int action, int modifiers) {
@@ -248,7 +244,7 @@ int main() {
 		input()->bindKeyEvent(&en, &keyHandler);
 
 		// Initialize the scene graph
-		init(sceneNode);
+		init(scene);
 
 		// Load the bunny!
 		loadGeo("content/meshes/bunny.obj");
@@ -257,7 +253,7 @@ int main() {
 		while (en.valid()) {
 			en.update();
 			en.renderer()->setClearColor(clr.r(), clr.g(), clr.b());
-			en.render(sceneHandle);
+			en.render(scene);
 			glfwSwapBuffers(en.window());
 		}
 	}

@@ -608,6 +608,9 @@ namespace Morpheus {
 		TransformNode* toTransform() override;
 		
 		inline TransformNode() : INodeOwner(NodeType::TRANSFORM) {
+			mTransform.mRotation = glm::identity<glm::quat>();
+			mTransform.mTranslation = glm::zero<glm::vec3>();
+			mTransform.mScale = glm::one<glm::vec3>();
 		}
 		inline TransformNode(const Transform& transform) : 
 			mTransform(transform), 

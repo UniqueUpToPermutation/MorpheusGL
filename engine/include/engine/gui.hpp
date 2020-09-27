@@ -22,6 +22,9 @@ namespace Morpheus {
 		virtual void initGui() = 0;
 
 	public:
+		inline GuiBase() : INodeOwner(NodeType::NANOGUI_SCREEN) {
+		}
+
 		inline nanogui::Screen* screen() { return mScreen; }
 
 		GuiBase* toGui() override;

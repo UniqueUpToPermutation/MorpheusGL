@@ -149,7 +149,7 @@ namespace Morpheus {
     }
 
     void LambertComputeKernel::init() {
-        if (mGPUBackend) {
+        if (!mGPUBackend) {
             std::string source(computeKernelSource);
 
             std::stringstream ss;

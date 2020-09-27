@@ -24,7 +24,7 @@ namespace Morpheus {
 	SET_BASE_TYPE(MaterialGui, GuiBase);
 }
 
-Morpheus::ref<Material> material;
+Material* material;
 ShaderUniform<GLfloat> roughness;
 ShaderUniform<GLfloat> metalness;
 ShaderUniform<glm::vec3> albedo;
@@ -76,10 +76,8 @@ protected:
 	}
 
 public:
-	void dispose() override {
+	~MaterialGui() {
 		delete gui;
-
-		GuiBase::dispose();
 	}
 
 	void update() {
@@ -94,18 +92,16 @@ int main() {
 	if (en.startup("config.json").isSuccess()) {
 
 		// Create a scene
-		auto scene = new Scene();
-		auto sceneNode = addNode(scene, engine()->handle());
-		setName(sceneNode, "__scene__");
-		auto sceneHandle = issueHandle(sceneNode);
+		auto scene = en.makeScene();
+		setName(scene, "__scene__");
 
 		// Create camera and camera controller
 		auto camera = new Camera();
-		auto cameraNode = addNode(camera, sceneNode);
+		createNode(camera, scene);
 		auto controller = new LookAtCameraController();
-		auto cameraControllerNode = addNode(controller, cameraNode);
+		createNode(controller, camera);
 
-		setName(cameraControllerNode, "__camera_controller__");
+		setName(controller, "__camera_controller__");
 
 		f_key_capture_t keyHandler = [](GLFWwindow*, int key, int scancode, int action, int modifiers) {
 			if (key == GLFW_KEY_ESCAPE) {
@@ -116,8 +112,8 @@ int main() {
 		input()->registerTarget(&en, InputPriority::CRITICAL);
 		input()->bindKeyEvent(&en, &keyHandler);
 
-		auto staticMeshNode = load<StaticMesh>("content/spheremesh.json");
-		auto geo = StaticMesh::getGeometry(staticMeshNode);
+		auto staticMesh = load<StaticMesh>("content/spheremesh.json");
+		auto geo = staticMesh->getGeometry();
 
 		auto aabb = geo->boundingBox();
 		float distance = length(aabb.mUpper - aabb.mLower) * 1.3f;
@@ -125,26 +121,25 @@ int main() {
 		controller->reset(distance);
 		controller->setPhi(-pi<double>() / 2.0);
 
-		auto transform = Transform::makeIdentity(sceneNode, sceneNode);
-		transform.addChild(staticMeshNode);
+		auto transform = new TransformNode();
+		createNode(transform, scene);
+		transform->addChild(staticMesh);
 
-		Morpheus::ref<Texture> tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/skybox.ktx", GL_RGBA8);
-		Node texNode = addNode<Texture>(tex, sceneNode);
-
+		Texture* tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/skybox.ktx", GL_RGBA8);
+		createContentNode(tex, scene);
+ 
 		auto lambertKernel = new LambertComputeKernel();
-		Node lambertKernelNode = addNode(lambertKernel, sceneNode);
+		createNode(lambertKernel, scene);
 
-		Morpheus::ref<Shader> ggxBackend;
-		load<Shader>("content/ggx.comp", sceneHandle, &ggxBackend);
+		Shader* ggxBackend = load<Shader>("content/ggx.comp", scene);
 		auto ggxKernel = new GGXComputeKernel(ggxBackend, 32);
-		Node ggxKernelNode = addNode(ggxKernel, sceneNode);
+		createNode(ggxKernel, scene);
 
-		Morpheus::ref<Shader> lutBackend;
-		load<Shader>("content/brdf.comp", sceneHandle, &lutBackend);
+		Shader* lutBackend = load<Shader>("content/brdf.comp", scene);
 		auto lutKernel = new CookTorranceLUTComputeKernel(lutBackend, 32);
-		Node lutKernelNode = addNode(lutKernel, sceneNode);
+		createNode(lutKernel, scene);
 
-		material = StaticMesh::getMaterial(staticMeshNode);
+		material = staticMesh->getMaterial();
 		roughness.find(material->shader(), "roughness");
 		metalness.find(material->shader(), "metalness");
 		albedo.find(material->shader(), "albedo");
@@ -153,11 +148,12 @@ int main() {
 		material->uniformAssignments().add(albedo, glm::vec3(1.0f, 1.0f, 1.0f));
 
 		// Create our GUI
-		auto guiNode = addNode(new MaterialGui(), sceneNode);
-		setName(guiNode, "__gui__");
+		auto gui = new MaterialGui();
+		createNode(gui, scene);
+		setName(gui, "__gui__");
 
 		// Initialize the scene graph
-		init(sceneNode);
+		init(scene);
 
 		// Submit a compute job to the lambert kernel
 		LambertComputeJob lambertJob;
@@ -169,8 +165,8 @@ int main() {
 		ggxJob.mInputImage = tex;
 		auto specularResult = ggxKernel->submit(ggxJob);
 
-		Morpheus::ref<Texture> lut = lutKernel->submit();
-		addNode<Texture>(lut, sceneNode);
+		Texture* lut = lutKernel->submit();
+		createContentNode(lut, scene);
 
 		lambertKernel->barrier();
 		ggxKernel->barrier();
@@ -180,11 +176,8 @@ int main() {
 		ShaderUniform<Sampler> environmentSpecular(material->shader(), "environmentSpecular");
 		ShaderUniform<Sampler> environmentBRDF(material->shader(), "environmentBRDF");
 
-		Morpheus::ref<Sampler> sampler;
-		load<Sampler>(MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC, sceneHandle, &sampler);
-
-		Morpheus::ref<Sampler> lutSampler;
-		load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, sceneHandle, &lutSampler);
+		Sampler* sampler = load<Sampler>(MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC, scene);
+		Sampler* lutSampler = load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, scene);
 
 		material->uniformAssignments().add(environmentDiffuseSH, lambertKernel->results(), lambertKernel->shCount());
 		material->samplerAssignments().add(environmentSpecular, sampler, specularResult);
@@ -193,7 +186,7 @@ int main() {
 		// Game loop
 		while (en.valid()) {
 			en.update();
-			en.render(sceneHandle);
+			en.render(scene);
 			//en.renderer()->debugBlit(lut, glm::vec2(0.0, 0.0), glm::vec2(256, 256));
 			en.present();
 		}

@@ -39,7 +39,7 @@ namespace Morpheus {
 		if ((job.mInputImage->width() & (job.mInputImage->width() - 1) == 0) || job.mInputImage->width() == 0)
 			throw std::runtime_error("GGXComputeKernel: Dimensions are not a power of two!");
 
-		if (mGPUBackend)
+		if (!mGPUBackend)
             throw std::runtime_error("GGXComputeKernel: Kernel has not been initialized!");
 
         if (bInJob)

@@ -83,12 +83,23 @@ namespace Morpheus {
 		// Create a node for a content object and transfer ownership of node to content manager.
 		// content: A reference to the content.
 		// returns: A child node of the content manager with the content as an owner. 
-		void createContentNode(INodeOwner* content) {
+		inline void createContentNode(INodeOwner* content) {
 			graph()->createNode(content, this);
 		}
 
-		void createContentNode(INodeOwner* content, const std::string& source) {
+		inline void createContentNode(INodeOwner* content, const std::string& source) {
 			graph()->createNode(content, this);
+			mSources.set(content->node(), source);
+		}
+
+		inline void createContentNode(INodeOwner* content, INodeOwner* parent) {
+			createNode(content, this);
+			parent->addChild(content);
+		}
+
+		inline void createContentNode(INodeOwner* content, INodeOwner* parent, const std::string& source) {
+			createNode(content, this);
+			parent->addChild(content);
 			mSources.set(content->node(), source);
 		}
 
@@ -185,10 +196,20 @@ namespace Morpheus {
 		friend class Engine;
 	};
 
-	// Transfer ownership of an already existing node to the content manager.
-	// content: The node for which to transfer ownership.
-	inline void createContentNode(INodeOwner* contentNode) {
-		return content()->createContentNode(contentNode);
+	inline void createContentNode(INodeOwner* obj) {
+		content()->createContentNode(obj);
+	}
+
+	inline void createContentNode(INodeOwner* obj, const std::string& source) {
+		content()->createContentNode(obj, source);
+	}
+
+	inline void createContentNode(INodeOwner* obj, INodeOwner* parent) {
+		content()->createContentNode(obj, parent);
+	}
+
+	inline void createContentNode(INodeOwner* obj, INodeOwner* parent, const std::string& source) {
+		content()->createContentNode(obj, parent, source);
 	}
 
 	// Get a content factory by content type.
@@ -197,15 +218,6 @@ namespace Morpheus {
 	template <typename ContentType> 
 	inline ContentFactory<ContentType>* getFactory() {
 		return content()->getFactory<ContentType>();
-	}
-
-	// Transfer ownership of an already existing node to the content manager.
-	// Also adds the content to the source lookup so that it can be retrieved with
-	// ContentManager::load.
-	// content: The node for which to transfer ownership.
-	// sourceName: The name of the content so it can be looked up with ContentManager::load.
-	inline void createContentNode(INodeOwner* contentNode, const std::string& sourceName) {
-		content()->createContentNode(contentNode, sourceName);
 	}
 
 	// Loads an asset.
