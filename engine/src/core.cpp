@@ -1,3 +1,5 @@
+#include <glad/glad.h>
+
 #include <engine/core.hpp>
 #include <engine/engine.hpp>
 #include <engine/content.hpp>
@@ -17,8 +19,6 @@
 #include <engine/camera.hpp>
 
 #include <iostream>
-
-#include <glad/glad.h>
 
 #define T_CASE(type) case NodeType::type: \
 	return #type

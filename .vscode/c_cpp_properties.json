@@ -9,7 +9,9 @@
 				"${workspaceFolder}/nanogui/ext/eigen",
 				"${workspaceFolder}/nanogui/include",
 				"${workspaceFolder}/nanogui/ext/nanovg/src",
-				"${workspaceFolder}/gli"
+				"${workspaceFolder}/gli",
+				"${workspaceFolder}/engine",
+				"${workspaceFolder}/assimp/include"
             ],
             "defines": ["_DEBUG",
 				"NANOGUI_USE_OPENGL",

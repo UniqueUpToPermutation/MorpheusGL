@@ -101,8 +101,7 @@ namespace Morpheus {
 		Geometry* makeGeometry(const HalfEdgeGeometry* geo) const;
 		Geometry* makeGeometry(const HalfEdgeGeometry* geo,
 			const std::string& source) const;
-		Geometry* makeBox(const glm::vec3& center, const glm::vec3& radius, const bool bInverted) const;
-
+	
 		std::string getContentTypeString() const override;
 	};
 }
