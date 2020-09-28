@@ -197,7 +197,7 @@ The implementation is based on these two papers:
 
 ## compute-test
 
-Shows how to load a compute shader with the content manager, write the result of the compute shader into a texture, and then blit that texture to screen. Displays and animation of the Mandelbrot fractal.
+Shows how to load a compute shader with the content manager, write the result of the compute shader into a texture, and then blit that texture to screen. Displays an animation of the Mandelbrot fractal.
 
 ![compute-test](images/compute-test.png)
 
