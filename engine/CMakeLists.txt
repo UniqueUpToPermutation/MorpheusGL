@@ -31,6 +31,7 @@ add_library(engine
     src/blit.cpp
 	src/ggx.cpp
 	src/brdf.cpp
+	src/glslpreprocessor.cpp
     lodepng/lodepng.cpp
     ../nanogui/ext/glad/src/glad.c)
 

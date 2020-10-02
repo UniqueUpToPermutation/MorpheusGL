@@ -140,7 +140,7 @@ namespace Morpheus {
             }
 
             // Add compute shader to this object's children for resource management
-            mGPUBackend = getFactory<Shader>()->makeFromGL(program);
+            mGPUBackend = getFactory<Shader>()->makeUnmanagedFromGL(program);
 			createContentNode(mGPUBackend);
             addChild(mGPUBackend);
 		}	

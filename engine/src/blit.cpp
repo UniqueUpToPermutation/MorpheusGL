@@ -46,7 +46,7 @@ namespace Morpheus {
         auto contentManager = content();
         auto shaderFactory = contentManager->getFactory<Shader>();
 
-        Shader* result = shaderFactory->makeFromGL(makeBlitShaderRaw());
+        Shader* result = shaderFactory->makeUnmanagedFromGL(makeBlitShaderRaw());
         GL_ASSERT;
 
         shaderViewOut->mLower.find(result, "lower");

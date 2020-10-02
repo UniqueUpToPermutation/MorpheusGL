@@ -7,6 +7,8 @@
 #include <engine/sampler.hpp>
 #include <engine/texture.hpp>
 
+#include <engine/glslpreprocessor.hpp>
+
 #include <glm/gtc/type_ptr.hpp>
 
 #define SET_WORLD(loc_str) mWorld.mLoc = glGetUniformLocation(id(), loc_str)
@@ -1014,22 +1016,31 @@ namespace Morpheus {
 	};
 
 	template <>
-	class ContentFactory<Shader> : public IContentFactory {
+	class ContentFactory<Shader> : public IContentFactory, public IGLSLSourceLoader {
 	private:
+		GLSLPreprocessor mPreprocessor;
+		std::unordered_map<std::string, const char*> mInternalShaders;
+
 		void readJsonMetadata(const nlohmann::json& j, Shader* shad, Node loadInto,
 			const std::string& parentSrc = "");
 
-		Shader* loadJson(const std::string& source, Node loadInto);
-		Shader* loadComp(const std::string& source, Node loadInto);
+		Shader* loadJson(const std::string& source, Node loadInto, GLSLPreprocessorConfig* overrides);
+		Shader* loadComp(const std::string& source, Node loadInto, GLSLPreprocessorConfig* overrides);
 
 	public:
 		ContentFactory();
+
+		bool tryFind(const std::string& source, const std::string& path, std::string* contents) override;
+
 		INodeOwner* load(const std::string& source, Node loadInto) override;
-		Shader* makeFromGL(GLint shaderProgram);
+		INodeOwner* load(const std::string& source, Node loadInto, GLSLPreprocessorConfig* overrides);
+		Shader* makeUnmanagedFromGL(GLint shaderProgram);
 		void unload(INodeOwner* ref) override;
 		void dispose() override;
 
 		std::string getContentTypeString() const override;
+
+		inline GLSLPreprocessor* preprocessor() { return &mPreprocessor; }
 	};
 
 	void readEditorUniforms(const nlohmann::json& j, const Shader* shad, 
@@ -1044,9 +1055,12 @@ namespace Morpheus {
 		const std::string& parentSrc = "");
 
 	GLuint compileShader(const std::string& code, const ShaderType type);
+	GLuint compileShader(const std::vector<GLSLPreprocessorOutput>& code, const ShaderType type);
 	GLuint compileComputeKernel(const std::string& code);
+	GLuint compileComputeKernel(const std::vector<GLSLPreprocessorOutput>& code);
 	void printProgramLinkerOutput(GLint program);
 	void printShaderCompilerOutput(GLint shader);
+	void printShaderCompilerOutput(GLint shader, const std::vector<GLSLPreprocessorOutput>& outputs);
 
 	inline void ShaderUniform<Sampler>::find(const Shader* shader, const std::string& identifier) {
 		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());

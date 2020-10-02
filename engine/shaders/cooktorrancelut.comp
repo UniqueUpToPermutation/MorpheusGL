@@ -1,0 +1,29 @@
+#version 450 core
+
+// Default group size
+#ifndef GROUP_SIZE
+#define GROUP_SIZE 32
+#endif
+
+// Default number of samples
+#ifndef NUM_SAMPLES
+#define NUM_SAMPLES 1024
+#endif
+
+layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
+
+layout(binding = 0) writeonly uniform image2D outputTexture;
+
+// Includes
+#pragma include "ggx.glsl"
+vec2 integrateBRDF(float Roughness, float NoV, const uint NumSamples);
+
+void main() {
+    uvec2 pixLocation = gl_GlobalInvocationID.xy;
+
+	vec2 uv = (vec2(pixLocation) + vec2(0.5, 0.5)) / imageSize(outputTexture);
+
+	vec2 brdfValue = integrateBRDF(uv.x, uv.y, NUM_SAMPLES);
+	
+	imageStore(outputTexture, ivec2(pixLocation), vec4(brdfValue, 0.0, 0.0));
+}

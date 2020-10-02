@@ -1,0 +1,84 @@
+#version 450 core
+
+precision highp int;
+precision highp float;
+
+// Includes from other files
+#pragma include "cubemap.glsl"
+float cubemapJacobian(vec2 surfacePosition);
+vec3 cubemapGetDirection(vec2 surfacePosition, uint face);
+
+#define SH_FUNC SH9
+#define SH_COEFFS 9
+
+#pragma include "sphericalharmonics.glsl"
+void SH9(vec3 position, out float sh[SH_COEFFS]);
+
+// Default group size
+#ifndef GROUP_SIZE
+#define GROUP_SIZE 32
+#endif
+
+layout(local_size_x = GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+layout(rgba8, binding = 0) uniform readonly imageCube img_input;
+
+layout(std430, binding = 0) writeonly buffer out_buffer {
+	float out_array[];
+};
+
+uniform uint outputOffset = 0;
+shared vec4 sum_array[gl_WorkGroupSize.x * SH_COEFFS];
+
+void main() {
+	uint y_indx = gl_GlobalInvocationID.x;
+
+	vec4 result[SH_COEFFS];
+
+	// Clear SH_COEFFS
+	for (uint i = 0; i < SH_COEFFS; ++i) {
+		result[i] = vec4(0.0, 0.0, 0.0, 0.0);
+	}
+
+	ivec2 size = imageSize(img_input);
+
+	float h2 = 4.0 / float(size.x) / float(size.y);
+	vec2 uv = vec2(-1.0, -1.0 + 2.0 * (float(y_indx) + 0.5) / float(size.y));
+
+	for (uint z_indx = 0; z_indx < 6; ++z_indx) {
+		for (uint x_indx = 0; x_indx < size.x; ++x_indx) {
+			uv.x = -1.0 + 2.0 * (float(x_indx) + 0.5) / float(size.x);
+
+			vec4 pix = imageLoad(img_input, ivec3(x_indx, y_indx, z_indx));
+			vec3 position = cubemapGetDirection(uv, z_indx);
+			float jac = cubemapJacobian(uv);
+
+			// Integrate against the spherical harmonics
+			float sh[SH_COEFFS];
+			SH_FUNC(position, sh);
+
+			for (uint i = 0; i < SH_COEFFS; ++i) {
+				result[i] += pix * sh[i] * jac * h2;
+			}
+		}
+	}
+
+	for (uint i = 0; i < SH_COEFFS; ++i) {
+		sum_array[SH_COEFFS * gl_LocalInvocationIndex + i] = result[i];
+	}
+
+	memoryBarrierShared();
+	barrier();
+
+	if (gl_LocalInvocationIndex < SH_COEFFS) {
+		uint sh = gl_LocalInvocationIndex;
+		vec4 final_result = vec4(0.0, 0.0, 0.0, 0.0);
+		for (uint i = 0; i < gl_WorkGroupSize.x; ++i) {
+			final_result += sum_array[i * SH_COEFFS + sh];
+		}
+
+		uint writePos = outputOffset + 3 * (gl_WorkGroupID.x * SH_COEFFS + sh);
+		out_array[writePos] = final_result.x;
+		out_array[writePos + 1] = final_result.y;
+		out_array[writePos + 2] = final_result.z;
+	}
+}
