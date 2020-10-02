@@ -1,4 +1,4 @@
-#version 450 core
+#version 410 core
 
 #define SH_C_0 0.28209479177
 #define SH_C_1 0.4886025119

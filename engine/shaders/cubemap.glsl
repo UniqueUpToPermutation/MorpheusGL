@@ -1,4 +1,4 @@
-#version 450 core
+#version 410 core
 
 #define FACE_POSITIVE_X 0
 #define FACE_NEGATIVE_X 1

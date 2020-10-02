@@ -1,4 +1,4 @@
-#version 450 core
+#version 410 core
 
 #pragma include "hammersley.glsl"
 vec2 hammersley(uint i, uint sampleCount);
