@@ -216,5 +216,3 @@ Shows how to load a texture and blit the result to screen using the renderer's d
 ## simple-app
 
 An easy hello world for the engine. Creates an empty scene and uses the renderer to display it.
-
-![simple-app](images/simple-app.png)
