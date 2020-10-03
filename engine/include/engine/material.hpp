@@ -41,4 +41,20 @@ namespace Morpheus {
 
 		std::string getContentTypeString() const override;
 	};
+
+	struct DefaultMaterialShaderView {
+		ShaderUniform<glm::vec3[]> mEnvironmentDiffuseSH;
+		ShaderUniform<Sampler> mEnvironmentSpecular;
+
+		ShaderUniform<Sampler> mAlbedo;
+		ShaderUniform<Sampler> mRoughness;
+		ShaderUniform<Sampler> mNormal;
+		ShaderUniform<Sampler> mDisplacement;
+
+		ShaderUniform<GLboolean> bSampleMetalness;
+		ShaderUniform<Sampler> mMetalness;
+		ShaderUniform<GLfloat> mMetalnessDefault;
+
+		DefaultMaterialShaderView(Shader* shader);
+	};
 }

@@ -152,7 +152,7 @@ namespace Morpheus {
         if (!mGPUBackend) {
 			GLSLPreprocessorConfig config;
 			config.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
-			mGPUBackend = loadExt<Shader>("internal/lambertsh.comp", config, this, true);
+			mGPUBackend = loadExt<Shader>("/internal/lambertsh.comp", config, this, true);
 
             mOffsetUniform.find(mGPUBackend, "outputOffset");
 

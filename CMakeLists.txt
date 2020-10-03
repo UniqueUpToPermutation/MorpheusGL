@@ -36,7 +36,7 @@ if(BUILD_SIMPLE_APP)
 endif()
 
 if(BUILD_PBR)
-    add_subdirectory(pbr)
+    add_subdirectory(simple-pbr)
 endif()
 
 if(BUILD_LAPVIEWER)

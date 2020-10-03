@@ -34,13 +34,18 @@ namespace Morpheus {
         string shaderSrc;
         j["shader"].get_to(shaderSrc);
 
-        string prefix_include_path = "";
+		if (shaderSrc.length() == 0)
+			throw std::runtime_error("Shader source is empty!");
 
-		auto extract_ptr = source.find_last_of("\\/");
-		if (extract_ptr != string::npos)
-			prefix_include_path = source.substr(0, extract_ptr + 1);
+		if (shaderSrc[0] != '/') {
+			string prefix_include_path = "";
 
-        shaderSrc = prefix_include_path + shaderSrc;
+			auto extract_ptr = source.find_last_of("\\/");
+			if (extract_ptr != string::npos)
+				prefix_include_path = source.substr(0, extract_ptr + 1);
+
+			shaderSrc = prefix_include_path + shaderSrc;
+		}
 
         // Load the shader through the content manager
         auto shader = content()->load<Shader>(shaderSrc);
@@ -86,4 +91,18 @@ namespace Morpheus {
     void ContentFactory<Material>::dispose() {
         delete this;
     }
+
+	DefaultMaterialShaderView::DefaultMaterialShaderView(Shader* shader) {
+		mEnvironmentDiffuseSH.find(shader, "environmentDiffuseSH");
+		mEnvironmentSpecular.find(shader, "environmentSpecular");
+		
+		mAlbedo.find(shader, "albedo");
+		mRoughness.find(shader, "roughness");
+		mMetalness.find(shader, "metalness");
+		mNormal.find(shader, "normal");
+		mDisplacement.find(shader, "displacement");
+
+		bSampleMetalness.find(shader, "bSampleMetalness");
+		mMetalnessDefault.find(shader, "metalnessDefault");
+	}
 }

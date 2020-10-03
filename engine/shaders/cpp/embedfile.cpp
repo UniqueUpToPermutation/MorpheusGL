@@ -70,8 +70,8 @@ int main(int argc, char* argv[])
 
 	f_out << "void makeSourceMap(std::unordered_map<std::string, const char*>* map) {" << endl;
 	for (auto& it : map) {
+		f_out << "\t(*map)[\"/internal/" << it.first << "\"] = " << it.second << ";" << endl;
 		f_out << "\t(*map)[\"internal/" << it.first << "\"] = " << it.second << ";" << endl;
-		f_out << "\t(*map)[\"./internal/" << it.first << "\"] = " << it.second << ";" << endl;
 	}
 	f_out << "}" << endl;
 	return 0;

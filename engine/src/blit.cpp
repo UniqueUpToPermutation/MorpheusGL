@@ -5,7 +5,7 @@
 namespace Morpheus {
 	Shader* makeBlitShader(INodeOwner* parent, BlitShaderView* shaderViewOut) {
 		// Load internal shader resource
-        Shader* result = load<Shader>("internal/blit.json", parent);
+        Shader* result = load<Shader>("/internal/blit.json", parent);
         GL_ASSERT;
 
         shaderViewOut->mLower.find(result, "lower");

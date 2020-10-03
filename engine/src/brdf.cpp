@@ -32,7 +32,7 @@ namespace Morpheus {
 			// Set configuration and load shader, and set as child
 			GLSLPreprocessorConfig overrides;
 			overrides.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
-			mGPUBackend = loadExt<Shader>("internal/cooktorrancelut.comp", overrides, this, true);
+			mGPUBackend = loadExt<Shader>("/internal/cooktorrancelut.comp", overrides, this, true);
 		}	
 	}
 }

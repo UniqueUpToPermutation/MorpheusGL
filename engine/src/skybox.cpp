@@ -16,7 +16,7 @@ namespace Morpheus {
 	}
 
 	void Skybox::init() {
-		mSkyboxShader = load<Shader>("internal/skybox.json", this);
+		mSkyboxShader = load<Shader>("/internal/skybox.json", this);
 		mSkyboxSampler = load<Sampler>(MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC, this);
 		addChild(mSkyboxTexture);
 

@@ -43,7 +43,7 @@ namespace Morpheus {
 
 		std::string contents;
 		if (!mSourceInterface->tryFind(source, &contents)) {
-			std::cout << "Unabled to find: " << source << std::endl;
+			std::cout << "Unable to find: " << source << std::endl;
 			throw new std::runtime_error(std::string("Unable to find: ") + source);
 		}
 
@@ -124,9 +124,9 @@ namespace Morpheus {
 				if (bGlobalSearch) {
 					nextPath = ".";
 
-					size_t separator_i = source.rfind('/');
+					size_t separator_i = includeSource.rfind('/');
 					if (separator_i != std::string::npos) {
-						nextPath = source.substr(0, separator_i);
+						nextPath = includeSource.substr(0, separator_i);
 					}
 
 					load(includeSource, nextPath, overrides, streamOut,
@@ -158,6 +158,9 @@ namespace Morpheus {
 
 		std::set<std::string> alreadyVisited;
 		std::string path = ".";
+
+		if (source.length() == 0)
+			throw std::runtime_error("source has length 0!");
 
 		size_t separator_i = source.rfind('/');
 		if (separator_i != std::string::npos) {
