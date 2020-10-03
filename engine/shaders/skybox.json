@@ -1,0 +1,10 @@
+{
+	"vertex_shader": "skybox.vert",
+	"fragment_shader": "skybox.frag",
+
+	"renderer_uniforms": {
+		"view": "view",
+		"projection": "projection",
+		"eye_position": "eyePosition"
+	}
+}
