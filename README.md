@@ -183,17 +183,21 @@ The implementation is based on these two papers:
 *  Diffuse irradiance maps via [the technique in this paper](https://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf).
 * A specular environment map via [the technique used by Unreal Engine 4](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf).
 
-#### PBR Example: A smooth green metal
+#### PBR Example: A smooth dialectric
 
 ![pbr0](images/pbr0.png)
 
-#### PBR Example: A smooth white dialectric
+#### PBR Example: A nonsmooth dialectric
 
-![pbr1](images/pbr.png)
+![pbr1](images/pbr1.png)
 
-### PBR Example: A rougher brown metal
+### PBR Example: A smooth conductor
 
 ![pbr2](images/pbr2.png)
+
+### PBR Example: A nonsmooth conductor
+
+![pbr3](images/pbr3.png)
 
 ## compute-test
 
