@@ -1,0 +1,6 @@
+{
+  "shader": "/internal/simplepbr.json",
+
+  "samplers": {
+  }
+}

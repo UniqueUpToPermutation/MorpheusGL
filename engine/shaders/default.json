@@ -1,0 +1,18 @@
+{
+	"vertex_shader": "default.vert",
+	"fragment_shader": "default.frag",
+
+	"editor_uniforms": [
+	],
+  
+	"uniform_defaults": {
+	},
+  
+	"renderer_uniforms": {
+	  "world": "model",
+	  "world_inverse_transpose": "modelInverseTranspose",
+	  "view": "view",
+	  "projection": "projection",
+	  "eye_position": "eyePosition"
+	}
+}
