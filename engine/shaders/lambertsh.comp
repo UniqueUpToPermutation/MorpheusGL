@@ -4,14 +4,14 @@ precision highp int;
 precision highp float;
 
 // Includes from other files
-#pragma include "internal/cubemap.glsl"
+#pragma include "cubemap.glsl"
 float cubemapJacobian(vec2 surfacePosition);
 vec3 cubemapGetDirection(vec2 surfacePosition, uint face);
 
 #define SH_FUNC SH9
 #define SH_COEFFS 9
 
-#pragma include "internal/sphericalharmonics.glsl"
+#pragma include "sphericalharmonics.glsl"
 void SH9(vec3 position, out float sh[SH_COEFFS]);
 
 // Default group size

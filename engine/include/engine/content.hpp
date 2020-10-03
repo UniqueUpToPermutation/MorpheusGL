@@ -13,8 +13,10 @@
 #include <engine/core.hpp>
 #include <engine/pool.hpp>
 #include <engine/engine.hpp>
+#include <engine/glslpreprocessor.hpp>
 
 #include <set>
+#include <iostream>
 
 /*
 *	Every piece of content is treated as a node in the node graph.
@@ -28,11 +30,27 @@ namespace Morpheus {
 		typedef void Base;
 	};
 
+	template <typename ContentType>
+	struct ContentExtParam;
+
+	template <>
+	struct ContentExtParam<Shader> {
+		typedef GLSLPreprocessorConfig RESULT;
+	};
+
+	template <typename ContentType>
+	using ContentExtParam_v = typename ContentExtParam<ContentType>::RESULT;
+
 	// An interface that all content factories must inherit from.
 	// Defines the interface for loading and unloading assets.
 	class IContentFactory {
 	public:
 		virtual INodeOwner* load(const std::string& source, Node loadInto) = 0;
+
+		virtual INodeOwner* loadExt(const std::string& source, Node loadInto, const void* extParams) {
+			throw std::runtime_error("loadExt not implemented for this factory type!");
+		}
+
 		virtual void unload(INodeOwner* ref) = 0;
 		virtual void dispose() = 0;
 		virtual std::string getContentTypeString() const = 0;
@@ -184,6 +202,62 @@ namespace Morpheus {
 			}
 		}
 
+		template <typename ContentType>
+		ContentType* loadExt(const std::string& source, const ContentExtParam_v<ContentType>& extParams, INodeOwner* parent = nullptr,
+			bool bOverrideExistingSource = false) {
+			assert(IS_BASE_TYPE_<ContentType>::RESULT);
+
+			std::string source_mod = source;
+			std::replace(source_mod.begin(), source_mod.end(), '\\', '/');
+			
+			auto graph_ = graph();
+			Node contentNode;
+			INodeOwner* content;
+
+			bool bAlreadyExists = mSources.tryFind(source_mod, &contentNode);
+			
+			if (bAlreadyExists && !bOverrideExistingSource) {
+				content = graph()->owner(contentNode);
+
+				if (parent)
+					parent->addChild(content);
+					
+				return convert<ContentType>(content);
+			}
+			else {
+				if (bAlreadyExists) {
+					std::cout << "Content " << source << " already exists! The content attached to this source will be overriden!" << std::endl;
+				}
+
+				// Create a vertex to load the content into
+				contentNode = graph_->createVertex();
+				
+				// Load a ref via the correct content factory
+				auto type = NODE_ENUM(ContentType);
+				content = mTypeToFactory[type]->loadExt(source_mod, contentNode, &extParams);
+
+				if (content == nullptr) {
+					graph_->deleteVertex(contentNode);
+					throw new std::runtime_error("Failed to load content!");
+				}
+
+				// Set the owner of the new vertex to the content just loaded
+				graph_->setOwner(contentNode, content);
+
+				// Set the node description of the created node appropriately
+				mSources.set(contentNode, source_mod);
+				
+				// If a parent was passed, add the created content as a child of the parent
+				if (parent)
+					parent->addChild(content);
+
+				// Add the new vertex as a child of the content manager
+				addChild(content);
+
+				return convert<ContentType>(content);
+			}
+		}
+
 		// Perform garbage collection for all descendents that are no longer
 		// in use.
 		void collectGarbage();
@@ -238,6 +312,12 @@ namespace Morpheus {
 	template <typename ContentType> 
 	inline ContentType* load(const std::string& source, INodeOwner* parent = nullptr) {
 		return content()->load<ContentType>(source, parent);
+	}
+
+	template <typename ContentType>
+	ContentType* loadExt(const std::string& source, const ContentExtParam_v<ContentType>& extParams, INodeOwner* parent = nullptr,
+		bool bOverrideExistingSource = false) {
+		return content()->loadExt<ContentType>(source, extParams, parent, bOverrideExistingSource);
 	}
 
 	// Perform garbage collection for all descendents that are no longer

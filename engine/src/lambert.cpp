@@ -150,29 +150,14 @@ namespace Morpheus {
 
     void LambertComputeKernel::init() {
         if (!mGPUBackend) {
-            std::string source(computeKernelSource);
-
-            std::stringstream ss;
-            ss << "#version 450" << std::endl;
-            ss << "#define GROUP_SIZE_X " << mGroupSize << std::endl;
-            ss << source;
-
-            auto program = compileComputeKernel(ss.str());
-                
-            if (program == 0) {
-                std::cout << "LambertComputeKernel: Error occured while compiling compute shader..." << std::endl;
-                throw std::runtime_error("LambertComputeKernel: Compute shader failed to compile!");
-            }
-
-            // Add compute shader to this object's children for resource management
-            mGPUBackend = getFactory<Shader>()->makeUnmanagedFromGL(program);
-			createContentNode(mGPUBackend);
-            addChild(mGPUBackend);
+			GLSLPreprocessorConfig config;
+			config.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
+			mGPUBackend = loadExt<Shader>("internal/lambertsh.comp", config, this, true);
 
             mOffsetUniform.find(mGPUBackend, "outputOffset");
 
 			if (!mOffsetUniform.valid()) {
-				throw std::runtime_error("Lambert Computer Kernel: could not find outputOffset!");
+				throw std::runtime_error("LambertComputeKernel: could not find outputOffset!");
 			}
 
             bInJob = false;

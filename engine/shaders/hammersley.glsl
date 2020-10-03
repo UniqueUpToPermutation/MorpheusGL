@@ -11,7 +11,7 @@ float radicalInverse_VdC(uint bits)
 }
 
 // Sample i-th point from Hammersley point set of NumSamples points total.
-vec2 hammersley(uint i, uint sampleCount)
+vec2 hammersley(uint i, const uint sampleCount)
 {
 	return vec2(float(i) / float(sampleCount), radicalInverse_VdC(i));
 }

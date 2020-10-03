@@ -12,7 +12,6 @@ namespace Morpheus {
         ShaderUniform<Sampler> mBlitTexture;
     };
 
-    GLint makeBlitShaderRaw();
     Shader* makeBlitShader(INodeOwner* parent, BlitShaderView* shaderViewOut);
    	Geometry* makeBlitGeometry(INodeOwner* parent);
 }

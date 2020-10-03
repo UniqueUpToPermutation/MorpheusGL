@@ -109,14 +109,14 @@ namespace Morpheus {
 		makeSourceMap(&mInternalShaders);
 	}
 
-	bool ContentFactory<Shader>::tryFind(const std::string& source, const std::string& path, std::string* contents) {
+	bool ContentFactory<Shader>::tryFind(const std::string& source, std::string* contents) {
 		// Search internal shaders first
 		auto it = mInternalShaders.find(source);
 		if (it != mInternalShaders.end()) {
 			*contents = it->second;
 			return true;
 		} else {
-			fstream f(path + '/' + source);
+			fstream f(source);
 
 			if (f.is_open()) {
 				f.seekg(0, std::ios::end);
@@ -375,6 +375,24 @@ namespace Morpheus {
 		}
 	}
 
+	void printProgramLinkerOutput(GLint program, const GLSLPreprocessorOutput& code) {
+		GLint len;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &len);
+		if (len > 1)
+		{
+			std::cout << "Includes: " << std::endl;
+			for (size_t i = 0; i < code.mSources.size(); ++i) {
+				const auto& out = code.mSources[i];
+				std::cout << "[" << i << "]: " << out << std::endl;
+			}
+			
+			GLchar* compiler_log = new GLchar[len];
+			glGetProgramInfoLog(program, len, &len, compiler_log);
+			cout << compiler_log << endl;
+			delete[] compiler_log;
+		}
+	}
+
 	void printShaderCompilerOutput(GLint shader) {
 		GLint len;
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
@@ -387,15 +405,15 @@ namespace Morpheus {
 		}
 	}
 
-	void printShaderCompilerOutput(GLint shader, const vector<GLSLPreprocessorOutput>& outputs) {
+	void printShaderCompilerOutput(GLint shader, const GLSLPreprocessorOutput& output) {
 		GLint len;
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
 		if (len > 1)
 		{
 			std::cout << "Includes: " << std::endl;
-			for (size_t i = 0; i < outputs.size(); ++i) {
-				const auto& out = outputs[i];
-				std::cout << "[" << i << "]: " << out.mSource << std::endl;
+			for (size_t i = 0; i < output.mSources.size(); ++i) {
+				const auto& out = output.mSources[i];
+				std::cout << "[" << i << "]: " << out << std::endl;
 			}
 
 			GLchar* compiler_log = new GLchar[len];
@@ -405,19 +423,28 @@ namespace Morpheus {
 		}
 	}
 
-	Shader* ContentFactory<Shader>::loadJson(const std::string& source, Node loadInto, GLSLPreprocessorConfig* overrides) {
+	Shader* ContentFactory<Shader>::loadJson(const std::string& source, Node loadInto, const GLSLPreprocessorConfig* overrides) {
 		json j;
-		ifstream f(source);
 
-		cout << "Loading shader " << source << "..." << endl;
+		auto internalIt = mInternalShaders.find(source);
+		if (internalIt != mInternalShaders.end()) {
+			cout << "Loading internal shader " << source << "..." << endl;
 
-		if (!f.is_open()) {
-			cout << "Failed to open " << source << "!" << endl;
-			return nullptr;
+			j = json::parse(internalIt->second);
 		}
+		else {
+			ifstream f(source);
 
-		f >> j;
-		f.close();
+			cout << "Loading shader " << source << "..." << endl;
+
+			if (!f.is_open()) {
+				cout << "Failed to open " << source << "!" << endl;
+				return nullptr;
+			}
+
+			f >> j;
+			f.close();
+		}
 
 		// Instantiate the C++ code surrounding the shader
 		Shader* shader = new Shader();
@@ -441,7 +468,7 @@ namespace Morpheus {
 			compute_src = prefix_include_path + compute_src;
 
 			vector<string> paths;
-			vector<GLSLPreprocessorOutput> preprocessor_out;
+			GLSLPreprocessorOutput preprocessor_out;
 
 			mPreprocessor.load(compute_src, &preprocessor_out, overrides);
 
@@ -456,8 +483,8 @@ namespace Morpheus {
 
 			vector<string> paths;
 			
-			vector<GLSLPreprocessorOutput> vertex_preprocessor_out;
-			vector<GLSLPreprocessorOutput> frag_preprocessor_out;
+			GLSLPreprocessorOutput vertex_preprocessor_out;
+			GLSLPreprocessorOutput frag_preprocessor_out;
 
 			mPreprocessor.load(vertex_src, &vertex_preprocessor_out, overrides);
 			mPreprocessor.load(frag_src, &frag_preprocessor_out, overrides);
@@ -501,13 +528,13 @@ namespace Morpheus {
 		return shader;
 	}
 
-	Shader* ContentFactory<Shader>::loadComp(const std::string& source, Node loadInto, GLSLPreprocessorConfig* overrides) {
+	Shader* ContentFactory<Shader>::loadComp(const std::string& source, Node loadInto, const GLSLPreprocessorConfig* overrides) {
 		Shader* shader = new Shader();
 
 		vector<string> paths;
 		stringstream comp_ss;
 
-		std::vector<GLSLPreprocessorOutput> preprocessorOutput;
+		GLSLPreprocessorOutput preprocessorOutput;
 		mPreprocessor.load(source, &preprocessorOutput, overrides);
 
 		std::cout << "Compiling compute shader: " << source << endl;
@@ -516,7 +543,7 @@ namespace Morpheus {
 		GLuint id = glCreateProgram();
 		glAttachShader(id, comp_id);
 		glLinkProgram(id);
-		printProgramLinkerOutput(id);
+		printProgramLinkerOutput(id, preprocessorOutput);
 
 		glDetachShader(id, comp_id);
 		glDeleteShader(comp_id);
@@ -525,7 +552,7 @@ namespace Morpheus {
 		return shader;
 	}
 
-	INodeOwner* ContentFactory<Shader>::load(const std::string& source, Node loadInto, GLSLPreprocessorConfig* overrides) {
+	INodeOwner* ContentFactory<Shader>::load(const std::string& source, Node loadInto, const GLSLPreprocessorConfig* overrides) {
 		size_t loc = source.rfind('.');
 		if (loc != std::string::npos) {
 			auto ext = source.substr(loc);
@@ -547,6 +574,10 @@ namespace Morpheus {
 		return load(source, loadInto, nullptr);
 	}
 
+	INodeOwner* ContentFactory<Shader>::loadExt(const std::string& source, Node loadInto, const void* extParam) {
+		return load(source, loadInto, static_cast<const GLSLPreprocessorConfig*>(extParam));
+	}
+
 	Shader* ContentFactory<Shader>::makeUnmanagedFromGL(GLint shaderProgram) {
 		Shader* shad = new Shader();
 		shad->mId = shaderProgram;
@@ -560,7 +591,6 @@ namespace Morpheus {
 	}
 
 	void ContentFactory<Shader>::dispose() {
-
 	}
 
 	GLuint compileComputeKernel(const std::string& code) {
@@ -583,7 +613,7 @@ namespace Morpheus {
 		}
 	}
 	
-	GLuint compileComputeKernel(const std::vector<GLSLPreprocessorOutput>& code) {
+	GLuint compileComputeKernel(const GLSLPreprocessorOutput& code) {
 		auto id = compileShader(code, ShaderType::COMPUTE);
 
 		auto program = glCreateProgram();
@@ -632,7 +662,7 @@ namespace Morpheus {
 		return id;
 	}
 
-	GLuint compileShader(const std::vector<GLSLPreprocessorOutput>& code, const ShaderType type) {
+	GLuint compileShader(const GLSLPreprocessorOutput& code, const ShaderType type) {
 		GLuint id;
 		GLenum shader_type;
 
@@ -653,14 +683,10 @@ namespace Morpheus {
 
 		id = glCreateShader(shader_type);
 
-		std::vector<const GLchar*> contents(code.size());
-		for (const auto& output : code) {
-			contents.emplace_back(output.mContent.c_str());
-		}
-
-		glShaderSource(id, contents.size(), &contents[0], nullptr);
+		const char* src = code.mContent.c_str();
+		glShaderSource(id, 1, &src, nullptr);
 		glCompileShader(id);
-		printShaderCompilerOutput(id);
+		printShaderCompilerOutput(id, code);
 		
 		return id;
 	}

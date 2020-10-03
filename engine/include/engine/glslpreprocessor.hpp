@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <sstream>
 
 namespace Morpheus {
 	struct GLSLPreprocessorConfig {
@@ -18,11 +19,11 @@ namespace Morpheus {
 
 	class IGLSLSourceLoader {
 	public:
-		virtual bool tryFind(const std::string& source, const std::string& path, std::string* contents) = 0;
+		virtual bool tryFind(const std::string& source, std::string* contents) = 0;
 	};
 
 	struct GLSLPreprocessorOutput {
-		std::string mSource;
+		std::vector<std::string> mSources;
 		std::string mContent;
 	};
 	
@@ -33,7 +34,9 @@ namespace Morpheus {
 
 		void load(const std::string& source,
 			const std::string& path,
-			std::vector<GLSLPreprocessorOutput>* output, 
+			const GLSLPreprocessorConfig* overrides,
+			std::stringstream* streamOut,
+			GLSLPreprocessorOutput* output, 
 			std::set<std::string>* alreadyVisited,
 			bool bOverrideVersion,
 			const std::string& preprocessorStr);
@@ -44,7 +47,7 @@ namespace Morpheus {
 
 		inline GLSLPreprocessorConfig* config() { return &mConfig; }
 
-		void load(const std::string& source, std::vector<GLSLPreprocessorOutput>* output, 
+		void load(const std::string& source, GLSLPreprocessorOutput* output, 
 			const GLSLPreprocessorConfig* overrides = nullptr);
 	};
 }

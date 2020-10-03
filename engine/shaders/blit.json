@@ -1,0 +1,4 @@
+{
+	"vertex_shader": "blit.vert",
+	"fragment_shader": "blit.frag"
+}

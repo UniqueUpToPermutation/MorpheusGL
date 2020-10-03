@@ -1024,16 +1024,18 @@ namespace Morpheus {
 		void readJsonMetadata(const nlohmann::json& j, Shader* shad, Node loadInto,
 			const std::string& parentSrc = "");
 
-		Shader* loadJson(const std::string& source, Node loadInto, GLSLPreprocessorConfig* overrides);
-		Shader* loadComp(const std::string& source, Node loadInto, GLSLPreprocessorConfig* overrides);
+		Shader* loadJson(const std::string& source, Node loadInto, const GLSLPreprocessorConfig* overrides);
+		Shader* loadComp(const std::string& source, Node loadInto, const GLSLPreprocessorConfig* overrides);
 
 	public:
 		ContentFactory();
 
-		bool tryFind(const std::string& source, const std::string& path, std::string* contents) override;
+		bool tryFind(const std::string& source, std::string* contents) override;
 
 		INodeOwner* load(const std::string& source, Node loadInto) override;
-		INodeOwner* load(const std::string& source, Node loadInto, GLSLPreprocessorConfig* overrides);
+		INodeOwner* load(const std::string& source, Node loadInto, const GLSLPreprocessorConfig* overrides);
+		INodeOwner* loadExt(const std::string& source, Node loadInto, const void* extParam) override;
+
 		Shader* makeUnmanagedFromGL(GLint shaderProgram);
 		void unload(INodeOwner* ref) override;
 		void dispose() override;
@@ -1055,12 +1057,12 @@ namespace Morpheus {
 		const std::string& parentSrc = "");
 
 	GLuint compileShader(const std::string& code, const ShaderType type);
-	GLuint compileShader(const std::vector<GLSLPreprocessorOutput>& code, const ShaderType type);
+	GLuint compileShader(const GLSLPreprocessorOutput& code, const ShaderType type);
 	GLuint compileComputeKernel(const std::string& code);
-	GLuint compileComputeKernel(const std::vector<GLSLPreprocessorOutput>& code);
+	GLuint compileComputeKernel(const GLSLPreprocessorOutput& code);
 	void printProgramLinkerOutput(GLint program);
 	void printShaderCompilerOutput(GLint shader);
-	void printShaderCompilerOutput(GLint shader, const std::vector<GLSLPreprocessorOutput>& outputs);
+	void printShaderCompilerOutput(GLint shader, const GLSLPreprocessorOutput& outputs);
 
 	inline void ShaderUniform<Sampler>::find(const Shader* shader, const std::string& identifier) {
 		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());

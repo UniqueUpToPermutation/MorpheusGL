@@ -10,15 +10,6 @@ namespace Morpheus {
 		std::stringstream ss;
 		bool bVersionOverriden = false;
 		
-		if (overrides) {
-			bVersionOverriden = overrides->bOverrideVersion;
-			ss << "#version " << overrides->mVersionString;
-		}
-
-		if (bOverrideVersion && !bVersionOverriden) {
-			ss << "#version " << mVersionString;
-		}
-
 		for (auto& it : mDefines) {
 			ss << "#define " << it.first << " " << it.second << std::endl;
 		}
@@ -37,7 +28,9 @@ namespace Morpheus {
 
 	void GLSLPreprocessor::load(const std::string& source,
 		const std::string& path,
-		std::vector<GLSLPreprocessorOutput>* output, 
+		const GLSLPreprocessorConfig* overrides,
+		std::stringstream* streamOut,
+		GLSLPreprocessorOutput* output, 
 		std::set<std::string>* alreadyVisited,
 		bool bOverrideVersion,
 		const std::string& preprocessorStr) {
@@ -49,8 +42,9 @@ namespace Morpheus {
 		alreadyVisited->emplace(source);
 
 		std::string contents;
-		if (!mSourceInterface->tryFind(source, path, &contents)) {
-			throw new std::runtime_error(std::string("Unabled to find: ") + source);
+		if (!mSourceInterface->tryFind(source, &contents)) {
+			std::cout << "Unabled to find: " << source << std::endl;
+			throw new std::runtime_error(std::string("Unable to find: ") + source);
 		}
 
 		size_t version_loc = contents.find("#version");
@@ -62,30 +56,41 @@ namespace Morpheus {
 		size_t line_number = std::count(contents.begin(), contents.begin() + version_loc, '\n') + 1;
 		size_t body_begin = contents.find('\n', version_loc);
 
-		if (body_begin != std::string::npos) {
+		if (body_begin == std::string::npos) {
 			std::cout << source << ": Warning: shader file is empty!" << std::endl;
 			return;
 		}
 
 		// Write preprocessed string
-		std::stringstream ss;
-		if (!bOverrideVersion) {
-			ss << contents.substr(0, body_begin);
+		std::stringstream& ss = *streamOut;
+		if (alreadyVisited->size() == 1) {
+			bool bVersionOverriden = false;
+			if (overrides) {
+				bVersionOverriden = overrides->bOverrideVersion;
+				if (bVersionOverriden)
+					ss << "#version " << overrides->mVersionString << std::endl;
+			}
+
+			if (bOverrideVersion && !bVersionOverriden) {
+				ss << "#version " << mConfig.mVersionString << std::endl;
+			}
+
+			if (!bOverrideVersion) {
+				ss << contents.substr(0, body_begin) << std::endl;
+			}
+
+			ss << preprocessorStr << std::endl;
+		
 		}
 
-		ss << preprocessorStr << std::endl;
-		ss << "#line 1" << std::endl; // Reset line numbers
-
+		ss << std::endl << "#line 1 " << alreadyVisited->size() - 1 << std::endl; // Reset line numbers
 		ss << contents.substr(body_begin);
-		GLSLPreprocessorOutput out;
-		out.mContent = ss.str();
-		out.mSource = source;
-		output->emplace_back(out);
+		output->mSources.emplace_back(source);
 
 		// Find all includes
 		size_t include_pos = contents.find("#pragma include");
-		if (include_pos != std::string::npos) {
-			size_t startIndx = contents.find('\"', include_pos);
+		while (include_pos != std::string::npos) {
+			size_t startIndx = contents.find('\"', include_pos) + 1;
 			if (startIndx == std::string::npos) {
 				std::cout << source << ": Warning: #pragma include detected without include file!" << std::endl;
 				return;
@@ -100,15 +105,18 @@ namespace Morpheus {
 
 			size_t separator_i = includeSource.rfind('/');
 			if (separator_i != std::string::npos) {
-				nextPath = includeSource.substr(0, separator_i + 1);
-				includeSource = includeSource.substr(separator_i + 1);
+				nextPath = path + '/' + includeSource.substr(0, separator_i);
 			}
+			includeSource = path + '/' + includeSource;
 
-			load(includeSource, nextPath, output, alreadyVisited, bOverrideVersion, preprocessorStr);
+			load(includeSource, nextPath, overrides, streamOut,
+				output, alreadyVisited, bOverrideVersion, preprocessorStr);
+
+			include_pos = contents.find("#pragma include", include_pos + 1);
 		}
 	}
 
-	void GLSLPreprocessor::load(const std::string& source, std::vector<GLSLPreprocessorOutput>* output, const GLSLPreprocessorConfig* overrides) {
+	void GLSLPreprocessor::load(const std::string& source, GLSLPreprocessorOutput* output, const GLSLPreprocessorConfig* overrides) {
 		std::string preprocessorStr = mConfig.stringify(overrides);
 
 		bool bOverrideVersion = mConfig.bOverrideVersion;
@@ -117,7 +125,18 @@ namespace Morpheus {
 		}
 
 		std::set<std::string> alreadyVisited;
-		std::string path = "./";
-		load(source, path, output, &alreadyVisited, bOverrideVersion, preprocessorStr);
+		std::string path = ".";
+
+		size_t separator_i = source.rfind('/');
+		if (separator_i != std::string::npos) {
+			path = source.substr(0, separator_i);
+		}
+
+		std::stringstream streamOut;
+
+		load(source, path, overrides,
+			&streamOut, output, &alreadyVisited, bOverrideVersion, preprocessorStr);
+
+		output->mContent = streamOut.str();
 	}
 }

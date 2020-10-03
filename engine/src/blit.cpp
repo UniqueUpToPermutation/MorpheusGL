@@ -2,58 +2,15 @@
 #include <engine/shader.hpp>
 #include <engine/geometry.hpp>
 
-static const char blitShaderVert[] = 
-R"(
-    #version 410 core
-    layout(location = 0) in vec2 position;
-    uniform vec2 lower;
-    uniform vec2 upper;
-    out vec2 uv;
-    void main() {
-    vec2 transformed = lower + position * (upper - lower);
-    gl_Position = vec4(transformed, 0.0, 1.0);
-        uv = position;
-    }
-)";
-
-static const char blitShaderFrag[] = 
-R"(
-    #version 410 core
-    in vec2 uv;
-    uniform sampler2D blitTexture;
-    out vec4 outColor;
-    void main() {
-        outColor = vec4(texture(blitTexture, uv).rgb, 1.0);
-    }
-)";
-
 namespace Morpheus {
-    GLint makeBlitShaderRaw() {
-        auto vShader = compileShader(blitShaderVert, ShaderType::VERTEX);
-        auto fShader = compileShader(blitShaderFrag, ShaderType::FRAGMENT);
-
-        auto program = glCreateProgram();
-        glAttachShader(program, vShader);
-        glAttachShader(program, fShader);
-        glLinkProgram(program);
-        printProgramLinkerOutput(program);
-        GL_ASSERT;
-
-        return program;
-    }
-
-    Shader* makeBlitShader(INodeOwner* parent, BlitShaderView* shaderViewOut) {
-        auto contentManager = content();
-        auto shaderFactory = contentManager->getFactory<Shader>();
-
-        Shader* result = shaderFactory->makeUnmanagedFromGL(makeBlitShaderRaw());
+	Shader* makeBlitShader(INodeOwner* parent, BlitShaderView* shaderViewOut) {
+		// Load internal shader resource
+        Shader* result = load<Shader>("internal/blit.json", parent);
         GL_ASSERT;
 
         shaderViewOut->mLower.find(result, "lower");
         shaderViewOut->mUpper.find(result, "upper");
         shaderViewOut->mBlitTexture.find(result, "blitTexture");
-
-		createContentNode(result, parent);
 
 		return result;
     }

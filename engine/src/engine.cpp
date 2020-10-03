@@ -152,7 +152,7 @@ namespace Morpheus {
 			if (child != mContent)
 				prune(child);
 		}
-
+		
 		// Explicitly dispose the content manager last to clean up anything remaining
 		delete mContent;
 		mContent = nullptr;
