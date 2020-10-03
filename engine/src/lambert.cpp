@@ -178,7 +178,7 @@ namespace Morpheus {
         if (bInJob)
             throw std::runtime_error("LambertComputeKernel: Pending Jobs!");
         
-        if (job.mInputImage->type() != TextureType::CUBE_MAP)
+        if (job.mInputImage->textureType() != TextureType::CUBE_MAP)
             throw std::runtime_error("LambertComputeKernel: Input must be cubemap!");
 
         if (job.mInputImage->format() != GL_RGBA8) 

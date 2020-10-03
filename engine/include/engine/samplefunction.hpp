@@ -754,7 +754,7 @@ namespace Morpheus {
 
 		void writeToTexture(Texture* tex) {
 			assert(mStorageMode == StorageMode::READ);
-			assert(tex->type() == TextureType::CUBE_MAP);
+			assert(tex->textureType() == TextureType::CUBE_MAP);
 			if (tex->width() != width() || tex->height() != height()) {
 				throw std::invalid_argument("Texture has incorrect dimensions!");
 			}
@@ -820,7 +820,7 @@ namespace Morpheus {
 		}
 
 		void fromTexture(Texture* tex) {
-			assert(tex->type() == TextureType::CUBE_MAP);
+			assert(tex->textureType() == TextureType::CUBE_MAP);
 
 			init(tex->width(), tex->height(), true);
 			transition(StorageMode::WRITE);
@@ -1081,7 +1081,7 @@ namespace Morpheus {
 
 		void writeToTexture(Texture* tex) {
 			assert(mStorageMode == StorageMode::READ);
-			assert(tex->type() == TextureType::TEXTURE_2D);
+			assert(tex->textureType() == TextureType::TEXTURE_2D);
 			if (tex->width() != width() || tex->height() != height()) {
 				throw std::invalid_argument("Texture has incorrect dimensions!");
 			}
@@ -1115,7 +1115,7 @@ namespace Morpheus {
 		}
 
 		void fromTexture(Texture* tex) {
-			assert(tex->type() == TextureType::CUBE_MAP);
+			assert(tex->textureType() == TextureType::CUBE_MAP);
 
 			init(tex->width(), tex->height(), true);
 			transition(StorageMode::WRITE);

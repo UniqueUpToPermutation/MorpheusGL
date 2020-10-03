@@ -17,6 +17,7 @@
 #include <engine/ggx.hpp>
 #include <engine/brdf.hpp>
 #include <engine/camera.hpp>
+#include <engine/skybox.hpp>
 
 #include <iostream>
 
@@ -38,6 +39,7 @@ namespace Morpheus {
 	Camera* INodeOwner::toCamera() 						{ return nullptr; }
 	GuiBase* INodeOwner::toGui() 						{ return nullptr; }
 	TransformNode* INodeOwner::toTransform()			{ return nullptr; }
+	Skybox* INodeOwner::toSkybox()						{ return nullptr; }
 
 	TransformNode* TransformNode::toTransform() 		{ return this; }
 
@@ -105,6 +107,7 @@ namespace Morpheus {
 			T_CASE(CONTENT_END);
 			T_CASE(HALF_EDGE_GEOMETRY);
 			T_CASE(SAMPLER);
+			T_CASE(SKYBOX);
 			T_CASE(END);
 		default:
 			return "UNKNOWN";

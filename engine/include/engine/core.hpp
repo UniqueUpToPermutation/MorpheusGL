@@ -65,6 +65,7 @@ namespace Morpheus {
 	class Texture;
 	class Camera;
 	class TransformNode;
+	class Skybox;
 
 	typedef DigraphVertex Node;
 	
@@ -342,6 +343,7 @@ namespace Morpheus {
 		virtual Camera* toCamera();
 		virtual GuiBase* toGui();
 		virtual TransformNode* toTransform();
+		virtual Skybox* toSkybox();
 
 		virtual ~INodeOwner() {}
 

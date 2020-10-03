@@ -12,6 +12,7 @@
 #include <engine/material.hpp>
 #include <engine/gui.hpp>
 #include <engine/blit.hpp>
+#include <engine/skybox.hpp>
 namespace Morpheus {
 	struct StaticMeshRenderInstance {
 		StaticMesh* mStaticMesh;
@@ -33,10 +34,12 @@ namespace Morpheus {
 		std::stack<Transform*>* mTransformStack;
 		RenderInstanceType mCurrentRenderType;
 		Camera* mRenderCamera;
+		Skybox* mSkybox;
 	};
 
 	struct ForwardRenderDrawParams {
 		Camera* mRenderCamera;
+		Skybox* mSkybox;
 	};
 
 	class ForwardRenderer : public IRenderer {

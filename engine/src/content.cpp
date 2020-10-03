@@ -46,15 +46,15 @@ namespace Morpheus {
 	void ContentManager::unloadMarked() {
 		while (!mMarkedNodes.empty()) {
 
-			auto top = mMarkedNodes.top();
-			mMarkedNodes.pop();
+			auto top = *mMarkedNodes.begin();
+			mMarkedNodes.erase(top);
 
 			auto type = top->getType();
 			
 			if (top->parentCount() <= 1) {
 				// Check if children of this node need to be collected too
 				for (auto it = top->children(); it.valid(); it.next()) {
-					mMarkedNodes.push(it());
+					mMarkedNodes.emplace(it());
 				}
 
 				// Collect garbage
@@ -91,7 +91,7 @@ namespace Morpheus {
 	}
 	
 	void ContentManager::collectGarbage() {
-		std::stack<INodeOwner*> toCollect;
+		std::set<INodeOwner*> toCollect;
 
 		// Iterate through children and calculate degrees
 		for (auto it = children(); it.valid(); it.next()) {
@@ -99,14 +99,14 @@ namespace Morpheus {
 
 			// The only parent of this object is the content manager, collect it
 			if (degree == 1)
-				toCollect.push(it());
+				toCollect.emplace(it());
 		}
 		
 		// Repeatedly collect until there is nothing to collect
 		while (!toCollect.empty()) {
 
-			auto top = toCollect.top();
-			toCollect.pop();
+			auto top = *toCollect.begin();
+			toCollect.erase(top);
 
 			auto type = top->getType();
 			std::cout << "Collecting " << nodeTypeString(type) << std::endl;
@@ -116,7 +116,7 @@ namespace Morpheus {
 				auto child = it();
 				auto newDegree = child->inDegree() - 1;
 				if (newDegree <= 1)
-					toCollect.push(it());
+					toCollect.emplace(it());
 			}
 
 			// Collect garbage
@@ -124,6 +124,6 @@ namespace Morpheus {
 		}
 
 		// All marked nodes have been dealt with
-		mMarkedNodes = std::stack<INodeOwner*>();
+		mMarkedNodes = std::set<INodeOwner*>();
 	}
 }

@@ -79,7 +79,17 @@
 			"metissupport": "cpp",
 			"sparseqr": "cpp",
 			"nonlinearoptimization": "cpp",
-			"fft": "cpp"
+			"fft": "cpp",
+			"orderingmethods": "cpp",
+			"*.evaluator": "cpp",
+			"*.expression": "cpp",
+			"adolcforward": "cpp",
+			"alignedvector3": "cpp",
+			"autodiff": "cpp",
+			"bvh": "cpp",
+			"mprealsupport": "cpp",
+			"matrixfunctions": "cpp",
+			"openglsupport": "cpp"
 		}
 	}
 }

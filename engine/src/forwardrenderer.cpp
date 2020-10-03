@@ -80,6 +80,12 @@ namespace Morpheus {
 				params.mRenderCamera = current->toCamera();
 			break;
 		}
+		case NodeType::SKYBOX:
+		{
+			if (!params.mSkybox)
+				params.mSkybox = current->toSkybox();
+			break;
+		}
 		default:
 			break;
 		}
@@ -108,6 +114,7 @@ namespace Morpheus {
 		params.mTransformStack = &mTransformStack;
 		params.mIsStaticStack = &mIsStaticStack;
 		params.mRenderCamera = nullptr;
+		params.mSkybox = nullptr;
 
 		params.mIsStaticStack->push(false);
 		collectRecursive(start, params);
@@ -133,7 +140,10 @@ namespace Morpheus {
 		glfwGetFramebufferSize(window(), &width, &height);
 
 		glViewport(0, 0, width, height);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		if (params.mSkybox)
+			glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		else
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		mat4 view = identity<mat4>();
 		mat4 projection = identity<mat4>();
@@ -167,7 +177,7 @@ namespace Morpheus {
 			mat4 worldInvTranspose = glm::transpose(glm::inverse(world));
 
 			// Set renderer related things
-			glUseProgram(shader->id());
+			shader->bind();
 			shaderRenderView.mWorld.set(world);
 			shaderRenderView.mView.set(view);
 			shaderRenderView.mProjection.set(projection);
@@ -187,6 +197,18 @@ namespace Morpheus {
 			GL_ASSERT;
 			glDrawElements(geo->elementType(), geo->elementCount(),
 				geo->indexType(), nullptr);
+			GL_ASSERT;
+		}
+
+		// Draw skybox
+		if (params.mSkybox) {
+			params.mSkybox->prepare(view, projection, eye);
+			GL_ASSERT;
+			glBindVertexArray(mBlitGeometry->vertexArray());
+			glBindBuffer(GL_ARRAY_BUFFER, mBlitGeometry->vertexBuffer());
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBlitGeometry->indexBuffer());
+			glDrawElements(mBlitGeometry->elementType(), mBlitGeometry->elementCount(),
+					mBlitGeometry->indexType(), nullptr);
 			GL_ASSERT;
 		}
 
@@ -211,6 +233,8 @@ namespace Morpheus {
 		collect(scene, collectParams);
 
 		drawParams.mRenderCamera = collectParams.mRenderCamera;
+		drawParams.mSkybox = collectParams.mSkybox;
+
 		draw(&mQueues, drawParams);
 	}
 

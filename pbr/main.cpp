@@ -6,6 +6,7 @@
 #include <engine/ggx.hpp>
 #include <engine/sphericalharmonics.hpp>
 #include <engine/brdf.hpp>
+#include <engine/skybox.hpp>
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
@@ -128,6 +129,10 @@ int main() {
 
 		Texture* tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/skybox.ktx", GL_RGBA8);
 		createContentNode(tex, scene);
+
+		// Create a skybox from the texture
+		Skybox* skybox = new Skybox(tex);
+		createNode(skybox, scene);
  
 		auto lambertKernel = new LambertComputeKernel();
 		auto ggxKernel = new GGXComputeKernel();
@@ -183,10 +188,6 @@ int main() {
 		material->uniformAssignments().add(environmentDiffuseSH, lambertKernel->results(), lambertKernel->shCount());
 		material->samplerAssignments().add(environmentSpecular, sampler, specularResult);
 		material->samplerAssignments().add(environmentBRDF, lutSampler, brdf);
-
-		// Free this texture, we don't need it anymore.
-		// Garbage collector will get it on shutdown, but this frees up memory.
-		unload(tex);
 
 		print(&en);
 

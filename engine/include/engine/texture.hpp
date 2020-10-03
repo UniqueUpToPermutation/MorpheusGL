@@ -36,14 +36,14 @@ namespace Morpheus {
 
 		Texture* toTexture() override;
 
-		inline GLuint id() const 			{ return mId; }
-		inline TextureType type() const 	{ return mType; }
-		inline GLenum target() const 		{ return mGLTarget; }
-		inline uint32_t width() const 		{ return mWidth; }
-		inline uint32_t height() const 		{ return mHeight; }
-		inline uint32_t levels() const 		{ return mLevels; }
-		inline uint32_t depth() const 		{ return mDepth; }
-		inline GLenum format() const 		{ return mFormat; }
+		inline GLuint id() const 				{ return mId; }
+		inline TextureType textureType() const 	{ return mType; }
+		inline GLenum target() const 			{ return mGLTarget; }
+		inline uint32_t width() const 			{ return mWidth; }
+		inline uint32_t height() const 			{ return mHeight; }
+		inline uint32_t levels() const 			{ return mLevels; }
+		inline uint32_t depth() const 			{ return mDepth; }
+		inline GLenum format() const 			{ return mFormat; }
 
 		// Resize the texture. Note that this will destroy everything in the texture.
 		void resize(uint32_t width, uint32_t height = 1, uint32_t depth = 1);

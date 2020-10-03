@@ -25,7 +25,7 @@ namespace Morpheus {
         if (bInJob)
             throw std::runtime_error("GGXComputeKernel: Pending Jobs!");
         
-        if (job.mInputImage->type() != TextureType::CUBE_MAP)
+        if (job.mInputImage->textureType() != TextureType::CUBE_MAP)
             throw std::runtime_error("GGXComputeKernel: Input must be cubemap!");
 
         uint result = mJobs.size();

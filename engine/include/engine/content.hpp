@@ -72,7 +72,7 @@ namespace Morpheus {
 		std::set<IContentFactory*> mFactories;
 		std::unordered_map<NodeType, IContentFactory*> mTypeToFactory;
 		DigraphTwoWayVertexLookupView<std::string> mSources;
-		std::stack<INodeOwner*> mMarkedNodes;
+		std::set<INodeOwner*> mMarkedNodes;
 
 	public:
 		void init() override;

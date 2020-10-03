@@ -986,6 +986,10 @@ namespace Morpheus {
 		inline const ShaderEditorView& editorView() const { return mEditorView; }
 		inline GLuint id() const { return mId; }
 
+		inline void bind() const {
+			glUseProgram(mId);
+		}
+
 		template <typename T>
 		ShaderUniform<T> getUniform(const std::string& name) const {
 			return ShaderUniform<T>(this, name);

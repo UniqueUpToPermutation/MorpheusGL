@@ -42,6 +42,7 @@ add_library(engine
 	src/ggx.cpp
 	src/brdf.cpp
 	src/glslpreprocessor.cpp
+	src/skybox.cpp
 
 	shader_rc.cpp
 	
