@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(engine VERSION 0.1.0)
 
+# Include package for embedding shaders in source code
+add_subdirectory(shaders/cpp)
+
+# Embed shaders
+add_custom_command(
+	OUTPUT shader_rc.cpp
+	COMMAND embedfile ${CMAKE_CURRENT_SOURCE_DIR}/shaders shader_rc.cpp
+	DEPENDS shaders/*)
+
+# Import OpenGL
 find_package(OpenGL)
 
 # Source files
@@ -32,6 +42,9 @@ add_library(engine
 	src/ggx.cpp
 	src/brdf.cpp
 	src/glslpreprocessor.cpp
+
+	shader_rc.cpp
+	
     lodepng/lodepng.cpp
     ../nanogui/ext/glad/src/glad.c)
 

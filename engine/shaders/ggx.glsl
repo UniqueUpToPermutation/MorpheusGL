@@ -1,6 +1,6 @@
 #version 410 core
 
-#pragma include "hammersley.glsl"
+#pragma include "internal/hammersley.glsl"
 vec2 hammersley(uint i, uint sampleCount);
 
 const float PI = 3.1415926535897932384626433832795;

@@ -1,5 +1,6 @@
 #include <engine/shader.hpp>
 #include <engine/json.hpp>
+#include <engine/shader_rc.hpp>
 
 #include <fstream>
 #include <sstream>
@@ -105,6 +106,7 @@ namespace Morpheus {
 	}
 
 	ContentFactory<Shader>::ContentFactory() : mPreprocessor(this) {
+		makeSourceMap(&mInternalShaders);
 	}
 
 	bool ContentFactory<Shader>::tryFind(const std::string& source, const std::string& path, std::string* contents) {

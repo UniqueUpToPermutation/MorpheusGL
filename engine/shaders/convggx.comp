@@ -18,10 +18,10 @@ uniform uint totalLevels;
 uniform uint beginLevel;
 
 // Includes from other files
-#pragma include "cubemap.glsl"
+#pragma include "internal/cubemap.glsl"
 vec3 cubemapGetDirection(vec2 surfacePosition, uint face);
 
-#pragma include "ggx.glsl"
+#pragma include "internal/ggx.glsl"
 vec3 ggxPrefilterEnvMap(samplerCube inTex, float Roughness, vec3 R);
 
 vec2 getSurfacePosition(uvec2 texPosition, uint texSize) {

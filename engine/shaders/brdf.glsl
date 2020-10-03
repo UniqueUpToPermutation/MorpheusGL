@@ -1,10 +1,10 @@
 #version 410 core
 
 // Includes
-#pragma include "hammersley.glsl"
+#pragma include "internal/hammersley.glsl"
 vec2 hammersley(uint i, uint sampleCount);
 
-#pragma include "ggx.glsl"
+#pragma include "internal/ggx.glsl"
 vec3 importanceSampleGGX(vec2 Xi, float Roughness, vec3 N);
 
 // Single term for separable Schlick-GGX below.
