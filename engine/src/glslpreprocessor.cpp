@@ -80,7 +80,6 @@ namespace Morpheus {
 			}
 
 			ss << preprocessorStr << std::endl;
-		
 		}
 
 		ss << std::endl << "#line 1 " << alreadyVisited->size() - 1 << std::endl; // Reset line numbers
@@ -90,27 +89,60 @@ namespace Morpheus {
 		// Find all includes
 		size_t include_pos = contents.find("#pragma include");
 		while (include_pos != std::string::npos) {
-			size_t startIndx = contents.find('\"', include_pos) + 1;
-			if (startIndx == std::string::npos) {
+
+			size_t endLineIndex = contents.find('\n', include_pos);
+			bool bGlobalSearch = false;
+
+			auto quotesIt = std::find(&contents[include_pos], &contents[endLineIndex], '\"');
+			auto carrotsIt = std::find(&contents[include_pos], &contents[endLineIndex], '<');
+
+			if (quotesIt == &contents[endLineIndex] && carrotsIt == &contents[endLineIndex]) {
 				std::cout << source << ": Warning: #pragma include detected without include file!" << std::endl;
-				return;
 			}
-			size_t endIndex = contents.find('\"', startIndx);
-			if (endIndex == std::string::npos) {
-				std::cout << source << ": Warning: unmatched quote in #pragma include!" << std::endl;
-				return;
-			}
-			std::string includeSource = contents.substr(startIndx, endIndex - startIndx);
-			std::string nextPath = path;
+			else {
+				size_t endIndx;
+				size_t startIndx;
 
-			size_t separator_i = includeSource.rfind('/');
-			if (separator_i != std::string::npos) {
-				nextPath = path + '/' + includeSource.substr(0, separator_i);
-			}
-			includeSource = path + '/' + includeSource;
+				if (quotesIt < carrotsIt) {
+					startIndx = quotesIt - &contents[0] + 1;
+					endIndx = contents.find('\"', startIndx);
+					bGlobalSearch = false;
+				} else {
+					startIndx = carrotsIt - &contents[0] + 1;
+					endIndx = contents.find('>', startIndx);
+					bGlobalSearch = true;
+				}
+				
+				if (endIndx == std::string::npos) {
+					std::cout << source << ": Warning: unmatched quote in #pragma include!" << std::endl;
+					return;
+				}
 
-			load(includeSource, nextPath, overrides, streamOut,
-				output, alreadyVisited, bOverrideVersion, preprocessorStr);
+				std::string includeSource = contents.substr(startIndx, endIndx - startIndx);
+				std::string nextPath = path;
+
+				if (bGlobalSearch) {
+					nextPath = ".";
+
+					size_t separator_i = source.rfind('/');
+					if (separator_i != std::string::npos) {
+						nextPath = source.substr(0, separator_i);
+					}
+
+					load(includeSource, nextPath, overrides, streamOut,
+						output, alreadyVisited, bOverrideVersion, preprocessorStr);
+
+				} else {
+					size_t separator_i = includeSource.rfind('/');
+					if (separator_i != std::string::npos) {
+						nextPath = path + '/' + includeSource.substr(0, separator_i);
+					}
+					includeSource = path + '/' + includeSource;
+				}
+
+				load(includeSource, nextPath, overrides, streamOut,
+					output, alreadyVisited, bOverrideVersion, preprocessorStr);
+			}
 
 			include_pos = contents.find("#pragma include", include_pos + 1);
 		}

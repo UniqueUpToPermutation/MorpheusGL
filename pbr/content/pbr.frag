@@ -5,16 +5,6 @@ in vec3 vNormal;
 in vec3 vTanget;
 in vec3 vPosition;
 
-#define SH_C_0 0.28209479177
-#define SH_C_1 0.4886025119
-#define SH_C_2n2 1.09254843059
-#define SH_C_2n1 SH_C_2n2
-#define SH_C_20 0.31539156525
-#define SH_C_21 SH_C_2n2
-#define SH_C_22 0.54627421529
-
-#define SH_COEFFS 9
-
 // Constant normal incidence Fresnel factor for all dielectrics.
 const vec3 Fdielectric = vec3(0.04);
 
@@ -29,20 +19,8 @@ layout(binding = 1) uniform sampler2D environmentBRDF;
 
 out vec4 outColor;
 
-vec3 envDiffuse(vec3 normal) {
-	return (
-		SH_C_0 * environmentDiffuseSH[0] +
-		SH_C_1 * normal.y * environmentDiffuseSH[1] + 
-		SH_C_1 * normal.z * environmentDiffuseSH[2] + 
-		SH_C_1 * normal.x * environmentDiffuseSH[3] + 
-		SH_C_2n2 * normal.x * normal.y * environmentDiffuseSH[4] +
-		SH_C_2n1 * normal.y * normal.z * environmentDiffuseSH[5] +
-		SH_C_20 * (-normal.x * normal.x - 
-			normal.y * normal.y + 2.0 * normal.z * normal.z) * environmentDiffuseSH[6] +
-		SH_C_21 * normal.z * normal.x * environmentDiffuseSH[7] + 
-		SH_C_22 * (normal.x * normal.x - normal.y * normal.y) * environmentDiffuseSH[8]
-    );
-}
+#pragma include <internal/sphericalharmonics.glsl>
+vec3 reconstructSH9(vec3 coeffs[9], vec3 normal);
 
 // Shlick's approximation of the Fresnel factor.
 vec3 fresnelSchlick(vec3 F0, float cosTheta)
@@ -65,7 +43,7 @@ void main()
 	vec3 kd = mix(vec3(1.0) - F, vec3(0.0), metalness);
 
 	// Irradiance map contains exitant radiance assuming Lambertian BRDF, no need to scale by 1/PI here either.
-	vec3 diffuseIBL = kd * albedo * envDiffuse(N);
+	vec3 diffuseIBL = kd * albedo * reconstructSH9(environmentDiffuseSH, N);
 
 	// Sample pre-filtered specular reflection environment at correct mipmap level.
 	int specularTextureLevels = textureQueryLevels(environmentSpecular);
