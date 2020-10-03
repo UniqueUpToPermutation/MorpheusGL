@@ -211,8 +211,6 @@ Shows how to load a compute shader with the content manager, write the result of
 
 Shows how to load a texture and blit the result to screen using the renderer's debug functionality.
 
-![blit-test](images/blit-test.png)
-
 ## simple-app
 
 An easy hello world for the engine. Creates an empty scene and uses the renderer to display it.
