@@ -212,14 +212,17 @@ namespace Morpheus {
 		uint32_t offset = 0u;
 		for (auto& unif : j.items()) {
 			std::string name = unif.key();
-			GLint a = glGetUniformLocation(shad->id(), name.c_str());
-			if (a >= 0) {
+			const GLchar* name_ptr = name.c_str();
+			GLuint index;
+			glGetUniformIndices(shad->id(), 1, &name_ptr, &index);
+
+			if (index != GL_INVALID_INDEX) {
 				GLenum type;
 				GLint size;
-				glGetActiveUniform(shad->id(), a, 0, nullptr, &size, &type, nullptr);
+				glGetActiveUniform(shad->id(), index, 0, nullptr, &size, &type, nullptr);
 
 				ShaderUniformAssignment assign;
-				assign.mUniformLocation = a;
+				assign.mUniformLocation = glGetUniformLocation(shad->id(), name_ptr);
 				assign.mUniformType = type;
 				assign.mOffset = offset;
 				assign.mArrayLength = 1;
@@ -258,11 +261,23 @@ namespace Morpheus {
 
 		for (auto& unif : j.items()) {
 			std::string name = unif.key();
-			GLint a = glGetUniformLocation(shad->id(), name.c_str());
-			if (a >= 0) {
+			const GLchar* name_ptr = name.c_str();
+			GLuint index;
+			glGetUniformIndices(shad->id(), 1, &name_ptr, &index);
+			GL_ASSERT;
+
+			if (index != GL_INVALID_INDEX) {
 				GLenum type;
 				GLint size;
-				glGetActiveUniform(shad->id(), a, 0, nullptr, &size, &type, nullptr);
+				GLchar name;
+
+				GLint activeUnif;
+				glGetProgramiv(shad->id(), GL_ACTIVE_UNIFORMS, &activeUnif);
+
+				std::cout << activeUnif << std::endl;
+
+				glGetActiveUniform(shad->id(), index, 0, nullptr, &size, &type, &name);
+				GL_ASSERT;
 
 				if (type == GL_SAMPLER_2D || type == GL_SAMPLER_1D ||
 					type == GL_SAMPLER_1D_ARRAY || type == GL_SAMPLER_2D_ARRAY ||
@@ -276,9 +291,26 @@ namespace Morpheus {
 					else
 						samplerSrc = MATERIAL_TEXTURE_2D_DEFAULT_SAMPLER_SRC;
 					std::string textureSrc;
-					if (unif.value().contains("sampler"))
-						unif.value()["sampler"].get_to(samplerSrc);
-					unif.value()["texture"].get_to(textureSrc);
+
+					// User just provided a texture name
+					if (unif.value().is_string()) {
+						unif.value().get_to(textureSrc);
+
+						if (type == GL_SAMPLER_2D || type == GL_SAMPLER_1D ||
+							type == GL_SAMPLER_1D_ARRAY || type == GL_SAMPLER_2D_ARRAY || 
+							type == GL_SAMPLER_3D) {
+							samplerSrc = MATERIAL_TEXTURE_2D_DEFAULT_SAMPLER_SRC;
+						}
+						else if (type == GL_SAMPLER_CUBE || type == GL_SAMPLER_CUBE_MAP_ARRAY) {
+							samplerSrc = MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC;
+						}
+					}
+					else if (unif.value().is_object()) {
+						// User provided a texture/sampler pair
+						if (unif.value().contains("sampler"))
+							unif.value()["sampler"].get_to(samplerSrc);
+						unif.value()["texture"].get_to(textureSrc);
+					}
 					ShaderSamplerAssignment assignment;
 
 					textureSrc = prefix_include_path + textureSrc;
@@ -289,8 +321,10 @@ namespace Morpheus {
 					parent.addChild(assignment.mTexture->node());
 					parent.addChild(assignment.mSampler->node());
 
-					assignment.mUniformLocation = a;
-					glGetUniformiv(shad->id(), a, &assignment.mTextureUnit); // Read the texture unit we should bind to
+					assignment.mUniformLocation = glGetUniformLocation(shad->id(), name_ptr);
+					glGetUniformiv(shad->id(), assignment.mUniformLocation, 
+						&assignment.mTextureUnit); // Read the texture unit we should bind to
+					GL_ASSERT;
 					out->mBindings.emplace_back(assignment);
 				}
 				else {

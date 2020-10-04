@@ -6,5 +6,5 @@ vec3 computeNormalFromMap(vec3 inputNormal, vec3 inputTangent, vec3 normalMapSam
 	vec3 b = cross(n, t);
 
 	vec3 n_map = normalMapSample * 2.0 - 1.0;
-	return n_map.x * t + n_map.y * b + n_map.z * n;	
+	return normalize(n_map.x * t + n_map.y * b + n_map.z * n);
 }

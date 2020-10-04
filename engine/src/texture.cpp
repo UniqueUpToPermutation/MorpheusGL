@@ -207,10 +207,12 @@ namespace Morpheus {
 		//State state contains extra information about the PNG such as text chunks, ...
 		if (!error) {
 			GLuint TextureName = 0;
+
 			glGenTextures(1, &TextureName);
 			glBindTexture(GL_TEXTURE_2D, TextureName);
 			glTexImage2D(GL_TEXTURE_2D, 0, internalFormatToUse, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
 			GL_ASSERT;
+			
 			glGenerateTextureMipmap(TextureName);
 			GL_ASSERT;
 

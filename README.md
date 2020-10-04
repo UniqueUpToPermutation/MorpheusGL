@@ -144,7 +144,7 @@ An example that displays both nanogui and assimp integration as well as the mesh
 
 ![lapviewer3](images/lapviewer3.png)
 
-## pbr
+## simple-pbr
 
 An example that shows how to implement PBR using the engine's built in tools for computing Lambert and GGX convolutions on the GPU as well as pre-integrating the Cook-Torrance BRDF via quasi Monte Carlo on the GPU.
 

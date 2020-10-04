@@ -19,7 +19,7 @@ layout(binding = 1) uniform sampler2D environmentBRDF;
 
 out vec4 outColor;
 
-#pragma include <internal/sphericalharmonics.glsl>
+#pragma include "sphericalharmonics.glsl"
 vec3 reconstructSH9(vec3 coeffs[9], vec3 normal);
 
 // Shlick's approximation of the Fresnel factor.

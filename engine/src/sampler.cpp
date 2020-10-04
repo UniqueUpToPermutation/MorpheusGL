@@ -86,6 +86,7 @@ namespace Morpheus {
 		glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, params.mWrapT);
 		glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, params.mWrapS);
 		glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_R, params.mWrapR);
+		GL_ASSERT;
 		auto sampler = new Sampler();
 		sampler->mId = sampler_id;
 		return sampler;
