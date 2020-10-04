@@ -6,6 +6,8 @@ Morpheus is an open source physically-based cross-platform renderer built using 
 
 MacOS support is possible, as the engine compiles with clang. But because Apple hasn't updated their OpenGL implementation since 2011, they're still stuck on OpenGL 4.1. I unfortunately make use of a lot of compute shaders which require OpenGL 4.3+. Maybe I'll make a scaled back version of this engine for OpenGL 4.1 someday, but for now, I'm targeting OpenGL 4.5.
 
+![pbr-gun0](images/pbr-gun0.png)
+
 ![lapviewer2](images/lapviewer2.png)
 
 It is mostly intended as an academic hobby project of a bored PhD student.
@@ -42,9 +44,9 @@ Currently, I have the following dependencies. They are all included a recursive 
 
 - **OpenGL**: Used to render stuff. I'm targeting version 4.5. _Please install seperately_
 - **GLFW**: Used to handle windowing and swapping of front and back buffers. _Please install seperately_
+- **assimp**: Used to load geometry into the engine. _Please install seperately_
 - **GLAD**: Used to load all OpenGL functions and extensions.
 - **nanogui**: A very nice gui library to handle user interaction.
-- **assimp**: Used to load geometry into the engine.
 - **Eigen**: Used for large matrix calculations. Currently the indirect lighting and spherical harmonics code uses it.
 - **glm**: Used for 2d, 3d, and 4d vector calcaluations.
 - **gli**: Used to load .ktx and .dds textures into the engine.
@@ -133,6 +135,16 @@ This will force VSCode to open its terminal as a login terminal, and run your .b
 Currently, there's not much. I'll make some if I ever get around to it.
 
 # Current Examples
+
+## pbr
+
+An example of a rendering physically-based model. The actual model is taken from [this repository](https://github.com/Nadrin/PBR).
+
+![pbr-gun0](images/pbr-gun0.png)
+
+![pbr-gun1](images/pbr-gun1.png)
+
+![pbr-gun2](images/pbr-gun2.png)
 
 ## lapviewer
 

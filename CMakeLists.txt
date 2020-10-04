@@ -1,14 +1,10 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(Morpheus VERSION 0.1.0)
 
-include(CTest)
-enable_testing()
-
 option(BUILD_ENGINE "Enable building engine" ON)
-option(BUILD_ASSIMP "Enable building assimp" ON)
 option(BUILD_NANOGUI "Enable building nanogui" ON)
 option(BUILD_SIMPLE_APP "Enable building simple app" ON)
-option(BUILD_PBR, "Enabled building PBR demo" ON)
+option(BUILD_PBR "Enable building PBR demo" ON)
 option(BUILD_SIMPLE_PBR "Enable building simple PBR demo" ON)
 option(BUILD_LAPVIEWER "Enable builing Laplacian Eigenvector viewer" ON)
 option(BUILD_BLITTEST "Enable building blit test" ON)
@@ -22,10 +18,6 @@ endif()
 
 if (BUILD_NANOGUI)
     add_subdirectory(nanogui)
-endif()
-
-if (BUILD_ASSIMP)
-    add_subdirectory(assimp)
 endif()
 
 if(BUILD_ENGINE)
@@ -56,7 +48,7 @@ if(BUILD_COMPUTE_SH)
     add_subdirectory(compute-sh-coeffs)
 endif()
 
-if (BUILD_PBR)
+if(BUILD_PBR)
 	add_subdirectory(pbr)
 endif()
 

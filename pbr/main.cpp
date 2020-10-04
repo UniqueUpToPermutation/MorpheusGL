@@ -110,9 +110,9 @@ int main() {
 		material = staticMesh->getMaterial();
 	
 		// Create our GUI
-		auto gui = new MaterialGui();
-		createNode(gui, scene);
-		setName(gui, "__gui__");
+		//auto gui = new MaterialGui();
+		//createNode(gui, scene);
+		//setName(gui, "__gui__");
 
 		// Initialize the scene graph
 		init(scene);

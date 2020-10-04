@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(engine VERSION 0.1.0)
 
+find_package(assimp REQUIRED)
+
 # Include package for embedding shaders in source code
 add_subdirectory(shaders/cpp)
 
@@ -78,14 +80,13 @@ target_compile_features(engine PRIVATE cxx_std_17)
 # Include directories
 target_include_directories(engine PRIVATE 
     ../nanogui/ext/nanovg/src
-    ../assimp/include
     ../gli
     ../engine
     ../incbin
 )
 
 set(${PROJECT_NAME}_INCLUDE_DIRS
-    ${OPENGL_INCLUDE_DIRS}
+	${OPENGL_INCLUDE_DIRS}
     ../engine/include
     ../glm
     ../nanogui/include
@@ -100,7 +101,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(${PROJECT_NAME}_LINK_LIBRARIES
         ${PROJECT_NAME}
         nanogui
-        assimp
+        ${ASSIMP_LIBRARIES}
         glfw3
         ${OPENGL_LIBRARIES}
         "-framework Cocoa"
@@ -112,13 +113,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         glfw3
         "-framework Cocoa"
         "-framework IOKit"
-        assimp
+        ${ASSIMP_LIBRARIES}
         nanogui)
 else()
     set(${PROJECT_NAME}_LINK_LIBRARIES
         ${PROJECT_NAME}
         nanogui
-        assimp
+        ${ASSIMP_LIBRARIES}
         glfw3
         ${OPENGL_LIBRARIES}
         CACHE INTERNAL "${PROJECT_NAME}: Link Libraries" FORCE)
