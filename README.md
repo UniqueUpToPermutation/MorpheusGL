@@ -42,7 +42,7 @@ It is mostly intended as an academic hobby project of a bored PhD student.
 
 Currently, I have the following dependencies. They are all included a recursive git clone, except for the first two.
 
-- **OpenGL**: Used to render stuff. I'm targeting version 4.5. _Please install seperately_
+- **OpenGL**: Used to render stuff. I'm targeting version 4.5. _Please install development tools seperately._
 - **GLFW**: Used to handle windowing and swapping of front and back buffers. _Please install seperately from [here](https://github.com/glfw/glfw)._
 - **assimp**: Used to load geometry into the engine. _Please install seperately from [here](https://github.com/assimp/assimp)._
 - **GLAD**: Used to load all OpenGL functions and extensions.

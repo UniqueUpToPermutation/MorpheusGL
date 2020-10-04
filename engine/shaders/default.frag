@@ -1,4 +1,4 @@
-#version 450 core
+﻿#version 450 core
 
 in vec2 vTexcoords;
 in vec3 vNormal;
@@ -9,19 +9,16 @@ in vec3 vPosition;
 const vec3 Fdielectric = vec3(0.04);
 
 uniform vec3 environmentDiffuseSH[9];
+
+uniform sampler2D albedoMap;
+uniform sampler2D normalMap;
+uniform sampler2D roughnessMap;
+uniform sampler2D metalnessMap;
+
 uniform vec3 eyePosition;
 
 uniform samplerCube environmentSpecular;
 uniform sampler2D environmentBRDF;
-
-uniform sampler2D albedo;
-uniform sampler2D normal;
-uniform sampler2D roughness;
-uniform sampler2D displacement;
-
-uniform bool bSampleMetalness;
-uniform sampler2D metalness;
-uniform float metalnessDefault = 0.0;
 
 out vec4 outColor;
 
@@ -39,21 +36,18 @@ vec3 fresnelSchlick(vec3 F0, float cosTheta)
 
 void main()
 {
-	vec3 albedo_sample = texture(albedo, vTexcoords).rgb;
-	float roughness_sample = texture(roughness, vTexcoords).w;
-	float metalness_sample;	
-	vec3 normal_sample = texture(normal, vTexcoords).xyz;
-	float displacement_sample = texture(displacement, vTexcoords).w;
-
-	if (bSampleMetalness)
-		metalness_sample = texture(metalness, vTexcoords).r;
-	else
-		metalness_sample = metalnessDefault;
-
+	vec3 normal_sample = texture(normalMap, vTexcoords).xyz;
 	vec3 N = computeNormalFromMap(vNormal, vTanget, normal_sample);
+
 	vec3 Lo = normalize(eyePosition - vPosition);
 	vec3 Lr = reflect(-Lo, N);
 	float NoR = clamp(dot(Lo, N), 0.0, 1.0);
+
+	vec3 albedo_sample = texture(albedoMap, vTexcoords).rgb;
+	float roughness_sample = texture(roughnessMap, vTexcoords).r;
+	float metalness_sample = texture(metalnessMap, vTexcoords).r;
+
+	//metalness_sample = 0.00001 * metalness_sample;
 
 	// Fresnel reflectance at normal incidence (for metals use albedo color).
 	vec3 F0 = mix(Fdielectric, albedo_sample, metalness_sample);

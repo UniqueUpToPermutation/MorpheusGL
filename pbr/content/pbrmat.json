@@ -1,5 +1,5 @@
 {
-  "shader": "/internal/simplepbrtex.json",
+  "shader": "/internal/default.json",
 
   "samplers": {
 	  "albedoMap" : "textures/pbr_albedo.png",
