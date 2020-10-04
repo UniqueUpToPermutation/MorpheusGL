@@ -271,11 +271,6 @@ namespace Morpheus {
 				GLint size;
 				GLchar name;
 
-				GLint activeUnif;
-				glGetProgramiv(shad->id(), GL_ACTIVE_UNIFORMS, &activeUnif);
-
-				std::cout << activeUnif << std::endl;
-
 				glGetActiveUniform(shad->id(), index, 0, nullptr, &size, &type, &name);
 				GL_ASSERT;
 

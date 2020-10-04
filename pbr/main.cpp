@@ -26,9 +26,6 @@ namespace Morpheus {
 }
 
 Material* material;
-ShaderUniform<GLfloat> roughness;
-ShaderUniform<GLfloat> metalness;
-ShaderUniform<glm::vec3> FDialectric;
 
 class MaterialGui : public GuiBase {
 protected:
@@ -39,28 +36,6 @@ protected:
 		nanogui::ref<nanogui::Window> window = gui->addWindow(nanogui::Vector2i(10, 10), "Shader Settings");
 
 		auto groupLabel = gui->addGroup("Material Properties");
-
-		std::function<void(const float& v)> roughnessSetter = [](const float& v) { 
-			float truR = std::min(std::max(v, 0.0f), 1.0f);
-			material->uniformAssignments().set(roughness, truR); 
-		};
-
-		std::function<void(const float& v)> metalnessSetter = [](const float& v) {
-			float truM = std::min(std::max(v, 0.0f), 1.0f);
-			material->uniformAssignments().set(metalness, truM);
-		};
-
-		auto roughnessSlider = new nanogui::Slider(window);
-		roughnessSlider->setRange(std::pair<float, float>(0.0, 1.0));
-		roughnessSlider->setCallback(roughnessSetter);
-
-		gui->addWidget("Roughness", roughnessSlider);
-
-		auto metalnessSlider = new nanogui::Slider(window);
-		metalnessSlider->setRange(std::pair<float, float>(0.0, 1.0));
-		metalnessSlider->setCallback(metalnessSetter);
-
-		gui->addWidget("Metalness", metalnessSlider);
 
 		mScreen->setVisible(true);
 		mScreen->performLayout();
@@ -103,7 +78,7 @@ int main() {
 		input()->registerTarget(&en, InputPriority::CRITICAL);
 		input()->bindKeyEvent(&en, &keyHandler);
 
-		auto staticMesh = load<StaticMesh>("content/spheremesh.json");
+		auto staticMesh = load<StaticMesh>("content/cerberus.json");
 		auto geo = staticMesh->getGeometry();
 
 		auto aabb = geo->boundingBox();
@@ -116,7 +91,7 @@ int main() {
 		createNode(transform, scene);
 		transform->addChild(staticMesh);
 
-		Texture* tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/skybox.ktx", GL_RGBA8);
+		Texture* tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/env.ktx", GL_RGBA8);
 		createContentNode(tex, scene);
 
 		// Create a skybox from the texture
@@ -133,11 +108,6 @@ int main() {
 
 		// Set material parameters
 		material = staticMesh->getMaterial();
-		roughness.find(material->shader(), "roughness");
-		metalness.find(material->shader(), "metalness");
-		FDialectric.find(material->shader(), "Fdialectric");
-		material->uniformAssignments().add(roughness, 0.0f);
-		material->uniformAssignments().add(metalness, 0.0f);
 	
 		// Create our GUI
 		auto gui = new MaterialGui();

@@ -127,7 +127,7 @@ int main() {
 		createNode(transform, scene);
 		transform->addChild(staticMesh);
 
-		Texture* tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/skybox.ktx", GL_RGBA8);
+		Texture* tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/env.ktx", GL_RGBA8);
 		createContentNode(tex, scene);
 
 		// Create a skybox from the texture

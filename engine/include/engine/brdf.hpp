@@ -10,7 +10,7 @@
 
 namespace Morpheus {
 	class CookTorranceLUTComputeKernel : public INodeOwner {
-	private:
+	protected:
 		Shader* mGPUBackend;
 
 		uint mGroupSize;

@@ -52,7 +52,7 @@ void main()
 
 	vec3 N = computeNormalFromMap(vNormal, vTanget, normal_sample);
 	vec3 Lo = normalize(eyePosition - vPosition);
-	vec3 Lr = reflect(Lo, N);
+	vec3 Lr = reflect(-Lo, N);
 	float NoR = clamp(dot(Lo, N), 0.0, 1.0);
 
 	// Fresnel reflectance at normal incidence (for metals use albedo color).

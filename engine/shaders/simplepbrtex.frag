@@ -12,9 +12,9 @@ uniform vec3 environmentDiffuseSH[9];
 
 uniform sampler2D albedoMap;
 uniform sampler2D normalMap;
+uniform sampler2D roughnessMap;
+uniform sampler2D metalnessMap;
 
-uniform float roughness = 0.0;
-uniform float metalness = 0.0;
 uniform vec3 eyePosition;
 
 uniform samplerCube environmentSpecular;
@@ -38,30 +38,31 @@ void main()
 {
 	vec3 normal_sample = texture(normalMap, vTexcoords).xyz;
 	vec3 N = computeNormalFromMap(vNormal, vTanget, normal_sample);
-	//vec3 N = normalize(vNormal);
 
 	vec3 Lo = normalize(eyePosition - vPosition);
-	vec3 Lr = reflect(Lo, N);
+	vec3 Lr = reflect(-Lo, N);
 	float NoR = clamp(dot(Lo, N), 0.0, 1.0);
 
 	vec3 albedo_sample = texture(albedoMap, vTexcoords).rgb;
+	float roughness_sample = texture(roughnessMap, vTexcoords).r;
+	float metalness_sample = texture(metalnessMap, vTexcoords).r;
 
 	// Fresnel reflectance at normal incidence (for metals use albedo color).
-	vec3 F0 = mix(Fdielectric, albedo_sample, metalness);
+	vec3 F0 = mix(Fdielectric, albedo_sample, metalness_sample);
 	vec3 F = fresnelSchlick(F0, NoR);
 
 	// Get diffuse contribution factor (as with direct lighting).
-	vec3 kd = mix(vec3(1.0) - F, vec3(0.0), metalness);
+	vec3 kd = mix(vec3(1.0) - F, vec3(0.0), metalness_sample);
 
 	// Irradiance map contains exitant radiance assuming Lambertian BRDF, no need to scale by 1/PI here either.
 	vec3 diffuseIBL = kd * albedo_sample * reconstructSH9(environmentDiffuseSH, N);
 
 	// Sample pre-filtered specular reflection environment at correct mipmap level.
 	int specularTextureLevels = textureQueryLevels(environmentSpecular);
-	vec3 specularIrradiance = textureLod(environmentSpecular, Lr, roughness * (specularTextureLevels - 1)).rgb;
+	vec3 specularIrradiance = textureLod(environmentSpecular, Lr, roughness_sample * (specularTextureLevels - 1)).rgb;
 
 	// Split-sum approximation factors for Cook-Torrance specular BRDF.
-	vec2 specularBRDF = texture(environmentBRDF, vec2(roughness, NoR)).rg;
+	vec2 specularBRDF = texture(environmentBRDF, vec2(roughness_sample, NoR)).rg;
 
 	// Total specular IBL contribution.
 	vec3 specularIBL = (F0 * specularBRDF.x + specularBRDF.y) * specularIrradiance;

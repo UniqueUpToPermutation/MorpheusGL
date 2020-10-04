@@ -1,0 +1,10 @@
+{
+	"shader": "/internal/simplepbrtex.json",
+  
+	"samplers": {
+		"albedoMap" : "textures/cerberus_A.png",
+		"normalMap" : "textures/cerberus_N.png",
+		"roughnessMap" : "textures/cerberus_R.png",
+		"metalnessMap" : "textures/cerberus_M.png"
+	}
+  }
