@@ -331,7 +331,7 @@ namespace Morpheus {
 			mNearestSampler = load<Sampler>(POINT_CLAMP_SAMPLER_SRC, this);
 
 		if (!mDefaultShader) {
-			mDefaultShader = load<Shader>("internal/spritebatch.json", this);
+			mDefaultShader = load<Shader>("/internal/spritebatch.json", this);
 			mDefaultShaderTex.find(mDefaultShader, "spriteTexture");
 			mDefaultShaderTransform.find(mDefaultShader, "transformMatrix");
 		}

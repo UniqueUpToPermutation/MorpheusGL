@@ -47,6 +47,7 @@ add_library(engine
 	src/skybox.cpp
 	src/blend.cpp
 	src/spritebatch.cpp
+	src/hdri2cube.cpp
 
 	shader_rc.cpp
 	

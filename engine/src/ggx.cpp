@@ -4,7 +4,7 @@
 
 namespace Morpheus {
 	GGXComputeKernel::GGXComputeKernel(uint groupSize) : INodeOwner(NodeType::GGX_COMPUTE_KERNEL),
-		mGPUBackend(nullptr), mGroupSize(groupSize) {
+		mGPUBackend(nullptr), mGroupSize(groupSize), bInJob(false) {
 	}
 
 	void GGXComputeKernel::beginQueue() {
@@ -106,7 +106,7 @@ namespace Morpheus {
         bInJob = true;
 	}
 
-	Texture* GGXComputeKernel::submit(const GGXComputeJob& job) {
+	Texture* GGXComputeKernel::submitUnmanaged(const GGXComputeJob& job) {
 		beginQueue();
 		Texture* tex = addJobUnmanaged(job);
 		submitQueue();

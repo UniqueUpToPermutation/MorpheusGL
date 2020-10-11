@@ -7,6 +7,7 @@
 #include <engine/sphericalharmonics.hpp>
 #include <engine/brdf.hpp>
 #include <engine/skybox.hpp>
+#include <engine/hdri2cube.hpp>
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
@@ -58,7 +59,6 @@ int main() {
 	Engine en;
 
 	if (en.startup("config.json").isSuccess()) {
-
 		// Create a scene
 		auto scene = en.makeScene();
 		setName(scene, "__scene__");
@@ -87,56 +87,64 @@ int main() {
 		float distance = length(aabb.mUpper - aabb.mLower) * 1.3f;
 	
 		controller->reset(distance);
-		controller->setPhi(-pi<double>() / 2.0);
+		controller->setPhi(pi<double>() / 2.0);
 
 		auto transform = new TransformNode();
 		createNode(transform, scene);
 		transform->addChild(staticMesh);
 		transform->mTransform = Transform::makeRotation(glm::angleAxis(glm::pi<float>(), glm::vec3(0.0, 1.0, 0.0)));
 
-		Texture* tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/env2.ktx", GL_RGBA8);
-		createContentNode(tex, scene);
-
-		// Create a skybox from the texture
-		Skybox* skybox = new Skybox(tex);
-		createNode(skybox, scene);
+		ContentExtParams<Texture> params;
+		params.bOverrideInternalFormat = true;
+		params.mInternalFormat = GL_RGBA8;
+		Texture* tex = loadExt<Texture>("content/textures/environment.hdr", params, scene);
  
 		auto lambertKernel = new LambertComputeKernel();
 		auto ggxKernel = new GGXComputeKernel();
 		auto lutKernel = new CookTorranceLUTComputeKernel();
+		auto hdri2cubeKernel = new HDRIToCubeKernel();
 
 		createNode(lambertKernel, scene);
 		createNode(ggxKernel, scene);
 		createNode(lutKernel, scene);
+		createNode(hdri2cubeKernel, scene);
 
 		// Set material parameters
 		material = staticMesh->getMaterial();
-	
-		// Create our GUI
-		//auto gui = new MaterialGui();
-		//createNode(gui, scene);
-		//setName(gui, "__gui__");
 
 		// Initialize the scene graph
 		init(scene);
 
+		// Convert texture to a cube map
+		HDRIToCubeComputeJob job;
+		job.mHDRI = tex;
+		job.mOutputFormat = GL_RGBA8;
+		job.mTextureSize = 2048;
+		Texture* envCube = hdri2cubeKernel->submitUnmananged(job);
+
+		// Create a lookup texture with the BRDF kernel
+		Texture* brdf = lutKernel->submit();
+
+		createContentNode(brdf, scene);
+		createContentNode(envCube, scene);
+
+		lutKernel->barrier();
+		hdri2cubeKernel->barrier();
+
 		// Submit a compute job to the lambert kernel
 		LambertComputeJob lambertJob;
-		lambertJob.mInputImage = tex;
+		lambertJob.mInputImage = envCube;
 		lambertKernel->submit(lambertJob);
 
 		// Submit a compute job to the ggx kernel
 		GGXComputeJob ggxJob;
-		ggxJob.mInputImage = tex;
-		auto specularResult = ggxKernel->submit(ggxJob);
+		ggxJob.mInputImage = envCube;
+		auto specularResult = ggxKernel->submitUnmanaged(ggxJob);
 
-		// Create a lookup texture with the BRDF kernel
-		Texture* brdf = lutKernel->submit();
-		createContentNode(brdf, scene);
+		createContentNode(specularResult, scene);
 
 		lambertKernel->barrier();
 		ggxKernel->barrier();
-		lutKernel->barrier();
 
 		ShaderUniform<glm::vec3[]> environmentDiffuseSH(material->shader(), "environmentDiffuseSH");
 		ShaderUniform<Sampler> environmentSpecular(material->shader(), "environmentSpecular");
@@ -148,6 +156,11 @@ int main() {
 		material->uniformAssignments().add(environmentDiffuseSH, lambertKernel->results(), lambertKernel->shCount());
 		material->samplerAssignments().add(environmentSpecular, sampler, specularResult);
 		material->samplerAssignments().add(environmentBRDF, lutSampler, brdf);
+
+		// Create a skybox from the texture
+		Skybox* skybox = new Skybox(envCube);
+		createNode(skybox, scene);
+		init(skybox);
 
 		print(&en);
 

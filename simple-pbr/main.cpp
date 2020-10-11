@@ -168,7 +168,7 @@ int main() {
 		// Submit a compute job to the ggx kernel
 		GGXComputeJob ggxJob;
 		ggxJob.mInputImage = tex;
-		auto specularResult = ggxKernel->submit(ggxJob);
+		auto specularResult = ggxKernel->submitUnmanaged(ggxJob);
 
 		// Create a lookup texture with the BRDF kernel
 		Texture* brdf = lutKernel->submit();

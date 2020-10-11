@@ -38,6 +38,13 @@ namespace Morpheus {
 			params.mWrapS = GL_REPEAT;
 			params.mWrapT = GL_REPEAT;
 		}
+		else if (prototype == SamplerPrototype::TRILINEAR_HDRI_SAMPLER) {
+			params.mMagFilter = GL_LINEAR;
+			params.mMinFilter = GL_LINEAR_MIPMAP_LINEAR;
+			params.mWrapR = GL_REPEAT;
+			params.mWrapS = GL_CLAMP_TO_EDGE;
+			params.mWrapT = GL_CLAMP_TO_EDGE;
+		}
 
 		return params;
 	}
@@ -65,6 +72,7 @@ namespace Morpheus {
 		mStringToPrototypeMap[BILINEAR_TILE_SAMPLER_SRC] = SamplerPrototype::BILINEAR_TILE;
 		mStringToPrototypeMap[POINT_CLAMP_SAMPLER_SRC] = SamplerPrototype::POINT_CLAMP;
 		mStringToPrototypeMap[POINT_TILE_SAMPLER_SRC] = SamplerPrototype::POINT_TILE;
+		mStringToPrototypeMap[TRILINEAR_HDRI_SAMPLER_SRC] = SamplerPrototype::TRILINEAR_HDRI_SAMPLER;
 	}
 
 	void ContentFactory<Sampler>::unload(INodeOwner* ref)

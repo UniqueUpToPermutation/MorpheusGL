@@ -36,7 +36,7 @@ namespace Morpheus {
 		Texture* addJobUnmanaged(const GGXComputeJob& job);
 		void submitQueue();
 
-		Texture* submit(const GGXComputeJob& job);
+		Texture* submitUnmanaged(const GGXComputeJob& job);
 
 		void barrier();
 
