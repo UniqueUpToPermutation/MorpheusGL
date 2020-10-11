@@ -150,9 +150,9 @@ namespace Morpheus {
 
     void LambertComputeKernel::init() {
         if (!mGPUBackend) {
-			GLSLPreprocessorConfig config;
-			config.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
-			mGPUBackend = loadExt<Shader>("/internal/lambertsh.comp", config, this, true);
+			ContentExtParams<Shader> params;
+			params.mConfigOverride.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
+			mGPUBackend = loadExt<Shader>("/internal/lambertsh.comp", params, this, true);
 
             mOffsetUniform.find(mGPUBackend, "outputOffset");
 

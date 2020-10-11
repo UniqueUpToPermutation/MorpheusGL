@@ -89,7 +89,8 @@
 			"bvh": "cpp",
 			"mprealsupport": "cpp",
 			"matrixfunctions": "cpp",
-			"openglsupport": "cpp"
+			"openglsupport": "cpp",
+			"polynomials": "cpp"
 		}
 	}
 }

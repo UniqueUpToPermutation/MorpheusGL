@@ -10,6 +10,7 @@ option(BUILD_LAPVIEWER "Enable builing Laplacian Eigenvector viewer" ON)
 option(BUILD_BLITTEST "Enable building blit test" ON)
 option(BUILD_COMPUTETEST "Enable building compute test" ON)
 option(BUILD_COMPUTE_SH "Enable building compute sh test" ON)
+option(BUILD_SPRITE_BATCH "Enable building sprite batch" ON)
 
 # Silence OpenGL Deprecation warnings on MacOSX
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -50,6 +51,10 @@ endif()
 
 if(BUILD_PBR)
 	add_subdirectory(pbr)
+endif()
+
+if(BUILD_SPRITE_BATCH)
+	add_subdirectory(sprite-batch)
 endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

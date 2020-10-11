@@ -31,15 +31,12 @@ namespace Morpheus {
 	};
 
 	template <typename ContentType>
-	struct ContentExtParam;
+	struct ContentExtParams;
 
 	template <>
-	struct ContentExtParam<Shader> {
-		typedef GLSLPreprocessorConfig RESULT;
-	};
-
-	template <typename ContentType>
-	using ContentExtParam_v = typename ContentExtParam<ContentType>::RESULT;
+	struct ContentExtParams<Shader>;
+	template <>
+	struct ContentExtParams<Texture>;
 
 	// An interface that all content factories must inherit from.
 	// Defines the interface for loading and unloading assets.
@@ -203,7 +200,7 @@ namespace Morpheus {
 		}
 
 		template <typename ContentType>
-		ContentType* loadExt(const std::string& source, const ContentExtParam_v<ContentType>& extParams, INodeOwner* parent = nullptr,
+		ContentType* loadExt(const std::string& source, const ContentExtParams<ContentType>& extParams, INodeOwner* parent = nullptr,
 			bool bOverrideExistingSource = false) {
 			assert(IS_BASE_TYPE_<ContentType>::RESULT);
 
@@ -315,7 +312,7 @@ namespace Morpheus {
 	}
 
 	template <typename ContentType>
-	ContentType* loadExt(const std::string& source, const ContentExtParam_v<ContentType>& extParams, INodeOwner* parent = nullptr,
+	ContentType* loadExt(const std::string& source, const ContentExtParams<ContentType>& extParams, INodeOwner* parent = nullptr,
 		bool bOverrideExistingSource = false) {
 		return content()->loadExt<ContentType>(source, extParams, parent, bOverrideExistingSource);
 	}

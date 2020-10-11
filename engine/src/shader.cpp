@@ -484,70 +484,42 @@ namespace Morpheus {
 		if (extract_ptr != string::npos)
 			prefix_include_path = source.substr(0, extract_ptr + 1);
 
-		bool bIsComputeShader = false;
+		unordered_map<string, ShaderType> stringToShaderTypes;
+		vector<GLuint> subShaders;
+		stringToShaderTypes["compute_shader"] = ShaderType::COMPUTE;
+		stringToShaderTypes["vertex_shader"] = ShaderType::VERTEX;
+		stringToShaderTypes["fragment_shader"] = ShaderType::FRAGMENT;
+		stringToShaderTypes["geometry_shader"] = ShaderType::GEOMETRY;
 
-		GLuint vertex_id = 0;
-		GLuint frag_id = 0;
-		GLuint comp_id = 0;
+		for (auto& i : j.items()) {
+			auto it = stringToShaderTypes.find(i.key());
+			if (it != stringToShaderTypes.end()) {
+				// Compile an Open GL shader
+				string src;
+				i.value().get_to(src);
+				src = prefix_include_path + src;
 
-		// Compile an Open GL shader
-		if (j.contains("compute_shader")) {
-			bIsComputeShader = true;
-			string compute_src = j["compute_shader"];
-			compute_src = prefix_include_path + compute_src;
-
-			vector<string> paths;
-			GLSLPreprocessorOutput preprocessor_out;
-
-			mPreprocessor.load(compute_src, &preprocessor_out, overrides);
-
-			cout << "Compiling compute shader: " << compute_src << endl;
-			comp_id = compileShader(preprocessor_out, ShaderType::COMPUTE);
-		}
-		else {
-			string vertex_src = j["vertex_shader"];
-			string frag_src = j["fragment_shader"];
-			vertex_src = prefix_include_path + vertex_src;
-			frag_src = prefix_include_path + frag_src;
-
-			vector<string> paths;
-			
-			GLSLPreprocessorOutput vertex_preprocessor_out;
-			GLSLPreprocessorOutput frag_preprocessor_out;
-
-			mPreprocessor.load(vertex_src, &vertex_preprocessor_out, overrides);
-			mPreprocessor.load(frag_src, &frag_preprocessor_out, overrides);
-
-			cout << "Compiling vertex shader: " << vertex_src << endl;
-			vertex_id = compileShader(vertex_preprocessor_out, ShaderType::VERTEX);
-			cout << "Compiling fragment shader: " << frag_src << endl;
-			frag_id = compileShader(frag_preprocessor_out, ShaderType::FRAGMENT);
+				cout << "Compiling shader: " << src << endl;
+				GLSLPreprocessorOutput preprocessor_out;
+				mPreprocessor.load(src, &preprocessor_out, overrides);
+				GLuint shaderId = compileShader(preprocessor_out, it->second);
+				subShaders.emplace_back(shaderId);
+			}
 		}
 
 		// Link the program and spit any errors to stdout
 		GLuint id = glCreateProgram();
-		if (!bIsComputeShader) {
-			glAttachShader(id, vertex_id);
-			glAttachShader(id, frag_id);
-		}
-		else {
-			glAttachShader(id, comp_id);
+		for (auto subShader : subShaders) {
+			glAttachShader(id, subShader);
 		}
 
 		glLinkProgram(id);
 		printProgramLinkerOutput(id);
 
-		// Shader no longer needed
-		if (!bIsComputeShader) {
-			glDetachShader(id, vertex_id);
-			glDetachShader(id, frag_id);
-
-			glDeleteShader(vertex_id);
-			glDeleteShader(frag_id);
-		}
-		else {
-			glDetachShader(id, comp_id);
-			glDeleteShader(comp_id);
+		// Individual shaders no longer needed
+		for (auto subShader : subShaders) {
+			glDetachShader(id, subShader);
+			glDeleteShader(subShader);
 		}
 
 		// Set the shader ID!
@@ -604,7 +576,8 @@ namespace Morpheus {
 	}
 
 	INodeOwner* ContentFactory<Shader>::loadExt(const std::string& source, Node loadInto, const void* extParam) {
-		return load(source, loadInto, static_cast<const GLSLPreprocessorConfig*>(extParam));
+		const auto& config = static_cast<const ContentExtParams<Shader>*>(extParam)->mConfigOverride;
+		return load(source, loadInto, &config);
 	}
 
 	Shader* ContentFactory<Shader>::makeUnmanagedFromGL(GLint shaderProgram) {
@@ -676,8 +649,11 @@ namespace Morpheus {
 		case ShaderType::COMPUTE:
 			shader_type = GL_COMPUTE_SHADER;
 			break;
+		case ShaderType::GEOMETRY:
+			shader_type = GL_GEOMETRY_SHADER;
+			break;
 		default:
-			shader_type = GL_VERTEX_SHADER;
+			throw std::runtime_error("Shader type not recognized!");
 			break;
 		}
 
@@ -705,8 +681,11 @@ namespace Morpheus {
 		case ShaderType::COMPUTE:
 			shader_type = GL_COMPUTE_SHADER;
 			break;
+		case ShaderType::GEOMETRY:
+			shader_type = GL_GEOMETRY_SHADER;
+			break;
 		default:
-			shader_type = GL_VERTEX_SHADER;
+			throw std::runtime_error("Shader type not recognized!");
 			break;
 		}
 

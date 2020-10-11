@@ -14,6 +14,8 @@
 #include <chrono>
 #include <iomanip>
 
+#include <glm/gtx/quaternion.hpp>
+
 using namespace Morpheus;
 using namespace std;
 using namespace glm;
@@ -90,6 +92,7 @@ int main() {
 		auto transform = new TransformNode();
 		createNode(transform, scene);
 		transform->addChild(staticMesh);
+		transform->mTransform = Transform::makeRotation(glm::angleAxis(glm::pi<float>(), glm::vec3(0.0, 1.0, 0.0)));
 
 		Texture* tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/env2.ktx", GL_RGBA8);
 		createContentNode(tex, scene);

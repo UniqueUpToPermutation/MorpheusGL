@@ -30,9 +30,9 @@ namespace Morpheus {
 	void CookTorranceLUTComputeKernel::init() {
 		if (!mGPUBackend) {
 			// Set configuration and load shader, and set as child
-			GLSLPreprocessorConfig overrides;
-			overrides.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
-			mGPUBackend = loadExt<Shader>("/internal/cooktorrancelut.comp", overrides, this, true);
+			ContentExtParams<Shader> params;
+			params.mConfigOverride.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
+			mGPUBackend = loadExt<Shader>("/internal/cooktorrancelut.comp", params, this, true);
 		}	
 	}
 }

@@ -67,8 +67,22 @@ namespace Morpheus {
 	SET_NODE_ENUM(Texture, TEXTURE);
 
 	template <>
+	struct ContentExtParams<Texture> {
+		bool bOverrideInternalFormat;
+		GLenum mInternalFormat;
+	};
+
+	enum class TextureLoader {
+		GLI,
+		STB,
+		LODEPNG
+	};
+
+	template <>
 	class ContentFactory<Texture> : public IContentFactory {
 	private:
+		std::unordered_map<std::string, TextureLoader> mExtensionToLoader;
+
 		template <bool overrideFormat>
 		Texture* loadGliInternal(const std::string& source,
 			GLenum internalFormat);
@@ -76,16 +90,26 @@ namespace Morpheus {
 		Texture* loadPngInternal(const std::string& source,
 			GLenum internalFormat);
 		template <bool overrideFormat>
+		Texture* loadStbInternal(const std::string& source,
+			GLenum internalFormat);
+		template <bool overrideFormat>
 		Texture* loadInternal(const std::string& source,
 			GLenum internalFormat);
 
 	public:
+		ContentFactory();
+
 		INodeOwner* load(const std::string& source, Node loadInto) override;
+		INodeOwner* loadExt(const std::string& source, Node loadInto, const void* extParams) override;
+		
 		Texture* loadGliUnmanaged(const std::string& source);
 		Texture* loadPngUnmanaged(const std::string& source);
+		Texture* loadStbUnmanaged(const std::string& source);
 		Texture* loadGliUnmanaged(const std::string& source,
 			GLenum internalFormat);
 		Texture* loadPngUnmanaged(const std::string& source,
+			GLenum internalFormat);
+		Texture* loadStbUnmanaged(const std::string& source,
 			GLenum internalFormat);
 		void unload(INodeOwner* ref) override;
 		void dispose() override;

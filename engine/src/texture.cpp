@@ -1,13 +1,44 @@
 #include <engine/texture.hpp>
 #include <lodepng/lodepng.h>
+#include <stb_image.h>
 
 #include <iostream>
 #include <gli/gli.hpp>
 #include <glad/glad.h>
 
 namespace Morpheus {
+
+	ContentFactory<Texture>::ContentFactory() {
+		mExtensionToLoader["dds"] = TextureLoader::GLI;
+		mExtensionToLoader["ktx"] = TextureLoader::GLI;
+		mExtensionToLoader["kmg"] = TextureLoader::GLI;
+		mExtensionToLoader["png"] = TextureLoader::LODEPNG;
+		mExtensionToLoader["hdr"] = TextureLoader::STB;
+		mExtensionToLoader["jpg"] = TextureLoader::STB;
+		mExtensionToLoader["jpeg"] = TextureLoader::STB;
+		mExtensionToLoader["bmp"] = TextureLoader::STB;
+		mExtensionToLoader["psd"] = TextureLoader::STB;
+		mExtensionToLoader["tga"] = TextureLoader::STB;
+		mExtensionToLoader["gif"] = TextureLoader::STB;
+		mExtensionToLoader["pic"] = TextureLoader::STB;
+		mExtensionToLoader["ppm"] = TextureLoader::STB;
+		mExtensionToLoader["pgm"] = TextureLoader::STB;
+	}
+
+	uint mipCount(const uint width, const uint height) {
+		return 1 + std::floor(std::log2(std::max(width, height)));
+	}
+
 	Texture* Texture::toTexture() {
 		return this;
+	}
+
+	INodeOwner* ContentFactory<Texture>::loadExt(const std::string& source, Node loadInto, const void* extParams) {
+		const auto param = reinterpret_cast<const ContentExtParams<Texture>*>(extParams);
+		if (param->bOverrideInternalFormat)
+			return loadInternal<true>(source, param->mInternalFormat);
+		else
+			return loadInternal<false>(source, 0);
 	}
 
 	INodeOwner* ContentFactory<Texture>::load(const std::string& source, Node loadInto) {
@@ -189,6 +220,90 @@ namespace Morpheus {
 	}
 
 	template <bool overrideFormat>
+	Texture* ContentFactory<Texture>::loadStbInternal(const std::string& source,
+		GLenum internalFormat) {
+
+		unsigned char* pixel_data = nullptr;
+		bool b_hdr;
+		int comp;
+		int x;
+		int y;
+
+		if(stbi_is_hdr(source.c_str())) {
+			float* pixels = stbi_loadf(source.c_str(), &x, &y, &comp, 0);
+			if(pixels) {
+				pixel_data = reinterpret_cast<unsigned char*>(pixels);
+				b_hdr = true;
+			}
+        }
+        else {
+			unsigned char* pixels = stbi_load(source.c_str(), &x, &y, &comp, 0);
+			if(pixels) {
+				pixel_data = pixels;
+				b_hdr = false;
+			}
+        }
+
+        if (!pixel_data) {
+			throw std::runtime_error("Failed to load image file: " + source);
+        }
+
+		GLenum internalFormatToUse = GL_RGBA8;
+		GLenum format = GL_RGBA;
+		switch (comp) {
+		case 1:
+			internalFormatToUse = GL_R8;
+			format = GL_RED;
+			break;
+		case 2:
+			internalFormatToUse = GL_RG8;
+			format = GL_RG;
+			break;
+		case 3:
+			internalFormatToUse = GL_RGB8;
+			format = GL_RGB;
+			break;
+		case 4:
+			internalFormatToUse = GL_RGBA8;
+			format = GL_RGBA;
+			break;
+		}
+
+		if constexpr (overrideFormat) {
+			internalFormatToUse = internalFormat;
+		}
+
+		GLuint TextureName = 0;
+		glGenTextures(1, &TextureName);
+		glBindTexture(GL_TEXTURE_2D, TextureName);
+		GL_ASSERT;
+
+		GLsizei actual_mip_levels = mipCount(x, y);
+
+		if (b_hdr) {
+			glTexImage2D(GL_TEXTURE_2D, 0, internalFormatToUse, x, y, 0, format, GL_FLOAT, pixel_data);
+		}
+		else {
+			glTexImage2D(GL_TEXTURE_2D, 0, internalFormatToUse, x, y, 0, format, GL_UNSIGNED_BYTE, pixel_data);
+		}
+
+		GL_ASSERT;
+
+		glGenerateTextureMipmap(TextureName);
+
+		Texture* tex = new Texture();
+		tex->mWidth = x;
+		tex->mHeight = y;
+		tex->mType = TextureType::TEXTURE_2D;
+		tex->mGLTarget = GL_TEXTURE_2D;
+		tex->mId = TextureName;
+		tex->mDepth = 1;
+		tex->mFormat = internalFormatToUse;
+		tex->mLevels = actual_mip_levels;
+		return tex;
+	}
+
+	template <bool overrideFormat>
 	Texture* ContentFactory<Texture>::loadPngInternal(const std::string& source,
 		GLenum internalFormat) {
 		std::vector<uint8_t> image;
@@ -241,14 +356,24 @@ namespace Morpheus {
 		std::cout << "Loading texture " << source;
 		size_t loc = source.rfind('.');
 		if (loc != std::string::npos) {
-			auto ext = source.substr(loc);
-			if (ext == ".png") {
-				std::cout << " (using lodepng)..." << std::endl;
-				return loadPngInternal<overrideFormat>(source, internalFormat);
-			}
-			else if (ext == ".ktx" || ext == ".dds" || ext == ".kmg") {
-				std::cout << " (using gli)..." << std::endl;
-				return loadGliInternal<overrideFormat>(source, internalFormat);
+			auto ext = source.substr(loc + 1);
+			auto it = mExtensionToLoader.find(ext);
+
+			if (it != mExtensionToLoader.end()) {
+				switch (it->second) {
+				case TextureLoader::GLI:
+					std::cout << " (using gli)..." << std::endl;
+					return loadGliInternal<overrideFormat>(source, internalFormat);
+				case TextureLoader::LODEPNG:
+					std::cout << " (using lodepng)..." << std::endl;
+					return loadPngInternal<overrideFormat>(source, internalFormat);
+				case TextureLoader::STB:
+					std::cout << " (using stb)..." << std::endl;
+					return loadStbInternal<overrideFormat>(source, internalFormat);
+				default:
+					std::cout << "\nFormat not recognized!" << std::endl;
+					return nullptr;
+				}
 			}
 			else {
 				std::cout << "\nFormat not recognized!" << std::endl;
@@ -269,6 +394,10 @@ namespace Morpheus {
 		return loadPngInternal<false>(source, 0);
 	}
 
+	Texture* ContentFactory<Texture>::loadStbUnmanaged(const std::string& source) {
+		return loadStbInternal<false>(source, 0);
+	}
+
 	Texture* ContentFactory<Texture>::loadTextureUnmanaged(const std::string& source) {
 		return loadInternal<false>(source, 0);
 	}
@@ -286,6 +415,11 @@ namespace Morpheus {
 	Texture* ContentFactory<Texture>::loadPngUnmanaged(const std::string& source,
 		GLenum internalFormat) {
 		return loadPngInternal<true>(source, internalFormat);
+	}
+
+	Texture* ContentFactory<Texture>::loadStbUnmanaged(const std::string& source,
+		GLenum internalFormat) {
+		return loadStbInternal<true>(source, internalFormat);
 	}
 
 	void Texture::savepngcubemap(const std::string& path) const {
@@ -433,7 +567,7 @@ namespace Morpheus {
 			actual_mip_levels = miplevels;
 		}
 		else {
-			actual_mip_levels = 1 + std::floor(std::log2(std::max(width, height)));
+			actual_mip_levels = mipCount(width, height);
 		}
 
 		glTexStorage2D(GL_TEXTURE_2D, actual_mip_levels, format, width, height);
@@ -479,7 +613,7 @@ namespace Morpheus {
 			actual_mip_levels = miplevels;
 		}
 		else {
-			actual_mip_levels = 1 + std::floor(std::log2(std::max(width, height)));
+			actual_mip_levels = mipCount(width, height);
 		}
 
 		glTexStorage2D(GL_TEXTURE_CUBE_MAP, actual_mip_levels, format, width, height);

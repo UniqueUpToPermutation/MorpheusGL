@@ -11,7 +11,7 @@
 				"${workspaceFolder}/nanogui/ext/nanovg/src",
 				"${workspaceFolder}/gli",
 				"${workspaceFolder}/engine",
-				"${workspaceFolder}/assimp/include"
+				"${workspaceFolder}/engine/stb/include"
             ],
             "defines": ["_DEBUG",
 				"NANOGUI_USE_OPENGL",

@@ -40,14 +40,12 @@ void main()
 	vec3 N = computeNormalFromMap(vNormal, vTanget, normal_sample);
 
 	vec3 Lo = normalize(eyePosition - vPosition);
-	vec3 Lr = reflect(-Lo, N);
+	vec3 Lr = -reflect(Lo, N);
 	float NoR = clamp(dot(Lo, N), 0.0, 1.0);
 
 	vec3 albedo_sample = texture(albedoMap, vTexcoords).rgb;
 	float roughness_sample = texture(roughnessMap, vTexcoords).r;
 	float metalness_sample = texture(metalnessMap, vTexcoords).r;
-
-	//metalness_sample = 0.00001 * metalness_sample;
 
 	// Fresnel reflectance at normal incidence (for metals use albedo color).
 	vec3 F0 = mix(Fdielectric, albedo_sample, metalness_sample);

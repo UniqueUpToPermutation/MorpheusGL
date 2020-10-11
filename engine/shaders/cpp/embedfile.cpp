@@ -16,6 +16,7 @@ set<string> important_ext = {
 	".frag",
 	".fs",
 	".vs",
+	".geom",
 	".comp",
 	".json"
 };

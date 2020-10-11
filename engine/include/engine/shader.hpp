@@ -763,7 +763,8 @@ namespace Morpheus {
 	enum class ShaderType {
 		VERTEX,
 		FRAGMENT,
-		COMPUTE
+		COMPUTE,
+		GEOMETRY
 	};
 
 	struct RendererShaderView {
@@ -1017,6 +1018,11 @@ namespace Morpheus {
 			if (u.mLoc < 0) 
 				std::cout << "Warning: Uniform " << name << " not found!" << std::endl;
 		}
+	};
+
+	template <>
+	struct ContentExtParams<Shader> {
+		GLSLPreprocessorConfig mConfigOverride;
 	};
 
 	template <>

@@ -122,9 +122,9 @@ namespace Morpheus {
 
 		if (!mGPUBackend) {
 			// Add compute shader to this object's children for resource management
-			GLSLPreprocessorConfig config;
-			config.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
-			mGPUBackend = loadExt<Shader>("/internal/convggx.comp", config, this, true);
+			ContentExtParams<Shader> params;
+			params.mConfigOverride.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
+			mGPUBackend = loadExt<Shader>("/internal/convggx.comp", params, this, true);
 					
 			mInputSamplerUniform.find(mGPUBackend, "inputTexture");
 			

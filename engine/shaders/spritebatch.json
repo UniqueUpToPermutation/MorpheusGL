@@ -1,0 +1,14 @@
+{
+	"vertex_shader": "spritebatch.vert",
+	"geometry_shader": "spritebatch.geom",
+	"fragment_shader": "spritebatch.frag",
+  
+	"editor_uniforms": [
+	],
+  
+	"uniform_defaults": {
+	},
+  
+	"renderer_uniforms": {
+	}
+  }

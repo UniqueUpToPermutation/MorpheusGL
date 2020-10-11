@@ -45,10 +45,14 @@ add_library(engine
 	src/brdf.cpp
 	src/glslpreprocessor.cpp
 	src/skybox.cpp
+	src/blend.cpp
+	src/spritebatch.cpp
 
 	shader_rc.cpp
 	
-    lodepng/lodepng.cpp
+	lodepng/lodepng.cpp
+	stb/src/libstb.c
+
     ../nanogui/ext/glad/src/glad.c)
 
 # Preprocessor definitions
@@ -126,6 +130,7 @@ else()
 endif()
 
 target_include_directories(engine PUBLIC
+	stb/include
     ${${PROJECT_NAME}_INCLUDE_DIRS}
 )
 
