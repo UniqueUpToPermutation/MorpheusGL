@@ -1,0 +1,44 @@
+#version 450 core
+
+precision highp int;
+precision highp float;
+
+const float PI = 3.1415926535897932384626433832795;
+
+// Includes from other files
+#pragma include "cubemap.glsl"
+vec3 cubemapGetDirection(vec2 surfacePosition, uint face);
+
+// Default group size
+#ifndef GROUP_SIZE
+#define GROUP_SIZE 32
+#endif
+
+layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
+
+uniform sampler2D img_input;
+uniform writeonly imageCube img_output;
+
+void main() {
+	uint x_indx = gl_GlobalInvocationID.y;
+	uint y_indx = gl_GlobalInvocationID.x;
+	uint face = gl_GlobalInvocationID.z;
+
+	ivec2 size = imageSize(img_output);
+
+	vec2 uv;
+	uv.x = -1.0 + 2.0 * (float(x_indx) + 0.5) / float(size.x);
+	uv.y = -1.0 + 2.0 * (float(y_indx) + 0.5) / float(size.y);
+
+	vec3 dir = cubemapGetDirection(uv, face);
+
+	// Find phi and theta
+	float phi = acos(dir.y);
+	float theta = atan(dir.z, dir.x);
+
+	vec2 lookup_uv = vec2(theta / (2 * PI) + 0.5, phi / PI);
+
+	vec4 tex_sample = textureLod(img_input, lookup_uv, 0);
+
+	imageStore(img_output, ivec3(x_indx, y_indx, face), tex_sample);
+}
