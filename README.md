@@ -219,6 +219,12 @@ Shows how to load a compute shader with the content manager, write the result of
 
 ![compute-test2](images/compute-test2.png)
 
+## sprite-batch
+
+Shows how to use the engine to render 2D sprites using the SpriteBatch class. For 2D games, this is preferred to using the renderer's blit functionality.
+
+![sprite-batch](images/spritebatch.png)
+
 ## blit-test
 
 Shows how to load a texture and blit the result to screen using the renderer's debug functionality.

@@ -59,8 +59,8 @@ int main() {
   		std::uniform_real_distribution<double> distribution1(-1.0, 1.0);
 		std::uniform_real_distribution<double> distribution2(0.0, 1.0);
 
-		constexpr uint obj_count = 500;
-		std::vector<ObjInstance> insts(500);
+		constexpr uint obj_count = 350;
+		std::vector<ObjInstance> insts(obj_count);
 		for (auto& obj : insts) {
 			obj.mPositionBase.x = distribution1(generator) * 400;
 			obj.mPositionBase.y = distribution1(generator) * 300;
