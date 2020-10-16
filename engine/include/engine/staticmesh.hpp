@@ -43,7 +43,8 @@ namespace Morpheus {
 	public:
 		INodeOwner* load(const std::string& source, Node loadInto) override;
 		void unload(INodeOwner* ref) override;
-		void dispose() override;
+
+		~ContentFactory();
 
 		std::string getContentTypeString() const override;
 

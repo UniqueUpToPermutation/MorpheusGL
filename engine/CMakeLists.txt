@@ -48,6 +48,7 @@ add_library(engine
 	src/blend.cpp
 	src/spritebatch.cpp
 	src/hdri2cube.cpp
+	src/framebuffer.cpp
 
 	shader_rc.cpp
 	

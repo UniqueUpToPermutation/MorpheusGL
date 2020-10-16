@@ -98,6 +98,7 @@ namespace Morpheus {
 
 	public:
 		ContentFactory();
+		~ContentFactory();
 
 		INodeOwner* load(const std::string& source, Node loadInto) override;
 		INodeOwner* loadEx(const std::string& source, Node loadInto, const void* extParams) override;
@@ -112,7 +113,6 @@ namespace Morpheus {
 		Texture* loadStbUnmanaged(const std::string& source,
 			GLenum internalFormat);
 		void unload(INodeOwner* ref) override;
-		void dispose() override;
 
 		Texture* loadTextureUnmanaged(const std::string& source);
 		Texture* loadTextureUnmanaged(const std::string& source, 

@@ -151,6 +151,7 @@ namespace Morpheus {
 
 		return geo;
 	}
+
 	void ContentFactory<Geometry>::unload(INodeOwner* ref) {
 		auto r = ref->toGeometry();
 		GLuint bufs[2] = { r->mVbo, r->mIbo };
@@ -159,9 +160,9 @@ namespace Morpheus {
 		glDeleteVertexArrays(1, &vao);
 		delete r;
 	}
-	void ContentFactory<Geometry>::dispose() {
+
+	ContentFactory<Geometry>::~ContentFactory() {
 		delete mImporter;
-		delete this;
 	}
 
 	Geometry* ContentFactory<Geometry>::makeGeometryUnmanaged(GLuint vao, GLuint vbo, GLuint ibo,

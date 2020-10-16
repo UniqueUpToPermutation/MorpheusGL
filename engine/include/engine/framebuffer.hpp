@@ -31,6 +31,9 @@ namespace Morpheus {
 		uint mHeight;
 
 	public:
+		inline Framebuffer() : INodeOwner(NodeType::FRAMEBUFFER) {
+		}
+
 		inline GLuint id() const {
 			return mId;
 		}
@@ -64,6 +67,8 @@ namespace Morpheus {
 		void blitToBackBuffer(GLbitfield copyComponents);
 
 		Framebuffer* toFramebuffer() override;
+
+		friend class ContentFactory<Framebuffer>;
 	};
 	SET_NODE_ENUM(Framebuffer, FRAMEBUFFER);
 
@@ -135,7 +140,9 @@ namespace Morpheus {
 			uint samples=1);
 
 		void unload(INodeOwner* ref) override;
-		void dispose() override;
+		
+		~ContentFactory();
+
 		std::string getContentTypeString() const override;
 	};
 }

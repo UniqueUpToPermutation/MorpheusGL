@@ -88,9 +88,8 @@ namespace Morpheus {
         delete ref;
     }
     
-    void ContentFactory<Material>::dispose() {
-        delete this;
-    }
+    ContentFactory<Material>::~ContentFactory() {
+	}
 
 	DefaultMaterialShaderView::DefaultMaterialShaderView(Shader* shader) {
 		mEnvironmentDiffuseSH.find(shader, "environmentDiffuseSH");

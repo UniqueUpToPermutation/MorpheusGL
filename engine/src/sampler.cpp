@@ -81,9 +81,8 @@ namespace Morpheus {
 		glDeleteSamplers(1, &sampler->mId);
 		delete sampler;
 	}
-
-	void ContentFactory<Sampler>::dispose()
-	{
+	
+	ContentFactory<Sampler>::~ContentFactory() {
 	}
 
 	Sampler* ContentFactory<Sampler>::makeInternal(const SamplerParameters& params) {

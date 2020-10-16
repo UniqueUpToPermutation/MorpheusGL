@@ -46,14 +46,12 @@ namespace Morpheus {
 	class IContentFactory {
 	public:
 		virtual INodeOwner* load(const std::string& source, Node loadInto) = 0;
-
-		virtual INodeOwner* loadEx(const std::string& source, Node loadInto, const void* extParams) {
-			throw std::runtime_error("loadEx not implemented for this factory type!");
-		}
+		virtual INodeOwner* loadEx(const std::string& source, Node loadInto, const void* extParams);
 
 		virtual void unload(INodeOwner* ref) = 0;
-		virtual void dispose() = 0;
 		virtual std::string getContentTypeString() const = 0;
+
+		virtual ~IContentFactory();
 
 		friend class ContentManager;
 	};
@@ -74,6 +72,15 @@ namespace Morpheus {
 		DigraphTwoWayVertexLookupView<std::string> mSources;
 		std::set<INodeOwner*> mMarkedNodes;
 
+		ContentFactory<Texture>* mTextureFactory;
+		ContentFactory<Shader>* mShaderFactory;
+		ContentFactory<Sampler>* mSamplerFactory;
+		ContentFactory<Material>* mMaterialFactory;
+		ContentFactory<Framebuffer>* mFramebufferFactory;
+		ContentFactory<Geometry>* mGeometryFactory;
+		ContentFactory<HalfEdgeGeometry>* mHalfEdgeGeometryFactory;
+		ContentFactory<StaticMesh>* mStaticMeshFactory;
+
 	public:
 		void init() override;
 	
@@ -90,10 +97,11 @@ namespace Morpheus {
 
 		// Add a factory to this content manager.
 		// ContentType: The content type of the factory to add.
-		template <typename ContentType> void addFactory() {
-			IContentFactory* factory = new ContentFactory<ContentType>();
+		template <typename ContentType> ContentFactory<ContentType>* addFactory() {
+			auto factory = new ContentFactory<ContentType>();
 			mFactories.insert(factory);
 			mTypeToFactory[NODE_ENUM(ContentType)] = factory;
+			return factory;
 		}
 
 		// Remove a factory from this content manager.

@@ -82,8 +82,7 @@ namespace Morpheus {
 		delete ref;
 	}
 
-	void ContentFactory<StaticMesh>::dispose() {
-		delete this;
+	ContentFactory<StaticMesh>::~ContentFactory() {
 	}
 	
 	std::string ContentFactory<StaticMesh>::getContentTypeString() const {

@@ -344,10 +344,8 @@ namespace Morpheus {
 		delete ref;
 	}
 
-	void ContentFactory<HalfEdgeGeometry>::dispose()
-	{
+	ContentFactory<HalfEdgeGeometry>::~ContentFactory() {
 		delete mImporter;
-		delete this;
 	}
 
 	std::string ContentFactory<HalfEdgeGeometry>::getContentTypeString() const {

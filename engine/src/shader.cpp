@@ -592,7 +592,7 @@ namespace Morpheus {
 		delete shad;
 	}
 
-	void ContentFactory<Shader>::dispose() {
+	ContentFactory<Shader>::~ContentFactory() {
 	}
 
 	GLuint compileComputeKernel(const std::string& code) {

@@ -35,9 +35,10 @@ namespace Morpheus {
 	template <>
 	class ContentFactory<Material> : public IContentFactory {
 	public:
+		~ContentFactory();
+
 		INodeOwner* load(const std::string& source, Node loadInto) override;
 		void unload(INodeOwner* ref) override;
-		void dispose() override;
 
 		std::string getContentTypeString() const override;
 	};

@@ -23,12 +23,13 @@ namespace Morpheus {
 		Assimp::Importer* mImporter;
 
 	public:
+		~ContentFactory();
+
 		HalfEdgeGeometry* loadUnmanaged(const std::string& source, const HalfEdgeLoadParameters& params);
 		HalfEdgeGeometry* loadUnmanaged(const std::string& source);
 
 		INodeOwner* load(const std::string& source, Node loadInto) override;
 		void unload(INodeOwner* ref) override;
-		void dispose() override;
 
 		std::string getContentTypeString() const override;
 

@@ -12,3 +12,4 @@
 #include <engine/halfedgeloader.hpp>
 #include <engine/material.hpp>
 #include <engine/scene.hpp>
+#include <engine/framebuffer.hpp>

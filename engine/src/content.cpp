@@ -11,23 +11,30 @@
 
 namespace Morpheus {
 
+	IContentFactory::~IContentFactory() {
+	}
+
+	INodeOwner* IContentFactory::loadEx(const std::string& source, Node loadInto, const void* extParams) {
+		throw std::runtime_error("loadEx not implemented for this factory type!");
+	}
+
 	void ContentManager::init() {
 		// Make shader factory
-		addFactory<Shader>();
+		mShaderFactory = addFactory<Shader>();
 		// Make geometry factory
-		addFactory<Geometry>();
+		mGeometryFactory = addFactory<Geometry>();
 		// Make material factory
-		addFactory<Material>();
+		mMaterialFactory = addFactory<Material>();
 		// Make the static mesh factory
-		addFactory<StaticMesh>();
+		mStaticMeshFactory = addFactory<StaticMesh>();
 		// Make the half edge geometry factory
-		addFactory<HalfEdgeGeometry>();
+		mHalfEdgeGeometryFactory = addFactory<HalfEdgeGeometry>();
 		// Make the Texture factory
-		addFactory<Texture>();
+		mTextureFactory = addFactory<Texture>();
 		// Make the Sampler factory
-		addFactory<Sampler>();
+		mSamplerFactory = addFactory<Sampler>();
 		// Make the Framebuffer factory
-		addFactory<Framebuffer>();
+		mFramebufferFactory = addFactory<Framebuffer>();
 
 		mSources = graph()->createTwoWayVertexLookup<std::string>("__content__");
 	}
@@ -39,7 +46,7 @@ namespace Morpheus {
 		unloadAll();
 
 		for (auto& factory : mFactories)
-			factory->dispose();
+			delete factory;
 		mFactories.clear();
 		mTypeToFactory.clear();
 

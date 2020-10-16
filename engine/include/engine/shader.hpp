@@ -1039,6 +1039,7 @@ namespace Morpheus {
 
 	public:
 		ContentFactory();
+		~ContentFactory();
 
 		bool tryFind(const std::string& source, std::string* contents) override;
 
@@ -1048,7 +1049,6 @@ namespace Morpheus {
 
 		Shader* makeUnmanagedFromGL(GLint shaderProgram);
 		void unload(INodeOwner* ref) override;
-		void dispose() override;
 
 		std::string getContentTypeString() const override;
 

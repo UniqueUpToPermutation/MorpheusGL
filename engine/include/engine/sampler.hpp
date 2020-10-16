@@ -64,10 +64,10 @@ namespace Morpheus {
 
 	public:
 		ContentFactory();
+		~ContentFactory();
 
 		INodeOwner* load(const std::string& source, Node loadInto) override;
 		void unload(INodeOwner* ref) override;
-		void dispose() override;
 
 		Sampler* makeUnmanaged(const SamplerParameters& params);
 		Sampler* makeUnmanaged(const SamplerPrototype prototype);

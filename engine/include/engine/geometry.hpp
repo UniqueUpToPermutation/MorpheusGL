@@ -75,11 +75,11 @@ namespace Morpheus {
 
 	public:
 		ContentFactory();
+		~ContentFactory();
 
 		INodeOwner* load(const std::string& source, Node loadInto) override;
 		void unload(INodeOwner* ref) override;
-		void dispose() override;
-
+		
 		Geometry* makeGeometryUnmanaged(GLuint vao, GLuint vbo, GLuint ibo,
 			GLenum elementType, GLsizei elementCount, GLenum indexType,
 			BoundingBox aabb) const;

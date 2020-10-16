@@ -551,8 +551,7 @@ namespace Morpheus {
 		delete tex;
 	}
 
-	void ContentFactory<Texture>::dispose() {
-		delete this;
+	ContentFactory<Texture>::~ContentFactory() {
 	}
 
 	Texture* ContentFactory<Texture>::makeTexture2DUnmanaged(const uint32_t width, const uint32_t height, 

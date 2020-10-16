@@ -82,6 +82,17 @@ namespace Morpheus {
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 			throw std::runtime_error("Failed to create framebuffer!");
 		}
+
+		auto framebuffer = new Framebuffer();
+		framebuffer->mWidth = width;
+		framebuffer->mHeight = height;
+		framebuffer->mSamples = samples;
+		framebuffer->mId = framebufferId;
+		framebuffer->mColorAttachments = colorTextures;
+		framebuffer->mDepthAttachment = nullptr;
+		framebuffer->mStencilAttachment = nullptr;
+		framebuffer->mDepthStencilAttachment = depthStencilTexture;
+		return framebuffer;
 	}
 
 	Framebuffer* ContentFactory<Framebuffer>::makeFramebufferUnmanaged(uint width, uint height, 
@@ -145,6 +156,17 @@ namespace Morpheus {
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 			throw std::runtime_error("Failed to create framebuffer!");
 		}
+
+		auto framebuffer = new Framebuffer();
+		framebuffer->mWidth = width;
+		framebuffer->mHeight = height;
+		framebuffer->mSamples = samples;
+		framebuffer->mId = framebufferId;
+		framebuffer->mColorAttachments = colorTextures;
+		framebuffer->mDepthAttachment = depthTexture;
+		framebuffer->mStencilAttachment = stencilTexture;
+		framebuffer->mDepthStencilAttachment = nullptr;
+		return framebuffer;
 	}
 
 	Framebuffer* ContentFactory<Framebuffer>::makeFramebufferSeparateDSUnmanaged(uint width, uint height, 
@@ -235,5 +257,32 @@ namespace Morpheus {
 			return makeFramebufferSeparateDSUnmanaged(ext->mWidth, ext->mHeight,
 				ext->mColorComponentFormats, ext->mDepthStencilFormat, ext->mSamples);
 		}
+	}
+
+	void ContentFactory<Framebuffer>::unload(INodeOwner* ref) {
+		auto framebuffer = ref->toFramebuffer();
+		auto textureFactory = getFactory<Texture>();
+
+		for (auto it : framebuffer->mColorAttachments)
+			textureFactory->unload(it);
+
+		if (framebuffer->mDepthAttachment)
+			textureFactory->unload(framebuffer->mDepthAttachment);
+
+		if (framebuffer->mStencilAttachment)
+			textureFactory->unload(framebuffer->mStencilAttachment);
+
+		if (framebuffer->mDepthStencilAttachment)
+			textureFactory->unload(framebuffer->mDepthStencilAttachment);
+
+		glDeleteFramebuffers(1, &framebuffer->mId);
+		delete framebuffer;
+	}
+
+	std::string ContentFactory<Framebuffer>::getContentTypeString() const {
+		return MORPHEUS_STRINGIFY(Framebuffer);
+	}
+
+	ContentFactory<Framebuffer>::~ContentFactory() {
 	}
 }
