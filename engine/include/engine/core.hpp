@@ -66,6 +66,7 @@ namespace Morpheus {
 	class Camera;
 	class TransformNode;
 	class Skybox;
+	class Framebuffer;
 
 	typedef DigraphVertex Node;
 	
@@ -135,6 +136,7 @@ namespace Morpheus {
 		STATIC_MESH,
 		CONTENT_END,
 		SAMPLER,
+		FRAMEBUFFER,
 
 		END
 	};
@@ -194,6 +196,7 @@ namespace Morpheus {
 	SET_RENDERABLE(TEXTURE, 							false);
 	SET_RENDERABLE(STATIC_MESH, 						true);
 	SET_RENDERABLE(SAMPLER, 							false);
+	SET_RENDERABLE(FRAMEBUFFER,							false);
 
 	// The content flag
 	SET_CONTENT(LAMBERT_COMPUTE_KERNEL, 				false);
@@ -211,7 +214,8 @@ namespace Morpheus {
 	SET_CONTENT(TEXTURE, 								true);
 	SET_CONTENT(STATIC_MESH, 							true);
 	SET_CONTENT(SAMPLER, 								true);
-	
+	SET_CONTENT(FRAMEBUFFER,							true);
+
 	// A static class used to obtain template metaprogramming values during runtime.
 	class NodeMetadata {
 	private:
@@ -354,6 +358,7 @@ namespace Morpheus {
 		virtual GuiBase* toGui();
 		virtual TransformNode* toTransform();
 		virtual Skybox* toSkybox();
+		virtual Framebuffer* toFramebuffer();
 
 		virtual ~INodeOwner() {}
 

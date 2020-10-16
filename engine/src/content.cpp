@@ -7,6 +7,7 @@
 #include <engine/halfedgeloader.hpp>
 #include <engine/texture.hpp>
 #include <engine/sampler.hpp>
+#include <engine/framebuffer.hpp>
 
 namespace Morpheus {
 
@@ -25,6 +26,8 @@ namespace Morpheus {
 		addFactory<Texture>();
 		// Make the Sampler factory
 		addFactory<Sampler>();
+		// Make the Framebuffer factory
+		addFactory<Framebuffer>();
 
 		mSources = graph()->createTwoWayVertexLookup<std::string>("__content__");
 	}

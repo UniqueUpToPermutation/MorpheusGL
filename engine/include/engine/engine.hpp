@@ -211,4 +211,6 @@ namespace Morpheus {
 			setClearColor(color.x, color.y, color.z);
 		}
 	};
+
+	void getFramebufferSize(int* width, int* height);
 }

@@ -575,7 +575,7 @@ namespace Morpheus {
 		return load(source, loadInto, nullptr);
 	}
 
-	INodeOwner* ContentFactory<Shader>::loadExt(const std::string& source, Node loadInto, const void* extParam) {
+	INodeOwner* ContentFactory<Shader>::loadEx(const std::string& source, Node loadInto, const void* extParam) {
 		const auto& config = static_cast<const ContentExtParams<Shader>*>(extParam)->mConfigOverride;
 		return load(source, loadInto, &config);
 	}

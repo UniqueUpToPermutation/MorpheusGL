@@ -124,7 +124,7 @@ namespace Morpheus {
 			// Add compute shader to this object's children for resource management
 			ContentExtParams<Shader> params;
 			params.mConfigOverride.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
-			mGPUBackend = loadExt<Shader>("/internal/convggx.comp", params, this, true);
+			mGPUBackend = loadEx<Shader>("/internal/convggx.comp", params, this, true);
 					
 			mInputSamplerUniform.find(mGPUBackend, "inputTexture");
 			

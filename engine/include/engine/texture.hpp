@@ -100,7 +100,7 @@ namespace Morpheus {
 		ContentFactory();
 
 		INodeOwner* load(const std::string& source, Node loadInto) override;
-		INodeOwner* loadExt(const std::string& source, Node loadInto, const void* extParams) override;
+		INodeOwner* loadEx(const std::string& source, Node loadInto, const void* extParams) override;
 		
 		Texture* loadGliUnmanaged(const std::string& source);
 		Texture* loadPngUnmanaged(const std::string& source);

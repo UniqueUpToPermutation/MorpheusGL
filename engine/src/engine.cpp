@@ -175,4 +175,8 @@ namespace Morpheus {
 	void IRenderer::debugBlit(Texture* texture) {
 		debugBlit(texture, glm::vec2(0.0, 0.0), glm::vec2(texture->width(), texture->height()));
 	}
+
+	void getFramebufferSize(int* width, int* height) {
+		glfwGetFramebufferSize(window(), width, height);
+	}
 }

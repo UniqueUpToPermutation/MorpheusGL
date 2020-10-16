@@ -38,14 +38,17 @@ namespace Morpheus {
 	template <>
 	struct ContentExtParams<Texture>;
 
+	template <>
+	struct ContentExtParams<Framebuffer>;
+
 	// An interface that all content factories must inherit from.
 	// Defines the interface for loading and unloading assets.
 	class IContentFactory {
 	public:
 		virtual INodeOwner* load(const std::string& source, Node loadInto) = 0;
 
-		virtual INodeOwner* loadExt(const std::string& source, Node loadInto, const void* extParams) {
-			throw std::runtime_error("loadExt not implemented for this factory type!");
+		virtual INodeOwner* loadEx(const std::string& source, Node loadInto, const void* extParams) {
+			throw std::runtime_error("loadEx not implemented for this factory type!");
 		}
 
 		virtual void unload(INodeOwner* ref) = 0;
@@ -200,7 +203,7 @@ namespace Morpheus {
 		}
 
 		template <typename ContentType>
-		ContentType* loadExt(const std::string& source, const ContentExtParams<ContentType>& extParams, INodeOwner* parent = nullptr,
+		ContentType* loadEx(const std::string& source, const ContentExtParams<ContentType>& extParams, INodeOwner* parent = nullptr,
 			bool bOverrideExistingSource = false) {
 			assert(IS_BASE_TYPE_<ContentType>::RESULT);
 
@@ -231,7 +234,7 @@ namespace Morpheus {
 				
 				// Load a ref via the correct content factory
 				auto type = NODE_ENUM(ContentType);
-				content = mTypeToFactory[type]->loadExt(source_mod, contentNode, &extParams);
+				content = mTypeToFactory[type]->loadEx(source_mod, contentNode, &extParams);
 
 				if (content == nullptr) {
 					graph_->deleteVertex(contentNode);
@@ -301,20 +304,17 @@ namespace Morpheus {
 		return content()->getFactory<ContentType>();
 	}
 
-	// Loads an asset.
-	// ContentType: Specifies the type of content. This determines which content factory is used.
-	// source: The source (i.e., file path) to load from.
-	// refOut: If this is not null, a ref to the loaded asset will be written to it.
-	// returns: A node containing the asset. 
+	// Loads an asset
 	template <typename ContentType> 
 	inline ContentType* load(const std::string& source, INodeOwner* parent = nullptr) {
 		return content()->load<ContentType>(source, parent);
 	}
 
+	// Loads an asset with extra parameters
 	template <typename ContentType>
-	ContentType* loadExt(const std::string& source, const ContentExtParams<ContentType>& extParams, INodeOwner* parent = nullptr,
+	ContentType* loadEx(const std::string& source, const ContentExtParams<ContentType>& extParams, INodeOwner* parent = nullptr,
 		bool bOverrideExistingSource = false) {
-		return content()->loadExt<ContentType>(source, extParams, parent, bOverrideExistingSource);
+		return content()->loadEx<ContentType>(source, extParams, parent, bOverrideExistingSource);
 	}
 
 	// Perform garbage collection for all descendents that are no longer

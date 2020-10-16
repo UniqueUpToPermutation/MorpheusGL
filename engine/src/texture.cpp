@@ -33,7 +33,7 @@ namespace Morpheus {
 		return this;
 	}
 
-	INodeOwner* ContentFactory<Texture>::loadExt(const std::string& source, Node loadInto, const void* extParams) {
+	INodeOwner* ContentFactory<Texture>::loadEx(const std::string& source, Node loadInto, const void* extParams) {
 		const auto param = reinterpret_cast<const ContentExtParams<Texture>*>(extParams);
 		if (param->bOverrideInternalFormat)
 			return loadInternal<true>(source, param->mInternalFormat);

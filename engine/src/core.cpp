@@ -40,6 +40,7 @@ namespace Morpheus {
 	GuiBase* INodeOwner::toGui() 						{ return nullptr; }
 	TransformNode* INodeOwner::toTransform()			{ return nullptr; }
 	Skybox* INodeOwner::toSkybox()						{ return nullptr; }
+	Framebuffer* INodeOwner::toFramebuffer() 			{ return nullptr; }
 
 	TransformNode* TransformNode::toTransform() 		{ return this; }
 

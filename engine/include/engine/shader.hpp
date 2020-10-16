@@ -1044,7 +1044,7 @@ namespace Morpheus {
 
 		INodeOwner* load(const std::string& source, Node loadInto) override;
 		INodeOwner* load(const std::string& source, Node loadInto, const GLSLPreprocessorConfig* overrides);
-		INodeOwner* loadExt(const std::string& source, Node loadInto, const void* extParam) override;
+		INodeOwner* loadEx(const std::string& source, Node loadInto, const void* extParam) override;
 
 		Shader* makeUnmanagedFromGL(GLint shaderProgram);
 		void unload(INodeOwner* ref) override;

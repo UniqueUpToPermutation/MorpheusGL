@@ -97,7 +97,7 @@ int main() {
 		ContentExtParams<Texture> params;
 		params.bOverrideInternalFormat = true;
 		params.mInternalFormat = GL_RGBA8;
-		Texture* tex = loadExt<Texture>("content/textures/environment.hdr", params, scene);
+		Texture* tex = loadEx<Texture>("content/textures/environment.hdr", params, scene);
  
 		auto lambertKernel = new LambertComputeKernel();
 		auto ggxKernel = new GGXComputeKernel();

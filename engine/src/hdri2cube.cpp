@@ -12,7 +12,7 @@ namespace Morpheus {
 			ContentExtParams<Shader> params;
 			params.mConfigOverride.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
 
-			mGPUBackend = loadExt<Shader>("/internal/hdri2cube.comp", params, this);
+			mGPUBackend = loadEx<Shader>("/internal/hdri2cube.comp", params, this);
 			mSampler = load<Sampler>(TRILINEAR_HDRI_SAMPLER_SRC, this);
 
 			mOutputTexture.find(mGPUBackend, "img_output");
