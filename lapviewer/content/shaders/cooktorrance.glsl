@@ -1,3 +1,5 @@
+#version 330 core
+
 #define PI 3.14159265
 
 vec3 CookTorrance(vec3 materialDiffuseColor,

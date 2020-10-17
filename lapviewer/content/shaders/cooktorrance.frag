@@ -1,6 +1,15 @@
 ﻿#version 330 core
 
-#include "cooktorrance.glsl"
+#pragma include "cooktorrance.glsl"
+vec3 CookTorrance(vec3 materialDiffuseColor,
+	vec3 materialSpecularColor,
+	vec3 normal,
+	vec3 lightDir,
+	vec3 viewDir,
+	vec3 lightColor, 
+	float F0,
+	float roughness,
+	float k);
 
 in vec2 vTexcoords;
 in vec3 vNormal;
