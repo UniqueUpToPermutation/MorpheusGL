@@ -6,7 +6,7 @@ Morpheus is an open source physically-based cross-platform renderer built using 
 
 MacOS support is possible, as the engine compiles with clang. But because Apple hasn't updated their OpenGL implementation since 2011, they're still stuck on OpenGL 4.1. I unfortunately make use of a lot of compute shaders which require OpenGL 4.3+. Maybe I'll make a scaled back version of this engine for OpenGL 4.1 someday, but for now, I'm targeting OpenGL 4.5.
 
-![pbr-gun0](images/pbr-gun0.png)
+![pbr-gun1](images/pbr-gun1.png)
 
 ![lapviewer2](images/lapviewer2.png)
 
