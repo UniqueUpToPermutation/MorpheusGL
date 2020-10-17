@@ -13,5 +13,7 @@ namespace Morpheus {
     };
 
     Shader* makeBlitShader(INodeOwner* parent, BlitShaderView* shaderViewOut);
+	Shader* makeBlitShader(INodeOwner* parent, const std::string& fragmentSrc, 
+		BlitShaderView* shaderViewOut, GLSLPreprocessorConfig* overrides = nullptr);
    	Geometry* makeBlitGeometry(INodeOwner* parent);
 }

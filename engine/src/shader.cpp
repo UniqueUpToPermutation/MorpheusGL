@@ -349,7 +349,7 @@ namespace Morpheus {
 				else if (name == "projection") 
 					out->mProjection.mLoc = a;
 				else if (name == "diffuse_irradiance_sh")
-					out->mDiffuseIrradianceSH.mLoc = a;
+					out->mEnvironmentDiffuseSH.mLoc = a;
 				else 
 					cout << "Warning: renderer uniform binding " << name << " not recognized!" << endl;
 				
@@ -551,6 +551,69 @@ namespace Morpheus {
 
 		shader->mId = id;
 		return shader;
+	}
+
+	Shader* ContentFactory<Shader>::makeUnmanaged(const std::vector<ShaderStageSource>& sources,
+		const GLSLPreprocessorConfig* overrides) {
+		// Instantiate the C++ code surrounding the shader
+		Shader* shader = new Shader();
+
+		vector<GLuint> subShaders;
+
+		for (auto& src : sources) {
+			// Compile an Open GL shader
+			cout << "Compiling shader: " << src.mSource << endl;
+			GLSLPreprocessorOutput preprocessor_out;
+			mPreprocessor.load(src.mSource, &preprocessor_out, overrides);
+			GLuint shaderId = compileShader(preprocessor_out, src.mStage);
+			subShaders.emplace_back(shaderId);
+		}
+
+		// Link the program and spit any errors to stdout
+		GLuint id = glCreateProgram();
+		for (auto subShader : subShaders) {
+			glAttachShader(id, subShader);
+		}
+
+		glLinkProgram(id);
+		printProgramLinkerOutput(id);
+
+		// Individual shaders no longer needed
+		for (auto subShader : subShaders) {
+			glDetachShader(id, subShader);
+			glDeleteShader(subShader);
+		}
+
+		// Set the shader ID!
+		shader->mId = id;
+
+		// Read renderer stuff
+		shader->mRenderView.mEnvironmentDiffuseSH.find(shader, "environmentDiffuseSH");
+		shader->mRenderView.mEyePosition.find(shader, "eyePosition");
+		shader->mRenderView.mProjection.find(shader, "projection");
+		shader->mRenderView.mTime.find(shader, "time");
+		shader->mRenderView.mView.find(shader, "view");
+		shader->mRenderView.mWorld.find(shader, "world");
+		shader->mRenderView.mWorldInverseTranspose.find(shader, "worldInverseTranspose");
+
+		return shader;
+	}
+
+	Shader* ContentFactory<Shader>::makeUnmanaged(const std::vector<ShaderStageSource>& sources) {
+		return makeUnmanaged(sources, nullptr);
+	}
+
+	Shader* ContentFactory<Shader>::make(INodeOwner* parent, const std::vector<ShaderStageSource>& sources, 
+		const GLSLPreprocessorConfig* overrides) {
+		Shader* shad = makeUnmanaged(sources, overrides);
+		createContentNode(shad, parent);
+		return shad;
+	}
+
+	Shader* ContentFactory<Shader>::make(INodeOwner* parent, const std::vector<ShaderStageSource>& sources) {
+		Shader* shad = makeUnmanaged(sources);
+		createContentNode(shad, parent);
+		return shad;
 	}
 
 	INodeOwner* ContentFactory<Shader>::load(const std::string& source, Node loadInto, const GLSLPreprocessorConfig* overrides) {

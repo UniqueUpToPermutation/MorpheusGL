@@ -50,6 +50,14 @@ namespace Morpheus {
 			return mDepthStencilAttachment;
 		}
 
+		inline Texture* getColor(uint index = 0) {
+			return mColorAttachments[index];
+		}
+
+		inline uint colorAttachmentCount() const {
+			return mColorAttachments.size();
+		}
+
 		inline uint samples() const {
 			return mSamples;
 		}

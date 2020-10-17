@@ -15,6 +15,22 @@ namespace Morpheus {
 		return result;
     }
 
+	Shader* makeBlitShader(INodeOwner* parent, const std::string& fragmentSrc, 
+		BlitShaderView* shaderViewOut, GLSLPreprocessorConfig* overrides) {
+
+		std::vector<ShaderStageSource> sources;
+		sources.push_back(ShaderStageSource{ShaderType::VERTEX, "/internal/blit.vert"});
+		sources.push_back(ShaderStageSource{ShaderType::FRAGMENT, fragmentSrc});
+
+		auto result = getFactory<Shader>()->make(parent, sources, overrides);
+
+		shaderViewOut->mLower.find(result, "lower");
+        shaderViewOut->mUpper.find(result, "upper");
+        shaderViewOut->mBlitTexture.find(result, "blitTexture");
+
+		return result;
+	}
+
     Geometry* makeBlitGeometry(INodeOwner* parent) {
         auto contentManager = content();
         auto geoFactory = contentManager->getFactory<Geometry>();
@@ -25,7 +41,7 @@ namespace Morpheus {
             1.0f, 1.0f
         };
 
-        unsigned short idx[] = { 0, 2, 1, 1, 2, 3 };
+        unsigned short idx[] = { 0, 1, 2, 2, 1, 3 };
 
         GLuint vbo;
         glCreateBuffers(1, &vbo);

@@ -58,6 +58,9 @@ namespace Morpheus {
 		Sampler* mDebugBlitSampler;
 		BlitShaderView mTextureBlitShaderView;
 
+		Shader* mPostProcessor;
+		BlitShaderView mPostProcessorBlitView;
+
 		Sampler* mTextureSampler;
 		Sampler* mCubemapSampler;
 
@@ -70,6 +73,7 @@ namespace Morpheus {
 		void draw(ForwardRenderQueue* queue, const ForwardRenderDrawParams& params);
 		void makeDebugObjects();
 		void resetFramebuffer();
+		void initPostProcessor();
 		RenderSettings readSetingsFromConfig(const nlohmann::json& config);
 
 	public:
@@ -83,9 +87,9 @@ namespace Morpheus {
 		void init() override;
 		void postGlfwRequests() override;
 		void draw(INodeOwner* scene) override;
-		void setClearColor(float r, float g, float b) override;
+		void setClearColorEx(float r, float g, float b) override;
 
-		void blit(Texture* texture,
+		void blitEx(Texture* texture,
 			const glm::vec2& lower,
 			const glm::vec2& upper,
 			Shader* shader,

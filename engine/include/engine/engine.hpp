@@ -203,10 +203,10 @@ namespace Morpheus {
 		// Get the type of this renderer
 		virtual RendererType getRendererType() const = 0;
 		// Set the clear color of this renderer
-		virtual void setClearColor(float r, float g, float b) = 0;
+		virtual void setClearColorEx(float r, float g, float b) = 0;
 
 		// Same as other blit function except you can override the shader used
-		virtual void blit(Texture* texture,
+		virtual void blitEx(Texture* texture,
 			const glm::vec2& lower,
 			const glm::vec2& upper,
 			Shader* shader, BlitShaderView* shaderView) = 0;
@@ -232,9 +232,18 @@ namespace Morpheus {
 			Shader* shader, 
 			BlitShaderView* shaderView);
 
+		void blit(Texture* texture,
+			const glm::vec2& lower,
+			const glm::vec2& upper,
+			Shader* shader, BlitShaderView* shaderView);
+			
 		// Set the clear color of this renderer
-		void setClearColor(const glm::vec3& color) {
-			setClearColor(color.x, color.y, color.z);
+		inline void setClearColor(const glm::vec3& color) {
+			setClearColorEx(color.x, color.y, color.z);
+		}
+
+		inline void setClearColor(float r, float g, float b) {
+			setClearColorEx(r, g, b);
 		}
 	};
 

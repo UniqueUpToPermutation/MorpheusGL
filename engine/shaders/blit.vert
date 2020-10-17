@@ -11,6 +11,7 @@ out vec2 uv;
 
 void main() {
 	vec2 transformed = lower + position * (upper - lower);
+	transformed.y = -transformed.y;
 	gl_Position = vec4(transformed, 0.0, 1.0); 
 	uv = position;
 }

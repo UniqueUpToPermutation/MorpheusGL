@@ -27,6 +27,77 @@ namespace Morpheus {
 		return RendererType::FORWARD;
 	}
 
+	void ForwardRenderer::init()
+	{
+		// Set VSync on
+		glfwSwapInterval(1); 
+		glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
+
+		// Read render settings from config and apply
+		auto& config_ = *config();
+		RenderSettings settings;
+		if (config_.contains("render_settings")) {
+			auto& render_settings_config = config_["render_settings"];
+			settings = readSetingsFromConfig(render_settings_config);
+		}
+		else {
+			nlohmann::json j_object_empty(nlohmann::json::value_t::object);
+			settings = readSetingsFromConfig(j_object_empty);
+		}
+
+		setRenderSettings(settings);
+
+		makeDebugObjects();
+		resetFramebuffer();
+		initPostProcessor();
+	}
+
+	void ForwardRenderer::makeDebugObjects() {
+		// Create the texture blit shader (managed)
+		mDebugBlitSampler = load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, this);
+
+		// Create blit geometry and shader (
+		mBlitGeometry = makeBlitGeometry(this);
+		mTextureBlitShader = makeBlitShader(this, &mTextureBlitShaderView);
+	}
+
+	void ForwardRenderer::initPostProcessor() {
+		mPostProcessor = makeBlitShader(this, "/internal/postprocessor.frag", &mPostProcessorBlitView);
+	}
+
+	void ForwardRenderer::resetFramebuffer() {
+		int width, height;
+		getFramebufferSize(&width, &height);
+
+		if (mTargetBuffer) {
+			mTargetBuffer->resize(width, height);
+		} else {
+			mTargetBuffer = getFactory<Framebuffer>()->makeFramebuffer(this, width, height, 
+				GL_RGBA8, GL_DEPTH24_STENCIL8, 1);
+		}
+
+		if (mCurrentSettings.mMSAASamples > 1) {
+			if (!mMultisampleTargetBuffer) {
+				mMultisampleTargetBuffer = getFactory<Framebuffer>()->makeFramebuffer(this, width, height, 
+					GL_RGBA8, GL_DEPTH24_STENCIL8, mCurrentSettings.mMSAASamples);
+			}
+			else {
+				mMultisampleTargetBuffer->resize(width, height, mCurrentSettings.mMSAASamples);
+			}
+		} else {
+			if (mMultisampleTargetBuffer) {
+				unload(mMultisampleTargetBuffer);
+				mMultisampleTargetBuffer = nullptr;
+			}
+		}
+
+		GL_ASSERT;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		GL_ASSERT;
+	}
+
 	void ForwardRenderer::collectRecursive(INodeOwner* current, ForwardRenderCollectParams& params) {
 
 		// Ignore anything that is not a scene child.
@@ -124,48 +195,6 @@ namespace Morpheus {
 
 		assert(mTransformStack.empty());
 		assert(mIsStaticStack.empty());
-	}
-
-	void ForwardRenderer::makeDebugObjects() {
-		// Create the texture blit shader (managed)
-		mDebugBlitSampler = load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, this);
-
-		// Create blit geometry and shader (
-		mBlitGeometry = makeBlitGeometry(this);
-		mTextureBlitShader = makeBlitShader(this, &mTextureBlitShaderView);
-	}
-
-	void ForwardRenderer::resetFramebuffer() {
-		int width, height;
-		getFramebufferSize(&width, &height);
-
-		if (mTargetBuffer) {
-			mTargetBuffer->resize(width, height);
-		} else {
-			mTargetBuffer = getFactory<Framebuffer>()->makeFramebuffer(this, width, height, 
-				GL_RGBA8, GL_DEPTH24_STENCIL8, 1);
-		}
-
-		if (mCurrentSettings.mMSAASamples > 1) {
-			if (!mMultisampleTargetBuffer) {
-				mMultisampleTargetBuffer = getFactory<Framebuffer>()->makeFramebuffer(this, width, height, 
-					GL_RGBA8, GL_DEPTH24_STENCIL8, mCurrentSettings.mMSAASamples);
-			}
-			else {
-				mMultisampleTargetBuffer->resize(width, height, mCurrentSettings.mMSAASamples);
-			}
-		} else {
-			if (mMultisampleTargetBuffer) {
-				unload(mMultisampleTargetBuffer);
-				mMultisampleTargetBuffer = nullptr;
-			}
-		}
-
-		GL_ASSERT;
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		GL_ASSERT;
 	}
 
 	RenderSettings ForwardRenderer::readSetingsFromConfig(const nlohmann::json& config) {
@@ -312,10 +341,17 @@ namespace Morpheus {
 			GL_ASSERT;
 		}
 
-		// Copy render target to back buffer
-		renderTarget->blitToBackBuffer(GL_COLOR_BUFFER_BIT | 
-			GL_DEPTH_BUFFER_BIT | 
-			GL_STENCIL_BUFFER_BIT);
+		// Resolve multisample buffer
+		if (mMultisampleTargetBuffer) {
+			renderTarget->blit(mTargetBuffer, GL_COLOR_BUFFER_BIT | 
+				GL_DEPTH_BUFFER_BIT | 
+				GL_STENCIL_BUFFER_BIT);
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		// Blit the target buffer to screen with the post processor
+		blit(mTargetBuffer->getColor(), mPostProcessor, &mPostProcessorBlitView);
 
 		// Just draw GUIs last for now
 		glBindVertexArray(0);
@@ -369,35 +405,11 @@ namespace Morpheus {
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	}
 
-	void ForwardRenderer::init()
-	{
-		// Set VSync on
-		glfwSwapInterval(1); 
-		glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
-
-		makeDebugObjects();
-
-		// Read render settings from config and apply
-		auto& config_ = *config();
-		RenderSettings settings;
-		if (config_.contains("render_settings")) {
-			auto& render_settings_config = config_["render_settings"];
-			settings = readSetingsFromConfig(render_settings_config);
-		}
-		else {
-			nlohmann::json j_object_empty(nlohmann::json::value_t::object);
-			settings = readSetingsFromConfig(j_object_empty);
-		}
-
-		setRenderSettings(settings);
-		resetFramebuffer();
-	}
-
-	void ForwardRenderer::setClearColor(float r, float g, float b) {
+	void ForwardRenderer::setClearColorEx(float r, float g, float b) {
 		glClearColor(r, g, b, 1.0f);
 	}
 
-	void ForwardRenderer::blit(Texture* texture, 
+	void ForwardRenderer::blitEx(Texture* texture, 
 			const glm::vec2& lower,
 			const glm::vec2& upper,
 			Shader* shader,

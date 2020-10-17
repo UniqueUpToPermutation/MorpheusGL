@@ -779,7 +779,7 @@ namespace Morpheus {
 		// The eye position
 		ShaderUniform<glm::vec3> mEyePosition;
 		// The SH coefficients of diffuse irradiance from light probes
-		ShaderUniform<glm::vec3[]> mDiffuseIrradianceSH;
+		ShaderUniform<glm::vec3[]> mEnvironmentDiffuseSH;
 		// The current time
 		ShaderUniform<float> mTime;
 	};
@@ -1025,6 +1025,11 @@ namespace Morpheus {
 		GLSLPreprocessorConfig mConfigOverride;
 	};
 
+	struct ShaderStageSource {
+		ShaderType mStage;
+		std::string mSource;
+	};
+
 	template <>
 	class ContentFactory<Shader> : public IContentFactory, public IGLSLSourceLoader {
 	private:
@@ -1046,6 +1051,11 @@ namespace Morpheus {
 		INodeOwner* load(const std::string& source, Node loadInto) override;
 		INodeOwner* load(const std::string& source, Node loadInto, const GLSLPreprocessorConfig* overrides);
 		INodeOwner* loadEx(const std::string& source, Node loadInto, const void* extParam) override;
+
+		Shader* makeUnmanaged(const std::vector<ShaderStageSource>& sources);
+		Shader* make(INodeOwner* parent, const std::vector<ShaderStageSource>& sources);
+		Shader* makeUnmanaged(const std::vector<ShaderStageSource>& sources, const GLSLPreprocessorConfig* overrides);
+		Shader* make(INodeOwner* parent, const std::vector<ShaderStageSource>& sources, const GLSLPreprocessorConfig* overrides);
 
 		Shader* makeUnmanagedFromGL(GLint shaderProgram);
 		void unload(INodeOwner* ref) override;

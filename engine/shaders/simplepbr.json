@@ -9,8 +9,8 @@
   },
 
   "renderer_uniforms": {
-    "world": "model",
-    "world_inverse_transpose": "modelInverseTranspose",
+    "world": "world",
+    "world_inverse_transpose": "worldInverseTranspose",
     "view": "view",
 	"projection": "projection",
 	"eye_position": "eyePosition"

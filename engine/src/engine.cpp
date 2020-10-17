@@ -168,7 +168,7 @@ namespace Morpheus {
 	void IRenderer::blit(Texture* texture, 
 			const glm::vec2& lower,
 			const glm::vec2& upper) {
-		blit(texture, lower, upper, nullptr, nullptr);
+		blitEx(texture, lower, upper, nullptr, nullptr);
 	}
 
 	void IRenderer::blit(Texture* texture,
@@ -184,11 +184,18 @@ namespace Morpheus {
 		const glm::vec2& position,
 		Shader* shader,
 		BlitShaderView* shaderView) {
-		blit(texture, position, position + glm::vec2(texture->width(), texture->height()), shader, shaderView);
+		blitEx(texture, position, position + glm::vec2(texture->width(), texture->height()), shader, shaderView);
 	}
 
 	void IRenderer::blit(Texture* texture, Shader* shader, BlitShaderView* shaderView) {
-		blit(texture, glm::vec2(0.0, 0.0), glm::vec2(texture->width(), texture->height()), shader, shaderView);
+		blitEx(texture, glm::vec2(0.0, 0.0), glm::vec2(texture->width(), texture->height()), shader, shaderView);
+	}
+
+	void IRenderer::blit(Texture* texture,
+		const glm::vec2& lower,
+		const glm::vec2& upper,
+		Shader* shader, BlitShaderView* shaderView) {
+		blitEx(texture, lower, upper, shader, shaderView);
 	}
 
 	void getFramebufferSize(int* width, int* height) {

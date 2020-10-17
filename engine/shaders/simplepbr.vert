@@ -10,17 +10,17 @@ out vec3 vNormal;
 out vec3 vTanget;
 out vec3 vPosition;
 
-uniform mat4 model;
-uniform mat4 modelInverseTranspose;
+uniform mat4 world;
+uniform mat4 worldInverseTranspose;
 uniform mat4 view; 
 uniform mat4 projection; 
 
 void main()
 {
     vTexcoords = texcoords;
-	vNormal = (modelInverseTranspose * vec4(normal, 0.0)).xyz;
-	vec4 worldPosition = model * vec4(position, 1.0f);
+	vNormal = (worldInverseTranspose * vec4(normal, 0.0)).xyz;
+	vec4 worldPosition = world * vec4(position, 1.0f);
 	vPosition = worldPosition.xyz;
-	vTanget = (modelInverseTranspose * vec4(tangent, 0.0)).xyz;
+	vTanget = (worldInverseTranspose * vec4(tangent, 0.0)).xyz;
     gl_Position = projection * view * worldPosition;
 }
