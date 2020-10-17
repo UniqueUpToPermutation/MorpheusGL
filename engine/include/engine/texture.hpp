@@ -9,7 +9,9 @@ namespace Morpheus {
 		TEXTURE_1D,
 		TEXTURE_1D_ARRAY,
 		TEXTURE_2D,
+		TEXTURE_2D_MULTISAMPLE,
 		TEXTURE_2D_ARRAY,
+		TEXTURE_2D_ARRAY_MULTISAMPLE,
 		CUBE_MAP,
 		TEXTURE_3D,
 		CUBE_MAP_ARRAY
@@ -19,10 +21,11 @@ namespace Morpheus {
 	private:
 		GLuint mId;
 		TextureType mType;
-		uint32_t mWidth;
-		uint32_t mHeight;
-		uint32_t mDepth;
-		uint32_t mLevels;
+		uint mWidth;
+		uint mHeight;
+		uint mDepth;
+		uint mLevels;
+		uint mSamples;
 		GLenum mFormat;
 		GLenum mGLTarget;
 
@@ -31,7 +34,7 @@ namespace Morpheus {
 
 	public:
 		inline Texture() : INodeOwner(NodeType::TEXTURE), 
-			mId(0), mWidth(0), mHeight(0), mDepth(0), mLevels(0) {
+			mId(0), mWidth(0), mHeight(0), mDepth(0), mLevels(0), mSamples(1) {
 		}
 
 		Texture* toTexture() override;
@@ -39,14 +42,16 @@ namespace Morpheus {
 		inline GLuint id() const 				{ return mId; }
 		inline TextureType textureType() const 	{ return mType; }
 		inline GLenum target() const 			{ return mGLTarget; }
-		inline uint32_t width() const 			{ return mWidth; }
-		inline uint32_t height() const 			{ return mHeight; }
-		inline uint32_t levels() const 			{ return mLevels; }
-		inline uint32_t depth() const 			{ return mDepth; }
+		inline uint width() const 				{ return mWidth; }
+		inline uint height() const 				{ return mHeight; }
+		inline uint levels() const 				{ return mLevels; }
+		inline uint depth() const 				{ return mDepth; }
+		inline uint samples() const 			{ return mSamples; }
 		inline GLenum format() const 			{ return mFormat; }
 
 		// Resize the texture. Note that this will destroy everything in the texture.
-		void resize(uint32_t width, uint32_t height = 1, uint32_t depth = 1);
+		void resize(uint width, uint height = 1, uint depth = 1, 
+			int miplevels = -1, int samples = -1);
 
 		inline void bind(GLuint unit) const {
 			glActiveTexture(GL_TEXTURE0 + unit);
@@ -118,18 +123,20 @@ namespace Morpheus {
 		Texture* loadTextureUnmanaged(const std::string& source, 
 			GLenum internalFormat);
 
-		Texture* makeTexture2DUnmanaged(const uint32_t width, const uint32_t height, 
+		Texture* makeTexture2DUnmanaged(const uint width, const uint height, 
 			const GLenum format, const int miplevels = -1);
-		Texture* makeTexture2DUnparented(const uint32_t width, 
-			const uint32_t height, const GLenum format, const int miplevels = -1);
-		Texture* makeTexture2D(INodeOwner* parent, const uint32_t width, 
-			const uint32_t height, const GLenum format, const int miplevels = -1);
-		Texture* makeCubemapUnmanaged(const uint32_t width, const uint32_t height, 
+		Texture* makeTexture2D(INodeOwner* parent, const uint width, 
+			const uint height, const GLenum format, const int miplevels = -1);
+		Texture* makeCubemapUnmanaged(const uint width, const uint height, 
 			const GLenum format, const int miplevels = -1);
-		Texture* makeCubemapUnparented(const uint32_t width, 
-			const uint32_t height, const GLenum format, const int miplevels = -1);
-		Texture* makeCubemap(INodeOwner* parent, const uint32_t width, 
-			const uint32_t height, const GLenum format, const int miplevels = -1);
+		Texture* makeCubemap(INodeOwner* parent, const uint width, 
+			const uint height, const GLenum format, const int miplevels = -1);
+
+		Texture* makeTexture2DMultisampleUnmanaged(const uint width, const uint height,
+			const GLenum format, const uint samples);
+		Texture* makeTexture2DMultisample(INodeOwner* parent, 
+			const uint width, const uint height,
+			const GLenum format, const uint samples);
 	
 		std::string getContentTypeString() const override;
 	};

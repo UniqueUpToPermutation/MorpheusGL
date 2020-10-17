@@ -48,6 +48,9 @@ namespace Morpheus {
 		std::stack<bool> mIsStaticStack;
 		std::stack<Transform*> mTransformStack;
 		std::stack<Material*> mMaterialStack;
+		RenderSettings mCurrentSettings;
+
+		f_framebuffer_size_capture_t mOnFramebufferResize;
 
 		// Debug texture blitting
 		Shader* mTextureBlitShader;
@@ -55,21 +58,38 @@ namespace Morpheus {
 		Sampler* mDebugBlitSampler;
 		BlitShaderView mTextureBlitShaderView;
 
+		Sampler* mTextureSampler;
+		Sampler* mCubemapSampler;
+
+		// Framebuffer
+		Framebuffer* mMultisampleTargetBuffer;
+		Framebuffer* mTargetBuffer;
+
 		void collectRecursive(INodeOwner* current, ForwardRenderCollectParams& params);
 		void collect(INodeOwner* start, ForwardRenderCollectParams& params);
 		void draw(ForwardRenderQueue* queue, const ForwardRenderDrawParams& params);
 		void makeDebugObjects();
+		void resetFramebuffer();
+		RenderSettings readSetingsFromConfig(const nlohmann::json& config);
 
 	public:
+		ForwardRenderer();
+		~ForwardRenderer();
+
+		void setRenderSettings(const RenderSettings& settings) override;
+		RenderSettings getRenderSettings() const override;
+
 		RendererType getRendererType() const override;
 		void init() override;
 		void postGlfwRequests() override;
 		void draw(INodeOwner* scene) override;
 		void setClearColor(float r, float g, float b) override;
 
-		void debugBlit(Texture* texture, 
+		void blit(Texture* texture,
 			const glm::vec2& lower,
-			const glm::vec2& upper) override;
+			const glm::vec2& upper,
+			Shader* shader,
+			BlitShaderView* shaderView) override;
 
 		friend class Engine;
 	};

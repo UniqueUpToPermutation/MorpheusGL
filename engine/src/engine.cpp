@@ -54,19 +54,17 @@ namespace Morpheus {
 		// Load config
 		ifstream f(configPath);
 		if (!f.is_open()) {
-			Error err(ErrorCode::FAIL_LOAD_CONFIG);
-			err.mMessage = "Failed to load configuration file!";
-			err.mSource = "Engine::startup";
-			cout << err.str() << endl;
-			return err;
+			cout << "Failed to load configuration file!";
+			mConfig = nlohmann::json();
 		}
-		f >> mConfig;
-		f.close();
+		else {
+			f >> mConfig;
+			f.close();
+		}
 
 		// Create renderer
-		auto renderer = new ForwardRenderer();
-		mGraph.createNode(renderer, this);
-		mRenderer = renderer;
+		mRenderer = new ForwardRenderer();
+		createNode(mRenderer, this);
 
 		// Renderer may request framebuffer features from GLFW
 		mRenderer->postGlfwRequests();
@@ -76,9 +74,9 @@ namespace Morpheus {
 		std::string title = "Morpheus";
 		if (mConfig.contains("window")) {
 			auto& windowConfig = mConfig["window"];
-			if (windowConfig.contains("width")) windowConfig["width"].get_to(width);
-			if (windowConfig.contains("height")) windowConfig["height"].get_to(height);
-			if (windowConfig.contains("title")) windowConfig["title"].get_to(title);
+			width = windowConfig.value("width", 800);
+			height = windowConfig.value("height", 600);
+			title = windowConfig.value("title", "Morpheus Engine");
 		}
 
 		mWindow = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
@@ -99,11 +97,11 @@ namespace Morpheus {
 
 		// Create content manager with handle
 		mContent = new ContentManager();
-		mGraph.createNode(mContent, this);
+		createNode(mContent, this);
 		
 		// Add updater to the graph
 		mUpdater = new Updater();
-		mGraph.createNode(mUpdater, this);
+		createNode(mUpdater, this);
 
 		// Set appropriate window callbacks
 		mInput.glfwRegister();
@@ -167,13 +165,30 @@ namespace Morpheus {
 		bValid = false;
 	}
 
-	void IRenderer::debugBlit(Texture* texture,
-		const glm::vec2& position) {
-		debugBlit(texture, position, position + glm::vec2(texture->width(), texture->height()));
+	void IRenderer::blit(Texture* texture, 
+			const glm::vec2& lower,
+			const glm::vec2& upper) {
+		blit(texture, lower, upper, nullptr, nullptr);
 	}
 
-	void IRenderer::debugBlit(Texture* texture) {
-		debugBlit(texture, glm::vec2(0.0, 0.0), glm::vec2(texture->width(), texture->height()));
+	void IRenderer::blit(Texture* texture,
+		const glm::vec2& position) {
+		blit(texture, position, position + glm::vec2(texture->width(), texture->height()));
+	}
+
+	void IRenderer::blit(Texture* texture) {
+		blit(texture, glm::vec2(0.0, 0.0), glm::vec2(texture->width(), texture->height()));
+	}
+
+	void IRenderer::blit(Texture* texture,
+		const glm::vec2& position,
+		Shader* shader,
+		BlitShaderView* shaderView) {
+		blit(texture, position, position + glm::vec2(texture->width(), texture->height()), shader, shaderView);
+	}
+
+	void IRenderer::blit(Texture* texture, Shader* shader, BlitShaderView* shaderView) {
+		blit(texture, glm::vec2(0.0, 0.0), glm::vec2(texture->width(), texture->height()), shader, shaderView);
 	}
 
 	void getFramebufferSize(int* width, int* height) {

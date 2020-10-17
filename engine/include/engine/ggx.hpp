@@ -38,6 +38,18 @@ namespace Morpheus {
 
 		Texture* submitUnmanaged(const GGXComputeJob& job);
 
+		inline Texture* addJob(const GGXComputeJob& job, INodeOwner* parent) {
+			Texture* tex = addJobUnmanaged(job);
+			createContentNode(tex, parent);
+			return tex;
+		}
+
+		inline Texture* submit(const GGXComputeJob& job, INodeOwner* parent) {
+			Texture* tex = submitUnmanaged(job);
+			createContentNode(tex, parent);
+			return tex;
+		}
+
 		void barrier();
 
 		void init() override;

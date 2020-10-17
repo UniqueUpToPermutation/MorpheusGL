@@ -12,6 +12,53 @@ namespace Morpheus {
 		glBindFramebuffer(GL_FRAMEBUFFER, mId);
 	}
 
+	void Framebuffer::resize(uint width, uint height, int samples) {
+		for (auto tex : mColorAttachments)
+			tex->resize(width, height, 1, -1, samples);
+
+		if (mDepthAttachment)
+			mDepthAttachment->resize(width, height, 1, -1, samples);
+
+		if (mStencilAttachment)
+			mStencilAttachment->resize(width, height, 1, -1, samples);
+
+		if (mDepthStencilAttachment)
+			mDepthStencilAttachment->resize(width, height, 1, -1, samples);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, mId);
+		uint i = 0;
+		for (auto tex : mColorAttachments) {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, 
+				tex->target(), tex->id(), 0);
+			++i;
+		}
+
+		if (mDepthStencilAttachment) {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 
+				mDepthStencilAttachment->target(), mDepthStencilAttachment->id(), 0);
+		}
+
+		if (mDepthAttachment) {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, 
+				mDepthAttachment->target(), mDepthAttachment->id(), 0);
+		}
+
+		if (mStencilAttachment) {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, 
+				mStencilAttachment->target(), mStencilAttachment->id(), 0);
+		}
+
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			throw std::runtime_error("Failed to create framebuffer!");
+		}
+
+		mWidth = width;
+		mHeight = height;
+
+		if (samples > 0)
+			mSamples = samples;
+	}
+
 	void Framebuffer::blit(Framebuffer* target, GLbitfield copyComponents) {
 		uint copy_width = std::min(target->width(), width());
 		uint copy_height = std::min(target->height(), height());
@@ -59,11 +106,11 @@ namespace Morpheus {
 
 		for (auto it = colorComponentFormats, end = &colorComponentFormats[colorComponentCount];
 			it < end; ++it) {
-			colorTextures.emplace_back(textureFactory->makeTexture2DUnmanaged(width, height, *it, 1));
+			colorTextures.emplace_back(textureFactory->makeTexture2DMultisampleUnmanaged(width, height, *it, samples));
 		}
 
 		if (depthStencilFormat != 0) {
-			depthStencilTexture = textureFactory->makeTexture2DUnmanaged(width, height, depthStencilFormat, 1);
+			depthStencilTexture = textureFactory->makeTexture2DMultisampleUnmanaged(width, height, depthStencilFormat, samples);
 		}
 
 		GLuint framebufferId;
@@ -125,15 +172,18 @@ namespace Morpheus {
 
 		for (auto it = colorComponentFormats, end = &colorComponentFormats[colorComponentCount];
 			it < end; ++it) {
-			colorTextures.emplace_back(textureFactory->makeTexture2DUnmanaged(width, height, *it, 1));
+			colorTextures.emplace_back(textureFactory->makeTexture2DMultisampleUnmanaged(
+				width, height, *it, samples));
 		}
 
 		if (depthFormat != 0) {
-			depthTexture = textureFactory->makeTexture2DUnmanaged(width, height, depthFormat, 1);
+			depthTexture = textureFactory->makeTexture2DMultisampleUnmanaged(
+				width, height, depthFormat, samples);
 		}
 
 		if (stencilFormat != 0) {
-			stencilTexture = textureFactory->makeTexture2DUnmanaged(width, height, stencilFormat, 1);
+			stencilTexture = textureFactory->makeTexture2DMultisampleUnmanaged(
+				width, height, stencilFormat, samples);
 		}
 
 		GLuint framebufferId;

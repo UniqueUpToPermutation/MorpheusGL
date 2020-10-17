@@ -180,10 +180,21 @@ namespace Morpheus {
 		globalGraph()->createNode(owner, parentName);
 	}
 
+	class BlitShaderView;
+
+	struct RenderSettings {
+		uint mMSAASamples;
+		uint mAnisotropySamples;
+	};
+
 	class IRenderer : public INodeOwner {
 	public:
 		inline IRenderer() : INodeOwner(NodeType::RENDERER) {
 		}
+
+		// Set the settings of the renderer
+		virtual void setRenderSettings(const RenderSettings& settings) = 0;
+		virtual RenderSettings getRenderSettings() const = 0;
 
 		// Posts all necessary requests to glfw when creating a context
 		virtual void postGlfwRequests() = 0;
@@ -194,17 +205,32 @@ namespace Morpheus {
 		// Set the clear color of this renderer
 		virtual void setClearColor(float r, float g, float b) = 0;
 
+		// Same as other blit function except you can override the shader used
+		virtual void blit(Texture* texture,
+			const glm::vec2& lower,
+			const glm::vec2& upper,
+			Shader* shader, BlitShaderView* shaderView) = 0;
+		
 		// Perform a blit of a texture to screen for debugging purposes
 		// lower: the lower bounds of the blit rectangle (in pixels)
 		// upper: the upper bounds of the blit rectangle (in pixels)
-		virtual void debugBlit(Texture* texture, 
+		void blit(Texture* texture, 
 			const glm::vec2& lower,
-			const glm::vec2& upper) = 0;
+			const glm::vec2& upper);
 
-		void debugBlit(Texture* texture,
+		void blit(Texture* texture,
 			const glm::vec2& position);
 		
-		void debugBlit(Texture* texture);
+		void blit(Texture* texture);
+
+		void blit(Texture* texture,
+			const glm::vec2& position, 
+			Shader* shader,
+			BlitShaderView* shaderView);
+
+		void blit(Texture* texture,
+			Shader* shader, 
+			BlitShaderView* shaderView);
 
 		// Set the clear color of this renderer
 		void setClearColor(const glm::vec3& color) {

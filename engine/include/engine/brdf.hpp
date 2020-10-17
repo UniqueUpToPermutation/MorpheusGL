@@ -18,8 +18,15 @@ namespace Morpheus {
 	public:
 		CookTorranceLUTComputeKernel(uint computeGroupSize = DEFAULT_CT_LUT_GROUP_SIZE);
 
-		Texture* submit(uint roughnessPixels = DEFAULT_CT_LUT_PIXELS, 
+		Texture* submitUnmanaged(uint roughnessPixels = DEFAULT_CT_LUT_PIXELS, 
 			uint NoVPixels = DEFAULT_CT_LUT_PIXELS);
+
+		inline Texture* submit(INodeOwner* parent, uint roughnessPixels = DEFAULT_CT_LUT_PIXELS, 
+			uint NoVPixels = DEFAULT_CT_LUT_PIXELS) {
+			Texture* tex = submitUnmanaged(roughnessPixels, NoVPixels);
+			createContentNode(tex, parent);
+			return tex;
+		}
 
 		void barrier();
 

@@ -62,6 +62,8 @@ namespace Morpheus {
 			return mHeight;
 		}
 
+		void resize(uint width, uint height, int samples = -1);
+
 		void bind();
 		void blit(Framebuffer* target, GLbitfield copyComponents);
 		void blitToBackBuffer(GLbitfield copyComponents);
@@ -74,6 +76,7 @@ namespace Morpheus {
 
 	template <>
 	class ContentFactory<Framebuffer> : public IContentFactory {
+	public:
 		INodeOwner* load(const std::string& source, Node loadInto) override;
 		INodeOwner* loadEx(const std::string& source, Node loadInto, const void* extParams) override;
 

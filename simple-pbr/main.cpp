@@ -168,11 +168,10 @@ int main() {
 		// Submit a compute job to the ggx kernel
 		GGXComputeJob ggxJob;
 		ggxJob.mInputImage = tex;
-		auto specularResult = ggxKernel->submitUnmanaged(ggxJob);
+		auto specularResult = ggxKernel->submit(ggxJob, scene);
 
 		// Create a lookup texture with the BRDF kernel
-		Texture* brdf = lutKernel->submit();
-		createContentNode(brdf, scene);
+		Texture* brdf = lutKernel->submit(scene);
 
 		lambertKernel->barrier();
 		ggxKernel->barrier();

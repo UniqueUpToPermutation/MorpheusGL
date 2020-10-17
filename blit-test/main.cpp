@@ -34,7 +34,7 @@ int main() {
 			int height;
 			glfwGetFramebufferSize(en.window(), &width, &height);
 
-            en.renderer()->debugBlit(texture, 
+            en.renderer()->blit(texture, 
                 glm::vec2(0.0, 0.0), 
                 glm::vec2(width, height));
             en.present();

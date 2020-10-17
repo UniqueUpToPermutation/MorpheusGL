@@ -10,5 +10,9 @@
   },
   "renderer": {
     "type": "default"
+  },
+  "render_settings": {
+	"msaa_samples": 4,
+	"anisotropy_samples": 16
   }
 }

@@ -807,13 +807,13 @@ namespace Morpheus {
 			return tex;
 		}
 
-		Texture* toTexture(const GLenum format,
+		Texture* toTexture(INodeOwner* parent, const GLenum format,
 			ContentFactory<Texture>* factory) {
 			assert(mStorageMode == StorageMode::READ);
 			checkValidFormat<OutputType>(format);
 			Texture* tex;
 			GL_ASSERT;
-			tex = factory->makeCubemapUnparented(width(), height(), format);
+			tex = factory->makeCubemap(parent, width(), height(), format);
 			GL_ASSERT;
 			writeToTexture(tex);
 			return tex;

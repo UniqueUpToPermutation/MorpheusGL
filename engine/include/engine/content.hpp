@@ -41,6 +41,9 @@ namespace Morpheus {
 	template <>
 	struct ContentExtParams<Framebuffer>;
 
+	template <>
+	struct ContentExtParams<Sampler>;
+
 	// An interface that all content factories must inherit from.
 	// Defines the interface for loading and unloading assets.
 	class IContentFactory {
@@ -58,6 +61,12 @@ namespace Morpheus {
 
 	template <typename ContentType>
 	class ContentFactory;
+
+	template <typename ContentType> 
+	ContentFactory<ContentType>* getFactory();
+
+	template <>
+	ContentFactory<Texture>* getFactory<Texture>();
 
 	// Manages all loaded assets for the engine. Assets are loaded and unloaded from content
 	// factories. All loaded assets are placed into the scene graph, and typically have the
@@ -82,6 +91,38 @@ namespace Morpheus {
 		ContentFactory<StaticMesh>* mStaticMeshFactory;
 
 	public:
+		inline ContentFactory<Texture>* getTextureFactory() {
+			return mTextureFactory;
+		}
+
+		inline ContentFactory<Shader>* getShaderFactory() {
+			return mShaderFactory;
+		}
+
+		inline ContentFactory<Sampler>* getSamplerFactory() {
+			return mSamplerFactory;
+		}
+
+		inline ContentFactory<Material>* getMaterialFactory() {
+			return mMaterialFactory;
+		}
+
+		inline ContentFactory<Framebuffer>* getFramebufferFactory() {
+			return mFramebufferFactory;
+		}
+
+		inline ContentFactory<Geometry>* getGeometryFactory() {
+			return mGeometryFactory;
+		}
+
+		inline ContentFactory<HalfEdgeGeometry>* getHalfEdgeGeometryFactory() {
+			return mHalfEdgeGeometryFactory;
+		}
+
+		inline ContentFactory<StaticMesh>* getStaticMeshFactory() {
+			return mStaticMeshFactory;
+		}
+
 		void init() override;
 	
 		ContentManager();
@@ -225,7 +266,7 @@ namespace Morpheus {
 			bool bAlreadyExists = mSources.tryFind(source_mod, &contentNode);
 			
 			if (bAlreadyExists && !bOverrideExistingSource) {
-				content = graph()->owner(contentNode);
+				content = graph_->owner(contentNode);
 
 				if (parent)
 					parent->addChild(content);
@@ -310,6 +351,46 @@ namespace Morpheus {
 	template <typename ContentType> 
 	inline ContentFactory<ContentType>* getFactory() {
 		return content()->getFactory<ContentType>();
+	}
+
+	template <>
+	inline ContentFactory<Texture>* getFactory<Texture>() {
+		return content()->getTextureFactory();
+	}
+
+	template <>
+	inline ContentFactory<Sampler>* getFactory<Sampler>() {
+		return content()->getSamplerFactory();
+	}
+
+	template <>
+	inline ContentFactory<Shader>* getFactory<Shader>() {
+		return content()->getShaderFactory();
+	}
+
+	template <>
+	inline ContentFactory<Material>* getFactory<Material>() {
+		return content()->getMaterialFactory();
+	}
+
+	template <>
+	inline ContentFactory<Framebuffer>* getFactory<Framebuffer>() {
+		return content()->getFramebufferFactory();
+	}
+
+	template <>
+	inline ContentFactory<Geometry>* getFactory<Geometry>() {
+		return content()->getGeometryFactory();
+	}
+
+	template <>
+	inline ContentFactory<HalfEdgeGeometry>* getFactory<HalfEdgeGeometry>() {
+		return content()->getHalfEdgeGeometryFactory();
+	}
+
+	template <>
+	inline ContentFactory<StaticMesh>* getFactory<StaticMesh>() {
+		return content()->getStaticMeshFactory();
 	}
 
 	// Loads an asset

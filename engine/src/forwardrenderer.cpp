@@ -5,6 +5,8 @@
 #include <engine/scene.hpp>
 #include <engine/staticmesh.hpp>
 #include <engine/blit.hpp>
+#include <engine/sampler.hpp>
+#include <engine/framebuffer.hpp>
 
 #include <stack>
 #include <iostream>
@@ -133,11 +135,109 @@ namespace Morpheus {
 		mTextureBlitShader = makeBlitShader(this, &mTextureBlitShaderView);
 	}
 
+	void ForwardRenderer::resetFramebuffer() {
+		int width, height;
+		getFramebufferSize(&width, &height);
+
+		if (mTargetBuffer) {
+			mTargetBuffer->resize(width, height);
+		} else {
+			mTargetBuffer = getFactory<Framebuffer>()->makeFramebuffer(this, width, height, 
+				GL_RGBA8, GL_DEPTH24_STENCIL8, 1);
+		}
+
+		if (mCurrentSettings.mMSAASamples > 1) {
+			if (!mMultisampleTargetBuffer) {
+				mMultisampleTargetBuffer = getFactory<Framebuffer>()->makeFramebuffer(this, width, height, 
+					GL_RGBA8, GL_DEPTH24_STENCIL8, mCurrentSettings.mMSAASamples);
+			}
+			else {
+				mMultisampleTargetBuffer->resize(width, height, mCurrentSettings.mMSAASamples);
+			}
+		} else {
+			if (mMultisampleTargetBuffer) {
+				unload(mMultisampleTargetBuffer);
+				mMultisampleTargetBuffer = nullptr;
+			}
+		}
+
+		GL_ASSERT;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		GL_ASSERT;
+	}
+
+	RenderSettings ForwardRenderer::readSetingsFromConfig(const nlohmann::json& config) {
+		RenderSettings result;
+		result.mAnisotropySamples = config.value("anisotropy_samples", 1);
+		result.mMSAASamples = config.value("msaa_samples", 1);
+		return result;
+	}
+
+	ForwardRenderer::ForwardRenderer() : 
+		mCubemapSampler(nullptr), 
+		mTextureSampler(nullptr),
+		mDebugBlitSampler(nullptr),
+		mBlitGeometry(nullptr),
+		mTextureBlitShader(nullptr),
+		mMultisampleTargetBuffer(nullptr),
+		mTargetBuffer(nullptr) {
+
+		mOnFramebufferResize = [this](GLFWwindow* window, int width, int height) {
+			this->resetFramebuffer();
+			
+			return false;
+		};
+
+		input()->registerTarget(this, InputPriority::ELEVATED);
+		input()->bindFramebufferSizeEvent(this, &mOnFramebufferResize);
+	}
+
+	ForwardRenderer::~ForwardRenderer() {
+		input()->unbindFramebufferSizeEvent(this);
+		input()->unregisterTarget(this);
+	}
+
+	void ForwardRenderer::setRenderSettings(const RenderSettings& settings) {
+		// Create or update cubemap sampler with render settings
+		if (!mCubemapSampler) {
+			ContentExtParams<Sampler> samplerParams = makeSamplerParams(SamplerPrototype::TRILINEAR_CLAMP);
+			samplerParams.mAnisotropy = settings.mAnisotropySamples;
+			mCubemapSampler = loadEx<Sampler>(RENDERER_CUBEMAP_SAMPLER_SRC, samplerParams);
+		} else {
+			mCubemapSampler->setAnisotropy(settings.mAnisotropySamples);
+		}
+
+		// Create or update texture sampler with render settings
+		if (!mTextureSampler) {
+			ContentExtParams<Sampler> samplerParams = makeSamplerParams(SamplerPrototype::TRILINEAR_TILE);
+			samplerParams.mAnisotropy = settings.mAnisotropySamples;
+			mTextureSampler = loadEx<Sampler>(RENDERER_TEXTURE_SAMPLER_SRC, samplerParams);
+		} else {
+			mTextureSampler->setAnisotropy(settings.mAnisotropySamples);
+		}
+
+		mCurrentSettings = settings;
+	}
+
+	RenderSettings ForwardRenderer::getRenderSettings() const {
+		return mCurrentSettings;
+	}
+
 	void ForwardRenderer::draw(ForwardRenderQueue* queue, const ForwardRenderDrawParams& params)
 	{
 		int width;
 		int height;
 		glfwGetFramebufferSize(window(), &width, &height);
+
+		GL_ASSERT;
+
+		Framebuffer* renderTarget = mTargetBuffer;
+		if (mMultisampleTargetBuffer)
+			renderTarget = mMultisampleTargetBuffer;
+		renderTarget->bind();
+		GL_ASSERT;
 
 		glViewport(0, 0, width, height);
 		if (params.mSkybox)
@@ -212,6 +312,11 @@ namespace Morpheus {
 			GL_ASSERT;
 		}
 
+		// Copy render target to back buffer
+		renderTarget->blitToBackBuffer(GL_COLOR_BUFFER_BIT | 
+			GL_DEPTH_BUFFER_BIT | 
+			GL_STENCIL_BUFFER_BIT);
+
 		// Just draw GUIs last for now
 		glBindVertexArray(0);
 		glUseProgram(0);
@@ -239,12 +344,15 @@ namespace Morpheus {
 	}
 
 	void ForwardRenderer::postGlfwRequests() {
-		auto& glConfig = (*config())["opengl"];
+		auto& config_ = *config();
+		nlohmann::json glConfig;
+		if (config_.contains("opengl"))
+			glConfig = config_["opengl"];
+		else
+			glConfig = nlohmann::json::value_t::object;
 
-		uint32_t majorVersion = DEFAULT_VERSION_MAJOR;
-		uint32_t minorVersion = DEFAULT_VERSION_MINOR;
-		glConfig["v_major"].get_to(majorVersion);
-		glConfig["v_minor"].get_to(minorVersion);
+		uint32_t majorVersion = glConfig.value("v_major", DEFAULT_VERSION_MAJOR);
+		uint32_t minorVersion = glConfig.value("v_minor", DEFAULT_VERSION_MINOR);
 
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, majorVersion);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minorVersion);
@@ -268,15 +376,32 @@ namespace Morpheus {
 		glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
 
 		makeDebugObjects();
+
+		// Read render settings from config and apply
+		auto& config_ = *config();
+		RenderSettings settings;
+		if (config_.contains("render_settings")) {
+			auto& render_settings_config = config_["render_settings"];
+			settings = readSetingsFromConfig(render_settings_config);
+		}
+		else {
+			nlohmann::json j_object_empty(nlohmann::json::value_t::object);
+			settings = readSetingsFromConfig(j_object_empty);
+		}
+
+		setRenderSettings(settings);
+		resetFramebuffer();
 	}
 
 	void ForwardRenderer::setClearColor(float r, float g, float b) {
 		glClearColor(r, g, b, 1.0f);
 	}
 
-	void ForwardRenderer::debugBlit(Texture* texture, 
+	void ForwardRenderer::blit(Texture* texture, 
 			const glm::vec2& lower,
-			const glm::vec2& upper) {
+			const glm::vec2& upper,
+			Shader* shader,
+			BlitShaderView* shaderView) {
 		glDisable(GL_DEPTH_TEST);
 
 		int width;
@@ -295,10 +420,15 @@ namespace Morpheus {
 		lower_normalized.y *= -1.0;
 		upper_normalized.y *= -1.0;
 
-		glUseProgram(mTextureBlitShader->id());
-		mTextureBlitShaderView.mLower.set(lower_normalized);
-		mTextureBlitShaderView.mUpper.set(upper_normalized);
-		mTextureBlitShaderView.mBlitTexture.set(texture, mDebugBlitSampler);
+		if (!shader) {
+			shader = mTextureBlitShader;
+			shaderView = &mTextureBlitShaderView;
+		}
+
+		shader->bind();
+		shaderView->mLower.set(lower_normalized);
+		shaderView->mUpper.set(upper_normalized);
+		shaderView->mBlitTexture.set(texture, mDebugBlitSampler);
 
 		glBindVertexArray(mBlitGeometry->vertexArray());
 		glBindBuffer(GL_ARRAY_BUFFER, mBlitGeometry->vertexBuffer());

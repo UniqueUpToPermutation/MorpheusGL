@@ -36,6 +36,18 @@ namespace Morpheus {
 		// This function submits a single job to the GPU
 		Texture* submitUnmananged(const HDRIToCubeComputeJob& job);
 
+		inline Texture* addJob(const HDRIToCubeComputeJob& job, INodeOwner* parent) {
+			Texture* tex = addJobUnmananged(job);
+			createContentNode(tex, parent);
+			return tex;
+		}
+
+		inline Texture* submit(const HDRIToCubeComputeJob& job, INodeOwner* parent) {
+			Texture* tex = submitUnmananged(job);
+			createContentNode(tex, parent);
+			return tex;
+		}
+
 		// Use this before attempting to access results of jobs
 		void barrier();
 	};

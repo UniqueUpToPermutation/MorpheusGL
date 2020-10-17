@@ -13,10 +13,35 @@
 #define BILINEAR_TILE_SAMPLER_SRC "BILINEAR_TILE_SAMPLER"
 #define TRILINEAR_HDRI_SAMPLER_SRC "TRILINEAR_HDRI_SAMPLER"
 
-#define MATERIAL_TEXTURE_2D_DEFAULT_SAMPLER_SRC TRILINEAR_TILE_SAMPLER_SRC
-#define MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC TRILINEAR_CLAMP_SAMPLER_SRC
+#define RENDERER_TEXTURE_SAMPLER_SRC "RENDERER_TEXTURE_SAMPLER"
+#define RENDERER_CUBEMAP_SAMPLER_SRC "RENDERER_CUBEMAP_SAMPLER"
+
+#define MATERIAL_TEXTURE_2D_DEFAULT_SAMPLER_SRC RENDERER_TEXTURE_SAMPLER_SRC
+#define MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC RENDERER_CUBEMAP_SAMPLER_SRC
 
 namespace Morpheus {
+
+	enum class MinFilter : GLint {
+		NEAREST = GL_NEAREST,
+		LINEAR = GL_LINEAR,
+		NEAREST_MIPMAP_NEAREST = GL_NEAREST_MIPMAP_NEAREST,
+		LINEAR_MIPMAP_NEAREST = GL_LINEAR_MIPMAP_NEAREST,
+		NEAREST_MIPMAP_LINEAR = GL_NEAREST_MIPMAP_LINEAR,
+		LINEAR_MIPMAP_LINEAR = GL_LINEAR_MIPMAP_LINEAR
+	};
+
+	enum class MagFilter : GLint {
+		NEAREST = GL_NEAREST,
+		LINEAR = GL_LINEAR
+	};
+
+	enum class TextureWrap : GLint {
+		CLAMP_TO_EDGE = GL_CLAMP_TO_EDGE,
+		CLAMP_TO_BORDER = GL_CLAMP_TO_BORDER,
+		MIRRORED_REPEAT = GL_MIRRORED_REPEAT,
+		REPEAT = GL_REPEAT
+	};
+
 	class Sampler : public INodeOwner {
 	private:
 		GLenum mId;
@@ -28,6 +53,13 @@ namespace Morpheus {
 
 		inline GLuint id() const { return mId; }
 
+		void setMinFilter(MinFilter filter);
+		void setMagFilter(MagFilter filter);
+		void setWrapS(TextureWrap wrap);
+		void setWrapT(TextureWrap wrap);
+		void setWrapR(TextureWrap wrap);
+		void setAnisotropy(float value);
+
 		inline void bind(GLuint unit) const {
 			glBindSampler(unit, mId);
 		}
@@ -36,12 +68,14 @@ namespace Morpheus {
 	};
 	SET_NODE_ENUM(Sampler, SAMPLER);
 
-	struct SamplerParameters {
-		GLint mMinFilter;
-		GLint mMagFilter;
-		GLint mWrapS;
-		GLint mWrapT;
-		GLint mWrapR;
+	template <>
+	struct ContentExtParams<Sampler> {
+		MinFilter mMinFilter;
+		MagFilter mMagFilter;
+		TextureWrap mWrapS;
+		TextureWrap mWrapT;
+		TextureWrap mWrapR;
+		float mAnisotropy;
 	};
 
 	enum class SamplerPrototype {
@@ -54,12 +88,12 @@ namespace Morpheus {
 		TRILINEAR_HDRI_SAMPLER
 	};
 
-	SamplerParameters makeSamplerParams(SamplerPrototype prototype);
+	ContentExtParams<Sampler> makeSamplerParams(SamplerPrototype prototype);
 
 	template <>
 	class ContentFactory<Sampler> : public IContentFactory {
 	private:
-		Sampler* makeInternal(const SamplerParameters& params);
+		Sampler* makeInternal(const ContentExtParams<Sampler>& params);
 		std::unordered_map<std::string, SamplerPrototype> mStringToPrototypeMap;
 
 	public:
@@ -67,9 +101,13 @@ namespace Morpheus {
 		~ContentFactory();
 
 		INodeOwner* load(const std::string& source, Node loadInto) override;
+
+		// Creates a sampler with the desired properties
+		INodeOwner* loadEx(const std::string& source, Node loadInto, const void* extParams) override;
+
 		void unload(INodeOwner* ref) override;
 
-		Sampler* makeUnmanaged(const SamplerParameters& params);
+		Sampler* makeUnmanaged(const ContentExtParams<Sampler>& params);
 		Sampler* makeUnmanaged(const SamplerPrototype prototype);
 	
 		std::string getContentTypeString() const override;

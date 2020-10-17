@@ -29,6 +29,10 @@ namespace Morpheus {
 		return 1 + std::floor(std::log2(std::max(width, height)));
 	}
 
+	uint mipCount(const uint width, const uint height, const uint depth) {
+		return 1 + std::floor(std::log2(std::max(width, std::max(height, depth))));
+	}
+
 	Texture* Texture::toTexture() {
 		return this;
 	}
@@ -502,15 +506,44 @@ namespace Morpheus {
 			break;
 		}	
 	}
+	
+	void Texture::resize(uint width, uint height, uint depth, int miplevels, int samples) {
 
-	void Texture::resize(uint32_t width, uint32_t height, uint32_t depth) {
 		mWidth = width;
 		mHeight = height;
 		mDepth = depth;
-		uint32_t numLevels = 1 + std::floor(std::log2(std::max(width, height)));
-		mLevels = numLevels;
 
-		glDeleteTextures(1, &mId);
+		if (samples > 0)
+			mSamples = samples;
+
+		if (miplevels < 0) {
+			if (mGLTarget == GL_TEXTURE_2D_MULTISAMPLE || mGLTarget == GL_TEXTURE_2D_MULTISAMPLE_ARRAY)
+				mLevels = mipCount(width, height, depth);
+			else
+				mLevels = 1;
+		} else {
+			mLevels = miplevels;
+		}
+
+		if (mId)
+			glDeleteTextures(1, &mId);
+
+		if (mGLTarget == GL_TEXTURE_2D && samples > 1) {
+			mGLTarget = GL_TEXTURE_2D_MULTISAMPLE;
+			mLevels = 1;
+		}
+		if (mGLTarget == GL_TEXTURE_2D_MULTISAMPLE && samples == 1) {
+			mGLTarget = GL_TEXTURE_2D;
+		}
+
+		if (mGLTarget == GL_TEXTURE_2D_ARRAY && samples > 1) {
+			mGLTarget = GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
+			mLevels = 1;
+		}
+		if (mGLTarget == GL_TEXTURE_2D_MULTISAMPLE_ARRAY && samples == 1) {
+			mGLTarget = GL_TEXTURE_2D_ARRAY;
+		}
+
 		glCreateTextures(mGLTarget, 1, &mId);
 		switch (mGLTarget) {
 			case GL_TEXTURE_1D:
@@ -525,7 +558,13 @@ namespace Morpheus {
 				glTextureStorage2D(mId, mLevels, mFormat, mWidth, mHeight);
 				assert(depth == 1);
 				break;
+			case GL_TEXTURE_2D_MULTISAMPLE:
+				glTextureStorage2DMultisample(mId, samples, mFormat, mWidth, mHeight, false);
+				break;
 			case GL_TEXTURE_2D_ARRAY:
+				throw std::runtime_error("Resizing texture array not allowed!");
+				break;
+			case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
 				throw std::runtime_error("Resizing texture array not allowed!");
 				break;
 			case GL_TEXTURE_CUBE_MAP:
@@ -537,6 +576,7 @@ namespace Morpheus {
 				break;
 			case GL_TEXTURE_3D:
 				glTextureStorage3D(mId, mLevels, mFormat, mWidth, mHeight, mDepth);
+				break;
 		}
 	}
 
@@ -584,19 +624,11 @@ namespace Morpheus {
 		return tex;
 	}
 
-	Texture* ContentFactory<Texture>::makeTexture2DUnparented(const uint32_t width, const uint32_t height,
-		const GLenum format, const int miplevels) {
-		Texture* tex =  makeTexture2DUnmanaged(width, height, format, miplevels);
-		content()->createContentNode(tex);
-		return tex;
-	}
-
 	Texture* ContentFactory<Texture>::makeTexture2D(INodeOwner* parent, 
 		const uint32_t width, const uint32_t height, 
 		const GLenum format, const int miplevels) {
 		Texture* tex = makeTexture2DUnmanaged(width, height, format, miplevels);
-		content()->createContentNode(tex);
-		parent->addChild(tex);
+		createContentNode(tex, parent);
 		return tex;
 	}
 
@@ -630,20 +662,49 @@ namespace Morpheus {
 		return tex;
 	}
 
-	Texture* ContentFactory<Texture>::makeCubemapUnparented(const uint32_t width, const uint32_t height,
-		const GLenum format, const int miplevels) {
-		Texture* texRef = makeCubemapUnmanaged(width, height, format, miplevels);
-		content()->createContentNode(texRef);
-		return texRef;
-	}
-
 	Texture* ContentFactory<Texture>::makeCubemap(INodeOwner* parent,
 		const uint32_t width, const uint32_t height, 
 		const GLenum format, const int miplevels) {
 		Texture* texRef = makeCubemapUnmanaged(width, height, format, miplevels);
-		content()->createContentNode(texRef);
-		parent->addChild(texRef);
+		createContentNode(texRef, parent);
 		return texRef;
+	}
+
+	Texture* ContentFactory<Texture>::makeTexture2DMultisampleUnmanaged(const uint width, const uint height,
+		const GLenum format, const uint samples) {
+		GLuint TextureName = 0;
+
+		if (samples == 1) {
+			// Fall back to a normal texture
+			return makeTexture2DUnmanaged(width, height, format, 1);
+		} else {
+			glGenTextures(1, &TextureName);
+			glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, TextureName);
+			GL_ASSERT;
+
+			glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, false);
+			GL_ASSERT;
+
+			Texture* tex = new Texture();
+			tex->mWidth = width;
+			tex->mHeight = height;
+			tex->mType = TextureType::TEXTURE_2D_MULTISAMPLE;
+			tex->mGLTarget = GL_TEXTURE_2D_MULTISAMPLE;
+			tex->mId = TextureName;
+			tex->mDepth = 1;
+			tex->mFormat = format;
+			tex->mLevels = 1;
+			tex->mSamples = samples;
+			return tex;
+		}
+	}
+
+	Texture* ContentFactory<Texture>::makeTexture2DMultisample(INodeOwner* parent, 
+		const uint width, const uint height,
+		const GLenum format, const uint samples) {
+		auto tex = makeTexture2DMultisampleUnmanaged(width, height, format, samples);
+		createContentNode(tex, parent);
+		return tex;
 	}
 
 	std::string ContentFactory<Texture>::getContentTypeString() const {

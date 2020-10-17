@@ -82,7 +82,7 @@ int main() {
             en.update();
             en.render(scene);
             // Display texture
-            en.renderer()->debugBlit(output_texture);
+            en.renderer()->blit(output_texture);
             en.present();
         }
     }
