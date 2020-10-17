@@ -140,8 +140,6 @@ Currently, there's not much. I'll make some if I ever get around to it.
 
 An example of a rendering physically-based model. The actual model is taken from [this repository](https://github.com/Nadrin/PBR).
 
-![pbr-gun0](images/pbr-gun0.png)
-
 ![pbr-gun1](images/pbr-gun1.png)
 
 ![pbr-gun2](images/pbr-gun2.png)
