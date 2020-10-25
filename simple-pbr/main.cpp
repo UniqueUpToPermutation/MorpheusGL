@@ -2,7 +2,7 @@
 #include <engine/gui.hpp>
 #include <engine/cameracontroller.hpp>
 #include <engine/samplefunction.hpp>
-#include <engine/lambert.hpp>
+#include <engine/lambertsh.hpp>
 #include <engine/ggx.hpp>
 #include <engine/sphericalharmonics.hpp>
 #include <engine/brdf.hpp>
@@ -128,7 +128,9 @@ int main() {
 		createNode(transform, scene);
 		transform->addChild(staticMesh);
 
-		Texture* environmentHDRI = load<Texture>("content/textures/environment.hdr", scene);
+		ContentExtParams<Texture> environmentLoadParams;
+		environmentLoadParams.mInternalFormat = GL_RGBA16F;
+		Texture* environmentHDRI = loadEx<Texture>("content/textures/environment.hdr", environmentLoadParams, scene);
 
 		auto lambertSHKernel = new LambertSHComputeKernel();
 		auto hdriToCubemap = new HDRIToCubeKernel();
@@ -159,10 +161,7 @@ int main() {
 		// Initialize the scene graph
 		init(scene);
 
-		HDRIToCubeComputeJob hdriJob;
-		hdriJob.mHDRI = environmentHDRI;
-		hdriJob.mOutputFormat = GL_RGBA8;
-		hdriJob.mTextureSize = 2048;
+		HDRIToCubeComputeJob hdriJob(environmentHDRI, 2048, GL_RGBA16F);
 
 		// Convert HDRI to cubemap
 		Texture* environment = hdriToCubemap->submit(hdriJob, scene);

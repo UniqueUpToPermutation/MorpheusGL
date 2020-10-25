@@ -624,6 +624,15 @@ namespace Morpheus {
 	template <> struct C_TO_GL_TYPE_<glm::dmat3x4> {
 		static const GLenum RESULT = GL_DOUBLE_MAT3x4;
 	};
+	template <> struct C_TO_GL_TYPE_<glm::ivec2> {
+		static const GLenum RESULT = GL_INT_VEC2;
+	};
+	template <> struct C_TO_GL_TYPE_<glm::ivec3> {
+		static const GLenum RESULT = GL_INT_VEC3;
+	};
+	template <> struct C_TO_GL_TYPE_<glm::ivec4> {
+		static const GLenum RESULT = GL_INT_VEC4;
+	};
 
 	template <typename T>
 	using UNIFORM_C_TYPE_ = 

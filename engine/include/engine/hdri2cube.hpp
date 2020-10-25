@@ -8,6 +8,12 @@ namespace Morpheus {
 		Texture* mHDRI;
 		uint mTextureSize;
 		GLenum mOutputFormat;
+
+		HDRIToCubeComputeJob(Texture* hdri, uint textureSize, GLenum outputFormat) :
+			mHDRI(hdri),
+			mTextureSize(textureSize),
+			mOutputFormat(outputFormat) {
+		}
 	};
 
 	class HDRIToCubeKernel : public INodeOwner {

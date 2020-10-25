@@ -284,7 +284,6 @@ namespace Morpheus {
 							unif.value()["sampler"].get_to(samplerSrc);
 						// Use provided a format
 						if (unif.value().contains("format")) {
-							params.bOverrideInternalFormat = true;
 							string formatStr;
 							unif.value()["format"].get_to(formatStr);
 							params.mInternalFormat = getFormatFromString(formatStr);

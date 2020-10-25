@@ -5,7 +5,7 @@
 #include <engine/samplefunction.hpp>
 #include <engine/sphericalharmonics.hpp>
 
-#define DEFAULT_CT_LUT_PIXELS 128
+#define DEFAULT_CT_LUT_PIXELS 256
 #define DEFAULT_CT_LUT_GROUP_SIZE 32
 
 namespace Morpheus {

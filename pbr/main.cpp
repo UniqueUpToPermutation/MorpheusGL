@@ -2,7 +2,7 @@
 #include <engine/gui.hpp>
 #include <engine/cameracontroller.hpp>
 #include <engine/samplefunction.hpp>
-#include <engine/lambert.hpp>
+#include <engine/lambertsh.hpp>
 #include <engine/ggx.hpp>
 #include <engine/sphericalharmonics.hpp>
 #include <engine/brdf.hpp>
@@ -95,8 +95,7 @@ int main() {
 		transform->mTransform = Transform::makeRotation(glm::angleAxis(glm::pi<float>(), glm::vec3(0.0, 1.0, 0.0)));
 
 		ContentExtParams<Texture> params;
-		params.bOverrideInternalFormat = true;
-		params.mInternalFormat = GL_RGBA8;
+		params.mInternalFormat = GL_RGBA16F;
 		Texture* tex = loadEx<Texture>("content/textures/environment.hdr", params, scene);
  
 		auto lambertKernelSH = new LambertSHComputeKernel();
@@ -117,10 +116,7 @@ int main() {
 		init(scene);
 
 		// Convert texture to a cube map
-		HDRIToCubeComputeJob job;
-		job.mHDRI = tex;
-		job.mOutputFormat = GL_RGBA8;
-		job.mTextureSize = 2048;
+		HDRIToCubeComputeJob job(tex, 2048, GL_RGBA16F);
 		Texture* envCube = hdri2cubeKernel->submit(job, scene);
 
 		// Create a lookup texture with the BRDF kernel

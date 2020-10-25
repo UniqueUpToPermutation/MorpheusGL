@@ -57,6 +57,8 @@ namespace Morpheus {
 		inline uint depth() const 				{ return mDepth; }
 		inline uint samples() const 			{ return mSamples; }
 		inline GLenum format() const 			{ return mFormat; }
+		inline glm::ivec2 size2d() const 		{ return glm::ivec2(mWidth, mHeight); }
+		inline glm::ivec3 size3d() const 		{ return glm::ivec3(mWidth, mHeight, mDepth); }
 
 		// Resize the texture. Note that this will destroy everything in the texture.
 		void resize(uint width, uint height = 1, uint depth = 1, 
@@ -68,8 +70,8 @@ namespace Morpheus {
 		}
 
 		inline void bindImage(GLuint unit, GLenum access, GLint level = 0) const {
-			glActiveTexture(GL_TEXTURE0 + unit);
-			glBindTexture(mGLTarget, mId);
+			/*glActiveTexture(GL_TEXTURE0 + unit);
+			glBindTexture(mGLTarget, mId);*/
 			glBindImageTexture(unit, mId, level, false, 0, access, mFormat);
 		}
 
@@ -82,12 +84,12 @@ namespace Morpheus {
 
 	template <>
 	struct ContentExtParams<Texture> {
-		bool bOverrideInternalFormat;
 		GLenum mInternalFormat;
+		bool bGenerateMips;
 
-		ContentExtParams(GLenum internalFormat = 0) : 
+		ContentExtParams(GLenum internalFormat = 0, bool generateMips = true) : 
 			mInternalFormat(internalFormat), 
-			bOverrideInternalFormat(internalFormat > 0) {
+			bGenerateMips(generateMips) {
 		}
 	};
 

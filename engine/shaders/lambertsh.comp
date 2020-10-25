@@ -20,7 +20,9 @@ void SH9(vec3 position, out float sh[SH_COEFFS]);
 #endif
 
 layout(local_size_x = GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
-layout(rgba8, binding = 0) uniform readonly imageCube img_input;
+uniform layout(binding = 0) samplerCube img_input;
+
+uniform ivec2 imageSize;
 
 layout(std430, binding = 0) writeonly buffer out_buffer {
 	float out_array[];
@@ -39,7 +41,7 @@ void main() {
 		result[i] = vec4(0.0, 0.0, 0.0, 0.0);
 	}
 
-	ivec2 size = imageSize(img_input);
+	ivec2 size = imageSize;
 
 	float h2 = 4.0 / float(size.x) / float(size.y);
 	vec2 uv = vec2(-1.0, -1.0 + 2.0 * (float(y_indx) + 0.5) / float(size.y));
@@ -48,8 +50,8 @@ void main() {
 		for (uint x_indx = 0; x_indx < size.x; ++x_indx) {
 			uv.x = -1.0 + 2.0 * (float(x_indx) + 0.5) / float(size.x);
 
-			vec4 pix = imageLoad(img_input, ivec3(x_indx, y_indx, z_indx));
 			vec3 position = cubemapGetDirection(uv, z_indx);
+			vec4 pix = texture(img_input, position);
 			float jac = cubemapJacobian(uv);
 
 			// Integrate against the spherical harmonics

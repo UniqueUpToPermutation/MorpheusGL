@@ -29,7 +29,8 @@ add_library(engine
     src/halfedge.cpp
     src/halfedgeloader.cpp
     src/input.cpp
-    src/lambert.cpp
+	src/lambert.cpp
+	src/lambertsh.cpp
     src/material.cpp
     src/meshlap.cpp
     src/samplefunction.cpp
