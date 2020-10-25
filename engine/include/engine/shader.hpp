@@ -697,8 +697,8 @@ namespace Morpheus {
 			return mUnit;
 		}
 
-		inline void set(const Texture* texture, const GLenum access) const {
-			texture->bindImage(mUnit, access);
+		inline void set(const Texture* texture, const GLenum access, const GLint level = 0) const {
+			texture->bindImage(mUnit, access, level);
 		}
 
 		inline void setUnit(const GLint unit) {
@@ -1086,7 +1086,8 @@ namespace Morpheus {
 
 	inline void ShaderUniform<Sampler>::find(const Shader* shader, const std::string& identifier) {
 		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());
-		glGetUniformiv(shader->id(), mLoc, &mUnit);
+		if (mLoc >= 0)
+			glGetUniformiv(shader->id(), mLoc, &mUnit);
 	}
 
 	inline ShaderUniform<Sampler>::ShaderUniform(const Shader* shader, const std::string& identifier) {
@@ -1105,7 +1106,8 @@ namespace Morpheus {
 
 	inline void ShaderUniform<Texture>::find(const Shader* shader, const std::string& identifier) {
 		mLoc = glGetUniformLocation(shader->id(), identifier.c_str());
-		glGetUniformiv(shader->id(), mLoc, &mUnit);
+		if (mLoc >= 0)
+			glGetUniformiv(shader->id(), mLoc, &mUnit);
 	}
 
 	inline ShaderUniform<Texture>::ShaderUniform(const Shader* shader, const std::string& identifier) {

@@ -1,0 +1,90 @@
+#version 450 core
+
+precision highp int;
+precision highp float;
+
+const float PI = 3.141592;
+const float TwoPI = 2 * PI;
+const float Epsilon = 0.00001;
+
+#define NUM_SAMPLES 64 * 1024
+
+const uint NumSamples = NUM_SAMPLES;
+
+// Includes from other files
+#pragma include "cubemap.glsl"
+float cubemapJacobian(vec2 surfacePosition);
+vec3 cubemapGetDirection(vec2 surfacePosition, uint face);
+
+#pragma include "hammersley.glsl"
+vec2 hammersley(uint i, const uint sampleCount);
+
+// Default group size
+#ifndef GROUP_SIZE
+#define GROUP_SIZE 32
+#endif
+
+layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
+
+layout(binding = 0) uniform samplerCube img_input;
+layout(binding = 1) uniform writeonly imageCube img_output;
+
+// Compute orthonormal basis for converting from tanget/shading space to world space.
+void computeBasisVectors(const vec3 N, out vec3 S, out vec3 T)
+{
+	// Branchless select non-degenerate T.
+	T = cross(N, vec3(0.0, 1.0, 0.0));
+	T = mix(cross(N, vec3(1.0, 0.0, 0.0)), T, step(Epsilon, dot(T, T)));
+
+	T = normalize(T);
+	S = normalize(cross(N, T));
+}
+
+vec2 getSurfacePosition(uvec2 texPosition, uint texSize) {
+    vec2 uv = (vec2(texPosition) + 0.5) / float(texSize);
+    return 2.0 * uv - 1.0;
+}
+
+// Convert point from tangent/shading space to world space.
+vec3 tangentToWorld(const vec3 v, const vec3 N, const vec3 S, const vec3 T)
+{
+	return S * v.x + T * v.y + N * v.z;
+}
+
+// Uniformly sample point on a hemisphere.
+// Cosine-weighted sampling would be a better fit for Lambertian BRDF but since this
+// compute shader runs only once as a pre-processing step performance is not *that* important.
+// See: "Physically Based Rendering" 2nd ed., section 13.6.1.
+vec3 sampleHemisphere(float u1, float u2)
+{
+	const float u1p = sqrt(max(0.0, 1.0 - u1*u1));
+	return vec3(cos(TwoPI*u2) * u1p, sin(TwoPI*u2) * u1p, u1);
+}
+
+void main() {
+	uint face = gl_GlobalInvocationID.z;
+    uvec2 pixLocation = gl_GlobalInvocationID.xy;
+
+    uint size = imageSize(img_output).x;
+    vec2 surfacePos = getSurfacePosition(pixLocation, size);
+    vec3 N = cubemapGetDirection(surfacePos, face);
+
+	vec3 S, T;
+	computeBasisVectors(N, S, T);
+
+	// Monte Carlo integration of hemispherical irradiance.
+	// As a small optimization this also includes Lambertian BRDF assuming perfectly white surface (albedo of 1.0)
+	// so we don't need to normalize in PBR fragment shader (so technically it encodes exitant radiance rather than irradiance).
+	vec3 irradiance = vec3(0);
+	for(uint i=0; i < NumSamples; ++i) {
+		vec2 u  = hammersley(i, NumSamples);
+		vec3 Li = tangentToWorld(sampleHemisphere(u.x, u.y), N, S, T);
+		float cosTheta = max(0.0, dot(Li, N));
+
+		// PIs here cancel out because of division by pdf.
+		irradiance += 2.0 * textureLod(img_input, Li, 0).rgb * cosTheta;
+	}
+	irradiance /= vec3(NumSamples);
+
+	imageStore(img_output, ivec3(gl_GlobalInvocationID), vec4(irradiance, 1.0));
+}

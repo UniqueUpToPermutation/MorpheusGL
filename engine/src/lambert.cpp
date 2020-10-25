@@ -3,11 +3,11 @@
 #include <GLFW/glfw3.h>
 
 namespace Morpheus {
-    LambertComputeKernel::LambertComputeKernel(uint groupSize) : INodeOwner(NodeType::LAMBERT_COMPUTE_KERNEL),
+    LambertSHComputeKernel::LambertSHComputeKernel(uint groupSize) : INodeOwner(NodeType::LAMBERT_SH_COMPUTE_KERNEL),
         mGroupSize(groupSize), mGPUBackend(nullptr), bInJob(false) {
     }
 
-    void LambertComputeKernel::init() {
+    void LambertSHComputeKernel::init() {
         if (!mGPUBackend) {
 			ContentExtParams<Shader> params;
 			params.mConfigOverride.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
@@ -16,7 +16,7 @@ namespace Morpheus {
             mOffsetUniform.find(mGPUBackend, "outputOffset");
 
 			if (!mOffsetUniform.valid()) {
-				throw std::runtime_error("LambertComputeKernel: could not find outputOffset!");
+				throw std::runtime_error("LambertSHComputeKernel: could not find outputOffset!");
 			}
 
             bInJob = false;
@@ -24,21 +24,21 @@ namespace Morpheus {
         }
     }
 
-    LambertComputeKernel::~LambertComputeKernel() {
+    LambertSHComputeKernel::~LambertSHComputeKernel() {
         if (mGPUOutputBuffer != 0) {
             glDeleteBuffers(1, &mGPUOutputBuffer);
         }
     }
 
-    uint LambertComputeKernel::addJob(const LambertComputeJob& job) {
+    uint LambertSHComputeKernel::addJob(const LambertSHComputeJob& job) {
         if (!mGPUBackend)
-            throw std::runtime_error("LambertComputeKernel: Kernel has not been initialized!");
+            throw std::runtime_error("LambertSHComputeKernel: Kernel has not been initialized!");
 
         if (bInJob)
-            throw std::runtime_error("LambertComputeKernel: Pending Jobs!");
+            throw std::runtime_error("LambertSHComputeKernel: Pending Jobs!");
         
         if (job.mInputImage->textureType() != TextureType::CUBE_MAP)
-            throw std::runtime_error("LambertComputeKernel: Input must be cubemap!");
+            throw std::runtime_error("LambertSHComputeKernel: Input must be cubemap!");
 
         if (job.mInputImage->format() != GL_RGBA8) 
             throw std::runtime_error("Image format not supported!");
@@ -53,15 +53,15 @@ namespace Morpheus {
             image->height() / mGroupSize;
     };
 
-    void LambertComputeKernel::submit(const LambertComputeJob& job) {
+    void LambertSHComputeKernel::submit(const LambertSHComputeJob& job) {
         beginQueue();
         addJob(job);
         submitQueue();
     }
 
-    void LambertComputeKernel::submitQueue() {
+    void LambertSHComputeKernel::submitQueue() {
         if (bInJob)
-            throw std::runtime_error("LambertComputeKernel: Pending Jobs!");
+            throw std::runtime_error("LambertSHComputeKernel: Pending Jobs!");
 
         uint bufferSize = 0;
         for (auto& job : mJobs) {
@@ -99,12 +99,12 @@ namespace Morpheus {
         bInJob = true;
     }
 
-    float* LambertComputeKernel::results(uint job_id) {
+    float* LambertSHComputeKernel::results(uint job_id) {
         uint blockSize = 3 * LAMBERT_SH_COEFFS;
         return &mResultBuffer[blockSize * job_id];
     }
 
-    void LambertComputeKernel::barrier() {
+    void LambertSHComputeKernel::barrier() {
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -143,9 +143,109 @@ namespace Morpheus {
         }
     }
 
-    void LambertComputeKernel::beginQueue() {
+    void LambertSHComputeKernel::beginQueue() {
         mJobs.clear();
         mResultBuffer.clear();
         bInJob = false;
     }
+
+	LambertComputeKernel::LambertComputeKernel(uint groupSize) :
+		INodeOwner(NodeType::LAMBERT_COMPUTE_KERNEL), 
+		mGroupSize(groupSize), mGPUBackend(nullptr) {
+	}
+
+	void LambertComputeKernel::init() {
+		mCubemapSampler = load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, this);
+
+		if (!mGPUBackend) {
+			ContentExtParams<Shader> params;
+			params.mConfigOverride.mDefines["GROUP_SIZE"] = std::to_string(mGroupSize);
+			mGPUBackend = loadEx<Shader>("/internal/lambert.comp", params, this, true);
+
+			mImageInput.find(mGPUBackend, "img_input");
+			if (!mImageInput.valid()) {
+				throw std::runtime_error("LambertComputeKernel: Image input not found!");
+			}
+
+			mImageOutput.find(mGPUBackend, "img_output");
+			if (!mImageOutput.valid()) {
+				throw std::runtime_error("LambertComputeKernel: Image output not found!");
+			}
+
+            bInJob = false;
+        }
+	}
+
+	// These functions will submit a batch of jobs to the GPU
+	void LambertComputeKernel::beginQueue() {
+ 		mJobs.clear();
+        bInJob = false;
+	}
+
+	Texture* LambertComputeKernel::addJobUnmanaged(const LambertComputeJob& job) {
+		mJobs.emplace_back(job);
+
+		int size = job.mOutputSize;
+		GLenum format = job.mOutputFormat;
+
+		if (size <= 0) {
+			size = job.mInputImage->width();
+		}
+
+		if (format <= 0) {
+			format = job.mInputImage->format();
+		}
+
+		Texture* tex = getFactory<Texture>()->makeCubemapUnmanaged(
+			size, size, format);
+
+		mResultTextures.emplace_back(tex);
+		return tex;
+	}
+
+	void LambertComputeKernel::submitQueue() {
+        if (bInJob)
+            throw std::runtime_error("GGXComputeKernel: Pending Jobs!");
+
+        mGPUBackend->bind();
+
+        GL_ASSERT;
+
+        uint offset = 0;
+        for (uint i_job = 0; i_job < mJobs.size(); ++i_job) {
+			auto& job = mJobs[i_job];
+			auto outputTexture = mResultTextures[i_job];
+			auto inputTexture = job.mInputImage;
+
+			mImageInput.set(inputTexture, mCubemapSampler);
+			mImageOutput.set(outputTexture, GL_WRITE_ONLY);
+
+			uint num_groups = outputTexture->width() / mGroupSize;
+			num_groups = glm::max(num_groups, 1u);
+
+			glDispatchCompute(num_groups, num_groups, 6);
+
+			GL_ASSERT;
+        }
+
+        bInJob = true;
+	}
+
+	// This function submits a single job to the GPU
+	Texture* LambertComputeKernel::submitUnmanaged(const LambertComputeJob& job) {
+		beginQueue();
+		Texture* tex = addJobUnmanaged(job);
+		submitQueue();
+		return tex;
+	}
+
+	// Use this before attempting to access results of jobs
+	void LambertComputeKernel::barrier() {
+		glTextureBarrier();
+
+		for (auto tex : mResultTextures) {
+			tex->genMipmaps();
+			tex->savepng("test.png");
+		}
+	}
 }

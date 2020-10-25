@@ -3,6 +3,7 @@
 #define COMPUTE_KERNEL_MAX_TEXTURES 8
 
 namespace Morpheus {
+
 	GGXComputeKernel::GGXComputeKernel(uint groupSize) : INodeOwner(NodeType::GGX_COMPUTE_KERNEL),
 		mGPUBackend(nullptr), mGroupSize(groupSize), bInJob(false) {
 	}
@@ -42,7 +43,7 @@ namespace Morpheus {
 	}
 
 	void GGXComputeKernel::submitQueue() {
- 		if (bInJob)
+		if (bInJob)
             throw std::runtime_error("GGXComputeKernel: Pending Jobs!");
 
         glUseProgram(mGPUBackend->id());
@@ -54,49 +55,25 @@ namespace Morpheus {
 			auto& job = mJobs[i_job];
 			auto outputTexture = mJobTextures[i_job];
 
-			glBindTexture(GL_TEXTURE_CUBE_MAP, outputTexture->id());
-
-			GL_ASSERT;
-
-			// Bind sampler
-			mTotalLevels.set(job.mInputImage->levels());
-
-			GL_ASSERT;
-
 			mInputSamplerUniform.set(job.mInputImage, mCubemapSampler);
 
+			const float deltaRoughness = 1.0f / glm::max(float(outputTexture->levels() - 1), 1.0f);
+
+			// Copy 0th mipmap level into destination environment map.
+			glCopyImageSubData(job.mInputImage->id(), GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+				outputTexture->id(), GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+				outputTexture->width(), outputTexture->height(), 6);
+
 			GL_ASSERT;
 
-			for (uint currentLevel = 0; currentLevel < job.mInputImage->levels();) {
-				uint beginLevel = currentLevel;
-				uint unit = 0;
+			for (uint level = 1; level < outputTexture->levels(); ++level) {
+				float roughness = deltaRoughness * level;
 
-				GL_ASSERT;
+				mRoughness.set(roughness);
+				mOutputTextureImage.set(outputTexture, GL_WRITE_ONLY, level);
 
-				// Assign a compute job to every mip level individually, batch remaining mips together when
-				// mips become small enough to fit in a single compute group.
-				if (job.mInputImage->width() >> currentLevel <= mGroupSize) {
-					for (; unit < COMPUTE_KERNEL_MAX_TEXTURES && currentLevel < job.mInputImage->levels(); ++currentLevel, ++unit) {
-						glBindImageTexture(unit, outputTexture->id(), currentLevel, false, 0, 
-							GL_WRITE_ONLY, outputTexture->format());
-					}
-				}
-				else {
-					glBindImageTexture(unit, outputTexture->id(), currentLevel, false, 0, 
-						GL_WRITE_ONLY, outputTexture->format());
-					unit = 1;
-					++currentLevel;
-				}
-
-				GL_ASSERT;
-				
-				mOutputTextureCount.set(unit);
-				mBeginLevel.set(beginLevel);
-
-				uint num_groups = job.mInputImage->width() >> beginLevel;
-
-				GL_ASSERT;
-
+				uint num_groups = (job.mInputImage->width() >> level) / mGroupSize;
+				num_groups = glm::max(num_groups, 1u);
 				glDispatchCompute(num_groups, num_groups, 6);
 
 				GL_ASSERT;
@@ -129,22 +106,17 @@ namespace Morpheus {
 			mInputSamplerUniform.find(mGPUBackend, "inputTexture");
 			
 			if (!mInputSamplerUniform.valid())
-				throw std::runtime_error("GGXComputeKernel: Could not find uniform inputTexture!");
+				throw std::runtime_error("GGXComputeKernelOld: Could not find uniform inputTexture!");
 			
-			mOutputTextureCount.find(mGPUBackend, "outputTextureCount");
+			mOutputTextureImage.find(mGPUBackend, "outputTexture");
 
-			if (!mOutputTextureCount.valid())
-				throw std::runtime_error("GGXComputeKernel: Could not find uniform outputTextureCount!");
-			
-			mBeginLevel.find(mGPUBackend, "beginLevel");
+			if (!mOutputTextureImage.valid())
+				throw std::runtime_error("GGXComputeKernelOld: Could not find uniform outputTexture!");
 
-			if (!mBeginLevel.valid())
-				throw std::runtime_error("GGXComputeKernel: Could not find uniform beginLevel!");
-			
-			mTotalLevels.find(mGPUBackend, "totalLevels");
+			mRoughness.find(mGPUBackend, "roughness");
 
-			if (!mTotalLevels.valid())
-				throw std::runtime_error("GGXComputeKernel: Could not find uniform totalLevels!");
+			if (!mRoughness.valid())
+				throw std::runtime_error("GGXComputeKernel: Could not find uniform roughness!");
 		}
 	}
 }

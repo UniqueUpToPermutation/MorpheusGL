@@ -10,12 +10,9 @@
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
 
 // Uniforms
-layout(binding = 0) uniform samplerCube inputTexture;
-layout(binding = 0) writeonly uniform imageCube outputTextures[TEXTURE_ARRAY_SIZE];
-
-uniform uint outputTextureCount;
-uniform uint totalLevels;
-uniform uint beginLevel;
+uniform samplerCube inputTexture;
+uniform writeonly imageCube outputTexture;
+uniform float roughness;
 
 // Includes from other files
 #pragma include "cubemap.glsl"
@@ -33,25 +30,12 @@ void main() {
     uint face = gl_GlobalInvocationID.z;
     uvec2 pixLocation = gl_GlobalInvocationID.xy;
 
-    uint size = imageSize(outputTextures[0]).x;
-    int currentTextureIndex = 0;
-	uint currentLevel = beginLevel;
+    uint size = imageSize(outputTexture).x;
+	vec2 surfacePos = getSurfacePosition(pixLocation, size);
+	vec3 dir = cubemapGetDirection(surfacePos, face);
 
-    while (currentTextureIndex < outputTextureCount && 
-		currentTextureIndex < TEXTURE_ARRAY_SIZE && 
-		pixLocation.x < size && pixLocation.y < size) {
-        vec2 surfacePos = getSurfacePosition(pixLocation, size);
-        vec3 dir = cubemapGetDirection(surfacePos, face);
+	// Do Monte Carlo
+	vec3 specular = ggxPrefilterEnvMap(inputTexture, roughness, dir);
 
-        float roughness = float(currentLevel) / float(totalLevels - 1);
-
-        // Do Monte Carlo
-        vec3 specular = ggxPrefilterEnvMap(inputTexture, roughness, dir);
-
-        imageStore(outputTextures[currentTextureIndex], ivec3(gl_GlobalInvocationID), vec4(specular, 1.0));
-
-        size = size / 2;
-        currentTextureIndex++;
-		currentLevel++;
-    }
+	imageStore(outputTexture, ivec3(gl_GlobalInvocationID), vec4(specular, 1.0));
 }

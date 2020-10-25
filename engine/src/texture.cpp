@@ -25,14 +25,6 @@ namespace Morpheus {
 		mExtensionToLoader["pgm"] = TextureLoader::STB;
 	}
 
-	uint mipCount(const uint width, const uint height) {
-		return 1 + std::floor(std::log2(std::max(width, height)));
-	}
-
-	uint mipCount(const uint width, const uint height, const uint depth) {
-		return 1 + std::floor(std::log2(std::max(width, std::max(height, depth))));
-	}
-
 	Texture* Texture::toTexture() {
 		return this;
 	}

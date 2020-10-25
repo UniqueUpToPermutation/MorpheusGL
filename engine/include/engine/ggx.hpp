@@ -10,6 +10,11 @@
 namespace Morpheus {
 	struct GGXComputeJob {
 		Texture* mInputImage;
+		GLenum mOutputFormat;
+
+		inline GGXComputeJob(Texture* input = nullptr, GLenum outputFormat = 0) :
+			mInputImage(input), mOutputFormat(outputFormat) {
+		}
 	};
 
 	class GGXComputeKernel : public INodeOwner {
@@ -18,10 +23,10 @@ namespace Morpheus {
 		std::vector<Texture*> mJobTextures;
 
 		Sampler* mCubemapSampler;
+
+		ShaderUniform<GLfloat> mRoughness;
+		ShaderUniform<Texture> mOutputTextureImage;
 		ShaderUniform<Sampler> mInputSamplerUniform;
-		ShaderUniform<GLuint> mOutputTextureCount;
-		ShaderUniform<GLuint> mBeginLevel;
-		ShaderUniform<GLuint> mTotalLevels;
 
 		Shader* mGPUBackend;
 

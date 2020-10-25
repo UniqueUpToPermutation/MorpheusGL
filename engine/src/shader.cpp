@@ -133,62 +133,6 @@ namespace Morpheus {
 		}
 	}
 
-	void preprocessor(const string& path, vector<string>& paths, stringstream& builder) {
-
-		if (std::count(paths.begin(), paths.end(), path) > 0) {
-			cout << path << ": WARNING: cyclical include detected!" << endl;
-			return;
-		}
-
-		ifstream f(path);
-
-		if (!f.is_open()) {
-			cout << path << ": ERROR: could not open!" << endl;
-			return;
-		}
-
-		std::string code;
-
-		f.seekg(0, std::ios::end);
-		code.reserve((size_t)f.tellg());
-		f.seekg(0, std::ios::beg);
-
-		code.assign((std::istreambuf_iterator<char>(f)),
-			std::istreambuf_iterator<char>());
-		f.close();
-
-		size_t start = 0;
-
-		while (start < code.length()) {
-			auto found = code.find("#include", start);
-
-			if (found == string::npos) {
-				builder << &code[start];
-				break;
-			}
-			else {
-				builder << code.substr(start, found - start);
-				auto path_start = code.find("\"", found);
-				auto path_end = code.find("\"", path_start + 1);
-
-				string include_path = code.substr(path_start + 1, path_end - path_start - 1);
-				string prefix_include_path = "";
-
-				auto extract_ptr = path.find_last_of("\\/");
-				if (extract_ptr != string::npos)
-					prefix_include_path = path.substr(0, extract_ptr+1);
-
-				include_path = prefix_include_path + include_path;
-
-				paths.push_back(path);
-				preprocessor(include_path, paths, builder);
-				paths.pop_back();
-
-				start = path_end + 1;
-			}
-		}
-	}
-
 	void substitute(const ShaderUniformAssignment& assign, std::vector<ShaderUniformAssignment>* vec) {
 		bool bFound = false;
 		for (auto& oldAssign : *vec) {
@@ -249,6 +193,38 @@ namespace Morpheus {
 		}
 	}
 
+	GLenum getFormatFromString(std::string& s) {
+		if (s == "R8") {
+			return GL_R8;
+		} else if (s == "RG8") {
+			return GL_RG8;
+		} else if (s == "RGB8") {
+			return GL_RGB8;
+		} else if (s == "RGBA8") {
+			return GL_RGBA8;
+		} else if (s == "SRGB8") {
+			return GL_SRGB8;
+		} else if (s == "R16") {
+			return GL_R16;
+		} else if (s == "RG16") {
+			return GL_RG16;
+		} else if (s == "RGB16") {
+			return GL_RGB16;
+		} else if (s == "RGBA16") {
+			return GL_RGBA16;
+		} else if (s == "R16F") {
+			return GL_R16F;
+		} else if (s == "RG16F") {
+			return GL_RG16F;
+		} else if (s == "RGB16F") {
+			return GL_RGB16F;
+		} else if (s == "RGBA16F") {
+			return GL_RGBA16F;
+		}
+		std::cout << "Warning: Format string not recognized, defaulting to GL_RGBA8!" << std::endl;
+		return GL_RGBA8;
+	}
+
 	void loadSamplerDefaults(const nlohmann::json& j, const Shader* shad, ShaderSamplerAssignments* out,
 		ContentManager* content, Node parent, const std::string& parentSrc) {
 		out->mBindings.clear();
@@ -287,6 +263,8 @@ namespace Morpheus {
 						samplerSrc = MATERIAL_TEXTURE_2D_DEFAULT_SAMPLER_SRC;
 					std::string textureSrc;
 
+					ContentExtParams<Texture> params;
+
 					// User just provided a texture name
 					if (unif.value().is_string()) {
 						unif.value().get_to(textureSrc);
@@ -301,16 +279,23 @@ namespace Morpheus {
 						}
 					}
 					else if (unif.value().is_object()) {
-						// User provided a texture/sampler pair
+						// User provided a sampler
 						if (unif.value().contains("sampler"))
 							unif.value()["sampler"].get_to(samplerSrc);
+						// Use provided a format
+						if (unif.value().contains("format")) {
+							params.bOverrideInternalFormat = true;
+							string formatStr;
+							unif.value()["format"].get_to(formatStr);
+							params.mInternalFormat = getFormatFromString(formatStr);
+						}
 						unif.value()["texture"].get_to(textureSrc);
 					}
 					ShaderSamplerAssignment assignment;
 
 					textureSrc = prefix_include_path + textureSrc;
 
-					assignment.mTexture = load<Texture>(textureSrc);
+					assignment.mTexture = loadEx<Texture>(textureSrc, params);
 					assignment.mSampler = load<Sampler>(samplerSrc);
 
 					parent.addChild(assignment.mTexture->node());

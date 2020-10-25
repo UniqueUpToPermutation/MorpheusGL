@@ -7,6 +7,7 @@
 #include <engine/sphericalharmonics.hpp>
 #include <engine/brdf.hpp>
 #include <engine/skybox.hpp>
+#include <engine/hdri2cube.hpp>
 
 #include <GLFW/glfw3.h>
 #include <nanogui/nanogui.h>
@@ -127,20 +128,19 @@ int main() {
 		createNode(transform, scene);
 		transform->addChild(staticMesh);
 
-		Texture* tex = getFactory<Texture>()->loadGliUnmanaged("content/textures/env.ktx", GL_RGBA8);
-		createContentNode(tex, scene);
+		Texture* environmentHDRI = load<Texture>("content/textures/environment.hdr", scene);
 
-		// Create a skybox from the texture
-		Skybox* skybox = new Skybox(tex);
-		createNode(skybox, scene);
- 
+		auto lambertSHKernel = new LambertSHComputeKernel();
 		auto lambertKernel = new LambertComputeKernel();
+		auto hdriToCubemap = new HDRIToCubeKernel();
 		auto ggxKernel = new GGXComputeKernel();
 		auto lutKernel = new CookTorranceLUTComputeKernel();
 
-		createNode(lambertKernel, scene);
+		createNode(lambertSHKernel, scene);
 		createNode(ggxKernel, scene);
 		createNode(lutKernel, scene);
+		createNode(hdriToCubemap, scene);
+		createNode(lambertKernel, scene);
 
 		// Set material parameters
 		material = staticMesh->getMaterial();
@@ -148,6 +148,7 @@ int main() {
 		metalness.find(material->shader(), "metalness");
 		albedo.find(material->shader(), "albedo");
 		FDialectric.find(material->shader(), "Fdialectric");
+
 		material->uniformAssignments().add(roughness, 0.0f);
 		material->uniformAssignments().add(metalness, 0.0f);
 		material->uniformAssignments().add(albedo, glm::vec3(1.0f, 1.0f, 1.0f));
@@ -160,33 +161,66 @@ int main() {
 		// Initialize the scene graph
 		init(scene);
 
-		// Submit a compute job to the lambert kernel
-		LambertComputeJob lambertJob;
-		lambertJob.mInputImage = tex;
-		lambertKernel->submit(lambertJob);
+		HDRIToCubeComputeJob hdriJob;
+		hdriJob.mHDRI = environmentHDRI;
+		hdriJob.mOutputFormat = GL_RGBA8;
+		hdriJob.mTextureSize = 2048;
 
-		// Submit a compute job to the ggx kernel
-		GGXComputeJob ggxJob;
-		ggxJob.mInputImage = tex;
-		auto specularResult = ggxKernel->submit(ggxJob, scene);
-
+		// Convert HDRI to cubemap
+		Texture* environment = hdriToCubemap->submit(hdriJob, scene);
 		// Create a lookup texture with the BRDF kernel
 		Texture* brdf = lutKernel->submit(scene);
 
-		lambertKernel->barrier();
-		ggxKernel->barrier();
 		lutKernel->barrier();
+		hdriToCubemap->barrier();
+
+		// Submit a compute job to the lambert kernel
+		LambertSHComputeJob lambertSHJob;
+		lambertSHJob.mInputImage = environment;
+		lambertSHKernel->submit(lambertSHJob);
+
+		LambertComputeJob lambertJob;
+		lambertJob.mInputImage = environment;
+		lambertJob.mOutputSize = environment->width() / 32;
+		Texture* lambertTex = lambertKernel->submit(lambertJob, scene);
+
+		// Submit a compute job to the ggx kernel
+		GGXComputeJob ggxJob;
+		ggxJob.mInputImage = environment;
+		auto specularResult = ggxKernel->submit(ggxJob, scene);
+
+		lambertKernel->barrier();
+		lambertSHKernel->barrier();
+		ggxKernel->barrier();
 
 		ShaderUniform<glm::vec3[]> environmentDiffuseSH(material->shader(), "environmentDiffuseSH");
 		ShaderUniform<Sampler> environmentSpecular(material->shader(), "environmentSpecular");
 		ShaderUniform<Sampler> environmentBRDF(material->shader(), "environmentBRDF");
 
+		GL_ASSERT;
+
 		Sampler* sampler = load<Sampler>(MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC, scene);
 		Sampler* lutSampler = load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, scene);
 
-		material->uniformAssignments().add(environmentDiffuseSH, lambertKernel->results(), lambertKernel->shCount());
-		material->samplerAssignments().add(environmentSpecular, sampler, specularResult);
-		material->samplerAssignments().add(environmentBRDF, lutSampler, brdf);
+		if (environmentDiffuseSH.valid())
+			material->uniformAssignments().add(environmentDiffuseSH, lambertSHKernel->results(), lambertSHKernel->shCount());
+		if (environmentSpecular.valid())
+			material->samplerAssignments().add(environmentSpecular, sampler, specularResult);
+		if (environmentBRDF.valid())
+			material->samplerAssignments().add(environmentBRDF, lutSampler, brdf);
+
+		// Delete stuff we don't need anymore
+		unload(environmentHDRI);
+		unload(lambertSHKernel);
+		unload(hdriToCubemap);
+		unload(ggxKernel);
+		unload(lutKernel);
+		collectGarbage();
+
+		// Create a skybox from the texture
+		Skybox* skybox = new Skybox(environment);
+		createNode(skybox, scene);
+		init(skybox);
 
 		print(&en);
 

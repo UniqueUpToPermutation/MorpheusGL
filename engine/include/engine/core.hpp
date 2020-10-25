@@ -104,8 +104,10 @@ namespace Morpheus {
 		UPDATER,
 		
 		// Misc.
+		LAMBERT_SH_COMPUTE_KERNEL,
 		LAMBERT_COMPUTE_KERNEL,
 		GGX_COMPUTE_KERNEL,
+		GGX_COMPUTE_KERNEL_OLD,
 		COOK_TORRANCE_LUT_COMPUTE_KERNEL,
 		SPRITE_BATCH,
 
@@ -171,7 +173,9 @@ namespace Morpheus {
 	SET_RENDERABLE(RENDERER, 							false);
 	SET_RENDERABLE(UPDATER, 							false);
 
+	SET_RENDERABLE(LAMBERT_SH_COMPUTE_KERNEL,			false);
 	SET_RENDERABLE(LAMBERT_COMPUTE_KERNEL,				false);
+	SET_RENDERABLE(GGX_COMPUTE_KERNEL_OLD,				false);
 	SET_RENDERABLE(GGX_COMPUTE_KERNEL,					false);
 	SET_RENDERABLE(COOK_TORRANCE_LUT_COMPUTE_KERNEL, 	false);
 	SET_RENDERABLE(SPRITE_BATCH,						false);
@@ -199,8 +203,10 @@ namespace Morpheus {
 	SET_RENDERABLE(FRAMEBUFFER,							false);
 
 	// The content flag
-	SET_CONTENT(LAMBERT_COMPUTE_KERNEL, 				false);
+	SET_CONTENT(LAMBERT_SH_COMPUTE_KERNEL, 				false);
+	SET_CONTENT(LAMBERT_COMPUTE_KERNEL,					false);
 	SET_CONTENT(GGX_COMPUTE_KERNEL,						false);
+	SET_CONTENT(GGX_COMPUTE_KERNEL_OLD,					false);
 	SET_CONTENT(COOK_TORRANCE_LUT_COMPUTE_KERNEL, 		false);
 	SET_CONTENT(SPRITE_BATCH,							false);
 	SET_CONTENT(CUSTOM_NO_RENDER_NOT_CONTENT,			false);
@@ -616,6 +622,10 @@ namespace Morpheus {
 		static Transform makeIdentity();
 		static Transform makeTranslation(const glm::vec3& translation);
 		static Transform makeRotation(const glm::quat& rotate);
+
+		inline static Transform makeTranslation(const float x, const float y, const float z) {
+			return makeTranslation(glm::vec3(x, y, z));
+		}
 	};
 
 	class TransformNode : public INodeOwner {

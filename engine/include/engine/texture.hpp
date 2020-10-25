@@ -5,6 +5,15 @@
 #include <engine/content.hpp>
 
 namespace Morpheus {
+
+	inline uint mipCount(const uint width, const uint height) {
+		return 1 + std::floor(std::log2(std::max(width, height)));
+	}
+
+	inline uint mipCount(const uint width, const uint height, const uint depth) {
+		return 1 + std::floor(std::log2(std::max(width, std::max(height, depth))));
+	}
+
 	enum class TextureType {
 		TEXTURE_1D,
 		TEXTURE_1D_ARRAY,
@@ -58,10 +67,10 @@ namespace Morpheus {
 			glBindTexture(mGLTarget, mId);
 		}
 
-		inline void bindImage(GLuint unit, GLenum access) const {
+		inline void bindImage(GLuint unit, GLenum access, GLint level = 0) const {
 			glActiveTexture(GL_TEXTURE0 + unit);
 			glBindTexture(mGLTarget, mId);
-			glBindImageTexture(unit, mId, 0, false, 0, access, mFormat);
+			glBindImageTexture(unit, mId, level, false, 0, access, mFormat);
 		}
 
 		void savepng(const std::string& path) const;
@@ -75,6 +84,11 @@ namespace Morpheus {
 	struct ContentExtParams<Texture> {
 		bool bOverrideInternalFormat;
 		GLenum mInternalFormat;
+
+		ContentExtParams(GLenum internalFormat = 0) : 
+			mInternalFormat(internalFormat), 
+			bOverrideInternalFormat(internalFormat > 0) {
+		}
 	};
 
 	enum class TextureLoader {

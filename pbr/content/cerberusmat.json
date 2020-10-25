@@ -2,7 +2,10 @@
 	"shader": "/internal/default.json",
   
 	"samplers": {
-		"albedoMap" : "textures/cerberus_A.png",
+		"albedoMap" : { 
+			"texture" : "textures/cerberus_A.png",
+			"format" : "SRGB8"
+		},
 		"normalMap" : "textures/cerberus_N.png",
 		"roughnessMap" : "textures/cerberus_R.png",
 		"metalnessMap" : "textures/cerberus_M.png"

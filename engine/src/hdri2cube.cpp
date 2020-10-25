@@ -39,7 +39,7 @@ namespace Morpheus {
 
 	void HDRIToCubeKernel::submitQueue() {
 		if (bInJob)
-			throw std::runtime_error("LambertComputeKernel: Pending Jobs!");
+			throw std::runtime_error("HDRIToCubeKernel: Pending Jobs!");
 
 		mGPUBackend->bind();
 

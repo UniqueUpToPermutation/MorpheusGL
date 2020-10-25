@@ -73,13 +73,13 @@ namespace Morpheus {
 			mTargetBuffer->resize(width, height);
 		} else {
 			mTargetBuffer = getFactory<Framebuffer>()->makeFramebuffer(this, width, height, 
-				GL_RGBA8, GL_DEPTH24_STENCIL8, 1);
+				GL_RGB32F, GL_DEPTH24_STENCIL8, 1);
 		}
 
 		if (mCurrentSettings.mMSAASamples > 1) {
 			if (!mMultisampleTargetBuffer) {
 				mMultisampleTargetBuffer = getFactory<Framebuffer>()->makeFramebuffer(this, width, height, 
-					GL_RGBA8, GL_DEPTH24_STENCIL8, mCurrentSettings.mMSAASamples);
+					GL_RGB32F, GL_DEPTH24_STENCIL8, mCurrentSettings.mMSAASamples);
 			}
 			else {
 				mMultisampleTargetBuffer->resize(width, height, mCurrentSettings.mMSAASamples);

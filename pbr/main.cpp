@@ -99,12 +99,13 @@ int main() {
 		params.mInternalFormat = GL_RGBA8;
 		Texture* tex = loadEx<Texture>("content/textures/environment.hdr", params, scene);
  
-		auto lambertKernel = new LambertComputeKernel();
+		auto lambertKernelSH = new LambertSHComputeKernel();
+		//auto lambertKernel = new LambertComputeKernel();
 		auto ggxKernel = new GGXComputeKernel();
 		auto lutKernel = new CookTorranceLUTComputeKernel();
 		auto hdri2cubeKernel = new HDRIToCubeKernel();
 
-		createNode(lambertKernel, scene);
+		createNode(lambertKernelSH, scene);
 		createNode(ggxKernel, scene);
 		createNode(lutKernel, scene);
 		createNode(hdri2cubeKernel, scene);
@@ -129,16 +130,18 @@ int main() {
 		hdri2cubeKernel->barrier();
 
 		// Submit a compute job to the lambert kernel
-		LambertComputeJob lambertJob;
+		LambertSHComputeJob lambertJob;
 		lambertJob.mInputImage = envCube;
-		lambertKernel->submit(lambertJob);
+		lambertKernelSH->submit(lambertJob);
+
+		GL_ASSERT;
 
 		// Submit a compute job to the ggx kernel
 		GGXComputeJob ggxJob;
 		ggxJob.mInputImage = envCube;
 		auto specularResult = ggxKernel->submit(ggxJob, scene);
 
-		lambertKernel->barrier();
+		lambertKernelSH->barrier();
 		ggxKernel->barrier();
 
 		ShaderUniform<glm::vec3[]> environmentDiffuseSH(material->shader(), "environmentDiffuseSH");
@@ -148,9 +151,11 @@ int main() {
 		Sampler* sampler = load<Sampler>(MATERIAL_CUBEMAP_DEFAULT_SAMPLER_SRC, scene);
 		Sampler* lutSampler = load<Sampler>(BILINEAR_CLAMP_SAMPLER_SRC, scene);
 
-		material->uniformAssignments().add(environmentDiffuseSH, lambertKernel->results(), lambertKernel->shCount());
+		material->uniformAssignments().add(environmentDiffuseSH, lambertKernelSH->results(), lambertKernelSH->shCount());
 		material->samplerAssignments().add(environmentSpecular, sampler, specularResult);
 		material->samplerAssignments().add(environmentBRDF, lutSampler, brdf);
+
+		GL_ASSERT;
 
 		// Create a skybox from the texture
 		Skybox* skybox = new Skybox(envCube);

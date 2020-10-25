@@ -74,22 +74,32 @@ namespace Morpheus {
 	}
 
 	void ContentManager::unload(INodeOwner* node) {
-		// Get factory from type
-		auto factory = mTypeToFactory[node->getType()];
-		if (factory) {
-			graph()->deleteVertex(node->node());
-			factory->unload(node);
+		graph()->deleteVertex(node->node());
+
+		if (node->isContent()) {
+			// Get factory from type
+			auto factory = mTypeToFactory[node->getType()];
+
+			if (factory) {
+				factory->unload(node);
+
+				std::string src;
+				if (mSources.tryFind(node->node(), &src))
+					std::cout << "Unloading " << src << " (" << 
+						factory->getContentTypeString() << ")..." << std::endl;
+				else
+					std::cout << "Unloading [UNNAMED] (" << 
+						factory->getContentTypeString()  << ")..." << std::endl;
+			}
+			else {
+				throw std::runtime_error("Could not find factory for object!");
+			}
+
+			mSources.remove(node->node());
+		} else {
+			// This is not managed by the content manager, just delete it!
+			delete node;
 		}
-
-		std::string src;
-		if (mSources.tryFind(node->node(), &src))
-			std::cout << "Unloading " << src << " (" << 
-				factory->getContentTypeString() << ")..." << std::endl;
-		else
-			std::cout << "Unloading [UNNAMED] (" << 
-				factory->getContentTypeString()  << ")..." << std::endl;
-
-		mSources.remove(node->node());
 	}
 
 	void ContentManager::unloadAll() {

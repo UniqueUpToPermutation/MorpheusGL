@@ -105,16 +105,19 @@ namespace Morpheus {
 		}
 	};
 
-	struct LambertComputeJob {
+	struct LambertSHComputeJob {
 		Texture* mInputImage;
+
+		inline LambertSHComputeJob(Texture* image = nullptr) : mInputImage(image) {
+		}
 	};
 
 	// Implements a lambert convolution in the SH basis on the GPU. Returns a set of 9 SH coefficients for 3 color channels.
-	class LambertComputeKernel : public INodeOwner {
+	class LambertSHComputeKernel : public INodeOwner {
 	private:
 		GLuint mGPUOutputBuffer;
 		
-		std::vector<LambertComputeJob> mJobs;
+		std::vector<LambertSHComputeJob> mJobs;
 		std::vector<float> mResultBuffer;
 
 		Shader* mGPUBackend;
@@ -126,18 +129,18 @@ namespace Morpheus {
 
 	public:
 
-		LambertComputeKernel(uint groupSize = LAMBERT_COMPUTE_KERNEL_DEFAULT_GROUP_SIZE);
-		~LambertComputeKernel();
+		LambertSHComputeKernel(uint groupSize = LAMBERT_COMPUTE_KERNEL_DEFAULT_GROUP_SIZE);
+		~LambertSHComputeKernel();
 
 		void init() override;
 
 		// These functions will submit a batch of jobs to the GPU
 		void beginQueue();
-		uint addJob(const LambertComputeJob& job);
+		uint addJob(const LambertSHComputeJob& job);
 		void submitQueue();
 
 		// This function submits a single job to the GPU
-		void submit(const LambertComputeJob& job);
+		void submit(const LambertSHComputeJob& job);
 
 		// Use this before attempting to access results of jobs
 		void barrier();
@@ -146,6 +149,62 @@ namespace Morpheus {
 
 		inline uint shCount() const {
 			return LAMBERT_SH_COEFFS;
+		}
+	};
+	SET_NODE_ENUM(LambertSHComputeKernel, LAMBERT_SH_COMPUTE_KERNEL);
+
+	struct LambertComputeJob {
+		Texture* mInputImage;
+		int mOutputSize;
+		GLenum mOutputFormat;
+
+		inline LambertComputeJob(Texture* input = nullptr, int outputSize = 0, GLenum outputFormat = 0) : 
+			mInputImage(input), mOutputSize(outputSize), mOutputFormat(outputFormat) {
+		}
+	};
+
+	class LambertComputeKernel : public INodeOwner {
+	private:
+		std::vector<LambertComputeJob> mJobs;
+		std::vector<Texture*> mResultTextures;
+
+		Shader* mGPUBackend;
+
+		ShaderUniform<Texture> mImageOutput;
+		ShaderUniform<Sampler> mImageInput;
+
+		Sampler* mCubemapSampler;
+
+		bool bInJob;
+		uint mGroupSize;
+
+	public:
+
+		LambertComputeKernel(uint groupSize = LAMBERT_COMPUTE_KERNEL_DEFAULT_GROUP_SIZE);
+
+		void init() override;
+
+		// These functions will submit a batch of jobs to the GPU
+		void beginQueue();
+		Texture* addJobUnmanaged(const LambertComputeJob& job);
+		void submitQueue();
+
+		// This function submits a single job to the GPU
+		Texture* submitUnmanaged(const LambertComputeJob& job);
+
+		// Use this before attempting to access results of jobs
+		void barrier();
+
+		inline Texture* addJob(const LambertComputeJob& job, INodeOwner* parent) {
+			Texture* tex = addJobUnmanaged(job);
+			createContentNode(tex, parent);
+			return tex;
+		}
+
+		inline Texture* submit(const LambertComputeJob& job, INodeOwner* parent) {
+			Texture* tex = submitUnmanaged(job);
+			createContentNode(tex, parent);
+			return tex;
 		}
 	};
 	SET_NODE_ENUM(LambertComputeKernel, LAMBERT_COMPUTE_KERNEL);

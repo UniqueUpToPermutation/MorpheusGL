@@ -1,8 +1,11 @@
 {
-  "shader": "/internal/default.json",
+  "shader": "pbr.json",
 
   "samplers": {
-	  "albedoMap" : "textures/pbr_albedo.png",
+	  "albedoMap" : { 
+		  "texture" : "textures/pbr_albedo.png",
+		  "format" : "SRGB8"
+	  },
 	  "normalMap" : "textures/pbr_normal.png",
 	  "roughnessMap" : "textures/pbr_roughness.png",
 	  "metalnessMap" : "textures/pbr_ao.png"
