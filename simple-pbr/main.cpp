@@ -131,7 +131,6 @@ int main() {
 		Texture* environmentHDRI = load<Texture>("content/textures/environment.hdr", scene);
 
 		auto lambertSHKernel = new LambertSHComputeKernel();
-		auto lambertKernel = new LambertComputeKernel();
 		auto hdriToCubemap = new HDRIToCubeKernel();
 		auto ggxKernel = new GGXComputeKernel();
 		auto lutKernel = new CookTorranceLUTComputeKernel();
@@ -140,7 +139,6 @@ int main() {
 		createNode(ggxKernel, scene);
 		createNode(lutKernel, scene);
 		createNode(hdriToCubemap, scene);
-		createNode(lambertKernel, scene);
 
 		// Set material parameters
 		material = staticMesh->getMaterial();
@@ -179,17 +177,11 @@ int main() {
 		lambertSHJob.mInputImage = environment;
 		lambertSHKernel->submit(lambertSHJob);
 
-		LambertComputeJob lambertJob;
-		lambertJob.mInputImage = environment;
-		lambertJob.mOutputSize = environment->width() / 32;
-		Texture* lambertTex = lambertKernel->submit(lambertJob, scene);
-
 		// Submit a compute job to the ggx kernel
 		GGXComputeJob ggxJob;
 		ggxJob.mInputImage = environment;
 		auto specularResult = ggxKernel->submit(ggxJob, scene);
 
-		lambertKernel->barrier();
 		lambertSHKernel->barrier();
 		ggxKernel->barrier();
 
