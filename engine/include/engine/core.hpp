@@ -13,6 +13,7 @@
 #include <engine/json.hpp>
 #include <engine/digraph.hpp>
 #include <engine/pool.hpp>
+#include <engine/geobase.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -91,11 +92,6 @@ namespace Morpheus {
 
 	class IRenderer;
 
-	struct BoundingBox {
-		glm::vec3 mLower;
-		glm::vec3 mUpper;
-	};
-
 	enum class NodeType : uint32_t {
 		START,
 
@@ -110,6 +106,10 @@ namespace Morpheus {
 		GGX_COMPUTE_KERNEL_OLD,
 		COOK_TORRANCE_LUT_COMPUTE_KERNEL,
 		SPRITE_BATCH,
+		LINE_BATCH,
+		TRIANGLE_BATCH,
+		POINT_BATCH,
+		DEBUG_BATCH,
 
 		CUSTOM_NO_RENDER_NOT_CONTENT,
 		CUSTOM_KERNEL,
@@ -118,6 +118,7 @@ namespace Morpheus {
 		SCENE_BEGIN,
 		CAMERA,
 		SCENE_ROOT,
+		ACCELERATOR,
 		ENTITY,
 		TRANSFORM,
 		REGION,
@@ -179,6 +180,10 @@ namespace Morpheus {
 	SET_RENDERABLE(GGX_COMPUTE_KERNEL,					false);
 	SET_RENDERABLE(COOK_TORRANCE_LUT_COMPUTE_KERNEL, 	false);
 	SET_RENDERABLE(SPRITE_BATCH,						false);
+	SET_RENDERABLE(LINE_BATCH,							false);
+	SET_RENDERABLE(TRIANGLE_BATCH,						false);
+	SET_RENDERABLE(POINT_BATCH,							false);
+	SET_RENDERABLE(DEBUG_BATCH,							false);
 	SET_RENDERABLE(CUSTOM_NO_RENDER_NOT_CONTENT,		false);
 	SET_RENDERABLE(CUSTOM_KERNEL,						false);
 
@@ -190,6 +195,7 @@ namespace Morpheus {
 	SET_RENDERABLE(CAMERA, 								true);
 	SET_RENDERABLE(NANOGUI_SCREEN, 						true);
 	SET_RENDERABLE(SCENE_ROOT, 							true);
+	SET_RENDERABLE(ACCELERATOR,							true);
 	SET_RENDERABLE(SKYBOX, 								true);
 
 	SET_RENDERABLE(HALF_EDGE_GEOMETRY, 					false);
@@ -209,8 +215,13 @@ namespace Morpheus {
 	SET_CONTENT(GGX_COMPUTE_KERNEL_OLD,					false);
 	SET_CONTENT(COOK_TORRANCE_LUT_COMPUTE_KERNEL, 		false);
 	SET_CONTENT(SPRITE_BATCH,							false);
+	SET_CONTENT(LINE_BATCH,								false);
+	SET_CONTENT(POINT_BATCH,							false);
+	SET_CONTENT(DEBUG_BATCH,							false);
+	SET_CONTENT(TRIANGLE_BATCH,							false);
 	SET_CONTENT(CUSTOM_NO_RENDER_NOT_CONTENT,			false);
 	SET_CONTENT(CUSTOM_KERNEL,							false);
+	SET_CONTENT(ACCELERATOR,							false);
 
 	SET_CONTENT(HALF_EDGE_GEOMETRY, 					true);
 	SET_CONTENT(CONTENT_MANAGER, 						false);
@@ -221,6 +232,13 @@ namespace Morpheus {
 	SET_CONTENT(STATIC_MESH, 							true);
 	SET_CONTENT(SAMPLER, 								true);
 	SET_CONTENT(FRAMEBUFFER,							true);
+
+	struct ByteColor {
+		uint8_t r;
+		uint8_t g;
+		uint8_t b;
+		uint8_t a;
+	};
 
 	// A static class used to obtain template metaprogramming values during runtime.
 	class NodeMetadata {
@@ -291,6 +309,13 @@ namespace Morpheus {
 		}
 	};
 
+	struct RaycastInfo {
+	public:
+		INodeOwner* mNode;
+		float mDistance;
+		glm::vec3 mLocation;
+	};
+
 	class INodeOwner {
 	private:
 		int mNodeId;
@@ -321,8 +346,8 @@ namespace Morpheus {
 		
 		inline NodeOwnerIteratorF children();
 		inline NodeOwnerIteratorB parents();
-		inline void addChild(INodeOwner* child);
-		inline void addParent(INodeOwner* parent);
+		virtual void addChild(INodeOwner* child);
+		virtual void addParent(INodeOwner* parent);
 		inline uint32_t childCount();
 		inline uint32_t parentCount();
 		inline uint32_t outDegree();
@@ -338,10 +363,8 @@ namespace Morpheus {
 			return NodeMetadata::isRenderable(mNodeType);
 		}
 
-		// This is not an efficient way of removing a child
-		inline void removeChild(INodeOwner* owner);
-		// This is not an efficient way of removing a parent
-		inline void removeParent(INodeOwner* owner);
+		virtual void removeChild(INodeOwner* owner);
+		virtual void removeParent(INodeOwner* owner);
 
 		template <typename T>
 		inline T& data(const std::string& s);
@@ -351,6 +374,35 @@ namespace Morpheus {
 		virtual bool isEnabled() const { return true; }
 		virtual void update(double dt) { }
 		virtual void init() { }
+
+		// By default, we just check all children
+		virtual bool raycast(const Ray& ray, RaycastInfo* result) {
+			result->mDistance = std::numeric_limits<float>::infinity();
+			bool bHit = false;
+
+			RaycastInfo info;
+			for (auto it = children(); it.valid(); it.next()) {
+				auto child = it();
+				if (child->raycast(ray, &info) && info.mDistance < result->mDistance) {
+					*result = info;
+					bHit = true;
+				}
+			}
+
+			return bHit;
+		}
+
+		virtual glm::vec3 computeCenter() const {
+			return glm::vec3(0.0f, 0.0f, 0.0f);
+		}
+
+		virtual BoundingBox computeBoundingBox() const {
+			return BoundingBox::empty();
+		}
+
+		virtual bool hasBoundingBox() const {
+			return false;
+		}
 
 		virtual Shader* toShader();
 		virtual StaticMesh* toStaticMesh();

@@ -33,13 +33,6 @@ namespace Morpheus {
 		LINEAR
 	};
 
-	struct ByteColor {
-		uint8_t r;
-		uint8_t g;
-		uint8_t b;
-		uint8_t a;
-	};
-
 	struct SpriteInstance {
 		Texture* mTexture;
 		glm::vec3 mPosition;

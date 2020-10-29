@@ -70,8 +70,6 @@ namespace Morpheus {
 		}
 
 		inline void bindImage(GLuint unit, GLenum access, GLint level = 0) const {
-			/*glActiveTexture(GL_TEXTURE0 + unit);
-			glBindTexture(mGLTarget, mId);*/
 			glBindImageTexture(unit, mId, level, false, 0, access, mFormat);
 		}
 

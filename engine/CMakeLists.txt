@@ -50,6 +50,8 @@ add_library(engine
 	src/spritebatch.cpp
 	src/hdri2cube.cpp
 	src/framebuffer.cpp
+	src/geobase.cpp
+	src/debugbatch.cpp
 
 	shader_rc.cpp
 	
