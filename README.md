@@ -1,6 +1,6 @@
 # The Morpheus Graphics Engine
 
-**This is a work in progress. I don't have any impressive tech demos yet, but I've laid most of the ground work now, so more exciting stuff should be comming soon.**
+**Please note that, due the limitations of OpenGL, I have discontinued work on this engine in favor of a new one built on DiligentEngine. The new engine can be accessed [here](https://github.com/UniqueUpToPermutation/MorpheusRedux)**
 
 Morpheus is an open source physically-based cross-platform renderer built using OpenGL. It runs on Linux and Windows (in that order of precedence). 
 
